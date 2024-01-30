@@ -19,7 +19,7 @@ using SO.UI.Game.Object;
 using SO.UI.Game.Object.Events;
 using SO.Map;
 using SO.Faction;
-using SO.Economy.RFO;
+using SO.Map.RFO;
 
 namespace SO.UI
 {
@@ -32,11 +32,12 @@ namespace SO.UI
         //Карта
         readonly EcsPoolInject<CRegion> regionPool = default;
 
+        readonly EcsPoolInject<CRegionFO> rFOPool = default;
+
+        readonly EcsPoolInject<CExplorationFRFO> exFRFOPool = default;
+
         //Фракции
         readonly EcsPoolInject<CFaction> factionPool = default;
-
-        //Экономика
-        readonly EcsPoolInject<CRegionFO> rFOPool = default;
 
 
         //Общие события
@@ -46,6 +47,7 @@ namespace SO.UI
         readonly EcsPoolInject<EcsGroupSystemState> ecsGroupSystemStatePool = default;
 
         //Данные
+        readonly EcsCustomInject<InputData> inputData = default;
         readonly EcsCustomInject<RuntimeData> runtimeData = default;
 
         readonly EcsCustomInject<SOUI> sOUI = default;
@@ -458,7 +460,7 @@ namespace SO.UI
             objectPanel.activeObjectPE = region.selfPE;
 
             //Отображаем, что это подпанель региона
-            objectPanel.objectName.text = "Region";
+            objectPanel.objectName.text = region.Index.ToString();
 
 
             //Отображаем обзорную вкладку
@@ -485,10 +487,19 @@ namespace SO.UI
             //Отображаем обзорную вкладку
             regionSubpanel.tabGroup.OnTabSelected(overviewTab.selfTabButton);
 
-            //Елси производится обновление
+            //Берём фракцию игрока
+            inputData.Value.playerFactionPE.Unpack(world.Value, out int factionEntity);
+            ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+
+            //Если производится обновление
             if(isRefresh == true)
             {
+                //Берём ExFRFO фракции игрока
+                rFO.factionRFOs[faction.selfIndex].fRFOPE.Unpack(world.Value, out int fRFOEntity);
+                ref CExplorationFRFO exFRFO = ref exFRFOPool.Value.Get(fRFOEntity);
 
+                //Отображаем уровень исследования региона
+                overviewTab.explorationLevel.text = exFRFO.explorationLevel.ToString();
             }
         }
         #endregion

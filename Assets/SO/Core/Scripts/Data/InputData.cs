@@ -11,14 +11,7 @@ namespace SO.UI
     {
         None,
         Default,
-        Distance
-    }
-
-    public enum OptionalToggle : byte
-    {
-        Ignore,
-        No,
-        Yes
+        Exploration
     }
 
     public class InputData : MonoBehaviour

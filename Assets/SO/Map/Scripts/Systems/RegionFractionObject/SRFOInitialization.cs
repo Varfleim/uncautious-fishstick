@@ -3,9 +3,9 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
 using SO.Map;
-using SO.Economy.RFO.Events;
+using SO.Map.RFO.Events;
 
-namespace SO.Economy.RFO
+namespace SO.Map.RFO
 {
     public class SRFOInitialization : IEcsRunSystem
     {
@@ -27,7 +27,7 @@ namespace SO.Economy.RFO
         public void Run(IEcsSystems systems)
         {
             //Для каждого региона с самозапросом создания RFO
-            foreach(int regionEntity in rFOCreatingSelfRequestFilter.Value)
+            foreach (int regionEntity in rFOCreatingSelfRequestFilter.Value)
             {
                 //Берём регион и самозапрос
                 ref CRegion region = ref regionPool.Value.Get(regionEntity);

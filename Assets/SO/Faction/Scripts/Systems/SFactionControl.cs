@@ -2,8 +2,9 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Faction.Events;
 using SO.Map.Events;
+using SO.Map.RFO.Events;
+using SO.Faction.Events;
 
 namespace SO.Faction
 {
@@ -23,6 +24,7 @@ namespace SO.Faction
 
         //Данные
         readonly EcsCustomInject<UI.InputData> inputData = default;
+        readonly EcsCustomInject<RuntimeData> runtimeData = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -49,12 +51,15 @@ namespace SO.Faction
 
             //Заполняем основные данные фракции
             faction = new(
-                world.Value.PackEntity(factionEntity), factionPool.Value.GetRawDenseItemsCount(),
+                world.Value.PackEntity(factionEntity), runtimeData.Value.factionsCount++,
                 requestComp.factionName);
 
             //ТЕСТ
             inputData.Value.playerFactionPE = faction.selfPE;
             //ТЕСТ
+
+            //Запрашиваем создание ExFRFO данной фракции
+            FactionExFRFOsCreatingSelfRequest(factionEntity);
 
             //Запрашиваем инициализацию стартового региона фракции
             FactionStartRegionInitializerRequest(faction.selfPE);
@@ -77,6 +82,17 @@ namespace SO.Faction
 
             //Заполняем данные запроса
             requestOwnerComp = new(factionPE);
+        }
+
+        readonly EcsPoolInject<SRExFRFOsCreating> exFRFOsCreatingSelfRequestPool = default;
+        void FactionExFRFOsCreatingSelfRequest(
+            int factionEntity)
+        {
+            //Назначаем фракции самозапрос создания ExFRFO
+            ref SRExFRFOsCreating selfRequestComp = ref exFRFOsCreatingSelfRequestPool.Value.Add(factionEntity);
+
+            //Заполняем данные запроса
+            selfRequestComp = new();
         }
     }
 }

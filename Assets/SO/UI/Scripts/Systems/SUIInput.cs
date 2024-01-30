@@ -14,8 +14,9 @@ using SO.UI.Game;
 using SO.UI.Game.Events;
 using SO.UI.Game.Object.Events;
 using SO.Map;
+using SO.Map.Events;
+using SO.Map.RFO;
 using SO.Faction;
-using SO.Economy.RFO;
 
 namespace SO.UI
 {
@@ -30,12 +31,12 @@ namespace SO.UI
         //Карта
         readonly EcsFilterInject<Inc<CRegion>> regionFilter = default;
         readonly EcsPoolInject<CRegion> regionPool = default;
+        readonly EcsPoolInject<CRegionFO> rFOPool = default;
+
+        readonly EcsPoolInject<CExplorationFRFO> exFRFOPool = default;
 
         //Фракции
         readonly EcsPoolInject<CFaction> factionPool = default;
-
-        //Экономика
-        readonly EcsPoolInject<CRegionFO> rFOPool = default;
 
 
         EcsFilter clickEventMapFilter;
@@ -125,48 +126,63 @@ namespace SO.UI
                 ref CRegion region = ref regionPool.Value.Get(regionEntity);
                 ref CRegionFO rFO = ref rFOPool.Value.Get(regionEntity);
 
-                /*if (region.Elevation < mapGenerationData.Value.waterLevel)
-                {
-                    RegionSetColor(ref region, Color.blue);
-                }
-                else if (region.TerrainTypeIndex == 0)
-                {
-                    RegionSetColor(ref region, Color.yellow);
-                }
-                else if (region.TerrainTypeIndex == 1)
-                {
-                    RegionSetColor(ref region, Color.green);
-                }
-                else if (region.TerrainTypeIndex == 2)
-                {
-                    RegionSetColor(ref region, Color.gray);
-                }
-                else if (region.TerrainTypeIndex == 3)
-                {
-                    RegionSetColor(ref region, Color.red);
-                }
-                else if (region.TerrainTypeIndex == 4)
-                {
-                    RegionSetColor(ref region, Color.white);
-                }*/
+                //if (region.Elevation < mapGenerationData.Value.waterLevel)
+                //{
+                //    RegionSetColor(ref region, Color.blue);
+                //}
+                //else if (region.TerrainTypeIndex == 0)
+                //{
+                //    RegionSetColor(ref region, Color.yellow);
+                //}
+                //else if (region.TerrainTypeIndex == 1)
+                //{
+                //    RegionSetColor(ref region, Color.green);
+                //}
+                //else if (region.TerrainTypeIndex == 2)
+                //{
+                //    RegionSetColor(ref region, Color.gray);
+                //}
+                //else if (region.TerrainTypeIndex == 3)
+                //{
+                //    RegionSetColor(ref region, Color.red);
+                //}
+                //else if (region.TerrainTypeIndex == 4)
+                //{
+                //    RegionSetColor(ref region, Color.white);
+                //}
 
-                if (rFO.ownerFactionPE.Unpack(world.Value, out int factionEntity))
-                {
-                    RegionSetColor(ref region, Color.magenta);
+                //for (int a = 0; a < rFO.factionRFOs.Length; a++)
+                //{
+                //    rFO.factionRFOs[a].fRFOPE.Unpack(world.Value, out int fRFOEntity);
+                //    ref CExplorationFRFO exFRFO = ref exFRFOPool.Value.Get(fRFOEntity);
 
-                    List<int> regions = regionsData.Value.GetRegionIndicesWithinSteps(
-                        world.Value,
-                        regionFilter.Value, regionPool.Value,
-                        ref region, 2);
+                //    if (exFRFO.factionPE.EqualsTo(inputData.Value.playerFactionPE))
+                //    {
+                //        RegionSetColor(
+                //            ref region,
+                //            new Color32(
+                //                exFRFO.explorationLevel, exFRFO.explorationLevel, exFRFO.explorationLevel,
+                //                255));
+                //    }
+                //}
 
-                    for(int a = 0; a < regions.Count; a++)
-                    {
-                        regionsData.Value.regionPEs[regions[a]].Unpack(world.Value, out int neighbourRegionEntity);
-                        ref CRegion neighbourRegion = ref regionPool.Value.Get(neighbourRegionEntity);
+                //if (rFO.ownerFactionPE.Unpack(world.Value, out int factionEntity))
+                //{
+                //    RegionSetColor(ref region, Color.magenta);
 
-                        RegionSetColor(ref neighbourRegion, Color.magenta);
-                    }
-                }
+                //    List<int> regions = regionsData.Value.GetRegionIndicesWithinSteps(
+                //        world.Value,
+                //        regionFilter.Value, regionPool.Value,
+                //        ref region, 10);
+
+                //    for(int a = 0; a < regions.Count; a++)
+                //    {
+                //        regionsData.Value.regionPEs[regions[a]].Unpack(world.Value, out int neighbourRegionEntity);
+                //        ref CRegion neighbourRegion = ref regionPool.Value.Get(neighbourRegionEntity);
+
+                //        RegionSetColor(ref neighbourRegion, Color.magenta);
+                //    }
+                //}
             }
         }
 
@@ -291,6 +307,14 @@ namespace SO.UI
                 //Запрашиваем выход из игры
                 GeneralActionRequest(GeneralActionType.QuitGame);
             }
+
+            if(Input.GetKeyUp(KeyCode.Y))
+            {
+                Debug.LogWarning("Y!");
+
+                MapChangeMapModeRequest(
+                    ChangeMapModeRequestType.Exploration);
+            }
         }
 
         void InputMouse()
@@ -378,6 +402,19 @@ namespace SO.UI
 
             //Заполняем данные запроса
             requestComp = new(actionType);
+        }
+
+        readonly EcsPoolInject<RChangeMapMode> changeMapModeRequestTypePool = default;
+        void MapChangeMapModeRequest(
+            ChangeMapModeRequestType requestType)
+        {
+            //Создаём новую сущность и назначаем ей запрос смены режима карты
+            int requestEntity = world.Value.NewEntity();
+            ref RChangeMapMode requestComp = ref changeMapModeRequestTypePool.Value.Add(requestEntity);
+
+            //Заполняем данные запроса
+            requestComp = new(
+                requestType);
         }
 
         #region ObjectPanel

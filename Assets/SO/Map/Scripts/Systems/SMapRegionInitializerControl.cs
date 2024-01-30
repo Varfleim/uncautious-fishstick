@@ -5,7 +5,7 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
 using SO.Map.Events;
-using SO.Economy.RFO.Events;
+using SO.Map.RFO.Events;
 
 namespace SO.Map
 {

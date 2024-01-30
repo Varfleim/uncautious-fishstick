@@ -1,5 +1,4 @@
-
-namespace SO.Economy.RFO.Events
+namespace SO.Map.RFO.Events
 {
     public readonly struct SRRFOCreating
     {

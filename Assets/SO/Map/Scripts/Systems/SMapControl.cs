@@ -7,6 +7,9 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
 using SO.UI;
+using SO.Map.Events;
+using SO.Map.RFO;
+using SO.Faction;
 
 namespace SO.Map
 {
@@ -17,16 +20,37 @@ namespace SO.Map
 
 
         //Карта
+        readonly EcsFilterInject<Inc<CRegionFO>> regionFilter = default; 
         readonly EcsPoolInject<CRegion> regionPool = default;
+        readonly EcsPoolInject<CRegionFO> rFOPool = default;
+
+        readonly EcsPoolInject<CExplorationFRFO> exFRFOPool = default;
+
+        //Фракции
+        readonly EcsPoolInject<CFaction> factionPool = default;
 
 
         //Данные
         readonly EcsCustomInject<SceneData> sceneData = default;
         readonly EcsCustomInject<MapGenerationData> mapGenerationData = default;
         readonly EcsCustomInject<RegionsData> regionsData = default;
+        readonly EcsCustomInject<InputData> inputData = default;
 
         public void Run(IEcsSystems systems)
         {
+            //Если фильтр запросов смены карты не пуст
+            if(changeMapModeRequestFilter.Value.GetEntitiesCount() > 0)
+            {
+                //Смена режимов карты
+                MapChangeMapMode();
+            }
+            //Иначе
+            else
+            {
+                //Отображаем текущий режим карты
+                MapRefreshMapMode();
+            }
+
             //Обновляем яркость материалов подсветки
             mapGenerationData.Value.fleetRegionHighlightMaterial.SetFloat(
                 ShaderParameters.ColorShift, Mathf.PingPong(UnityEngine.Time.time * 0.25f, 1f));
@@ -65,6 +89,247 @@ namespace SO.Map
                 mapGenerationData.Value.isColorUpdated = false;
                 mapGenerationData.Value.isUVUpdatedFast = false;
             }
+        }
+
+        readonly EcsFilterInject<Inc<RChangeMapMode>> changeMapModeRequestFilter = default;
+        readonly EcsPoolInject<RChangeMapMode> changeMapModeRequestPool = default;
+        void MapChangeMapMode()
+        {
+            //Для каждого запроса смены режима карты
+            foreach(int requestEntity in changeMapModeRequestFilter.Value)
+            {
+                //Берём запрос
+                ref RChangeMapMode requestComp = ref changeMapModeRequestPool.Value.Get(requestEntity);
+
+                //Если запрашивается отображение режима исследования
+                if(requestComp.requestType == ChangeMapModeRequestType.Exploration)
+                {
+                    //Указываем режим исследования как активный
+                    inputData.Value.mapMode = MapMode.Exploration;
+
+                    //Отображаем режим исследования
+                    MapDisplayModeExploration();
+                }
+
+                changeMapModeRequestPool.Value.Del(requestEntity);
+            }
+        }
+
+        void MapRefreshMapMode()
+        {
+            //Если текущий режим карты - режим исследования
+            if(inputData.Value.mapMode == MapMode.Exploration)
+            {
+                //Отображаем режим исследования
+                MapDisplayModeExploration();
+            }
+        }
+
+        void MapDisplayModeExploration()
+        {
+            //Берём организацию игрока
+            inputData.Value.playerFactionPE.Unpack(world.Value, out int factionEntity);
+            ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+
+            //Для каждого региона
+            foreach (int regionEntity in regionFilter.Value)
+            {
+                //Берём RFO
+                ref CRegion region = ref regionPool.Value.Get(regionEntity);
+                ref CRegionFO rFO = ref rFOPool.Value.Get(regionEntity);
+
+                //Берём ExFRFO фракции
+                rFO.factionRFOs[faction.selfIndex].fRFOPE.Unpack(world.Value, out int fRFOEntity);
+                ref CExplorationFRFO exFRFO = ref exFRFOPool.Value.Get(fRFOEntity);
+
+                //ТЕСТ
+                //Устанавливаем цвет региона соответственно его уровню исследования
+                RegionSetColor(
+                    ref region,
+                    new Color32(
+                        exFRFO.explorationLevel, exFRFO.explorationLevel, exFRFO.explorationLevel,
+                        255));
+                //ТЕСТ
+            }
+        }
+
+
+        void RegionSetColor(
+            ref CRegion region,
+            Color color)
+        {
+            //Берём кэшированный материал
+            Material material;
+
+            //Если материал такого цвета уже существует в кэше цветных материалов
+            if (mapGenerationData.Value.colorCache.ContainsKey(color) == false)
+            {
+                //То создаём новый материал и кэшируем его
+                material = GameObject.Instantiate(mapGenerationData.Value.regionColoredMaterial);
+                mapGenerationData.Value.colorCache.Add(color, material);
+
+                //Заполняем основные данные материала
+                material.hideFlags = HideFlags.DontSave;
+                material.color = color;
+                material.SetFloat(ShaderParameters.RegionAlpha, 1f);
+            }
+            //Иначе
+            else
+            {
+                //Берём материал из словаря
+                material = mapGenerationData.Value.colorCache[color];
+            }
+
+            //Устанавливаем материал региона
+            RegionSetMaterial(
+                region.Index,
+                material);
+        }
+
+        bool RegionSetMaterial(
+            int regionIndex,
+            Material material,
+            bool temporary = false)
+        {
+            //Берём регион
+            regionsData.Value.regionPEs[regionIndex].Unpack(world.Value, out int regionEntity);
+            ref CRegion region = ref regionPool.Value.Get(regionEntity);
+
+            //Если назначается временный материал
+            if (temporary == true)
+            {
+                //Если этот временный материал уже назначен региону
+                if (region.tempMaterial == material)
+                {
+                    //То ничего не меняется
+                    return false;
+                }
+
+                //Назначаем временный материал рендереру региона
+                region.hoverRenderer.sharedMaterial = material;
+                region.hoverRenderer.enabled = true;
+            }
+            //Иначе
+            else
+            {
+                //Если этот основной материал уже назначен региону
+                if (region.customMaterial == material)
+                {
+                    //То ничего не меняется
+                    return false;
+                }
+
+                //Берём цвет материала
+                Color32 materialColor = Color.white;
+                if (material.HasProperty(ShaderParameters.Color) == true)
+                {
+                    materialColor = material.color;
+                }
+                else if (material.HasProperty(ShaderParameters.BaseColor))
+                {
+                    materialColor = material.GetColor(ShaderParameters.BaseColor);
+                }
+
+                //Отмечаем, что требуется обновление цветов
+                mapGenerationData.Value.isColorUpdated = true;
+
+                //Берём текстуру материала
+                Texture materialTexture = null;
+                if (material.HasProperty(ShaderParameters.MainTex))
+                {
+                    materialTexture = material.mainTexture;
+                }
+                else if (material.HasProperty(ShaderParameters.BaseMap))
+                {
+                    materialTexture = material.GetTexture(ShaderParameters.BaseMap);
+                }
+
+                //Если текстура не пуста
+                if (materialTexture != null)
+                {
+                    //Отмечаем, что требуется обновление массива текстур
+                    mapGenerationData.Value.isTextureArrayUpdated = true;
+                }
+                //Иначе
+                else
+                {
+                    List<Color32> colorChunk = mapGenerationData.Value.colorShaded[region.uvShadedChunkIndex];
+                    for (int k = 0; k < region.uvShadedChunkLength; k++)
+                    {
+                        colorChunk[region.uvShadedChunkStart + k] = materialColor;
+                    }
+                    mapGenerationData.Value.colorShadedDirty[region.uvShadedChunkIndex] = true;
+                }
+            }
+
+            //Если материал - не материал подсветки наведения
+            if (material != mapGenerationData.Value.hoverRegionHighlightMaterial)
+            {
+                //Если это временный материал
+                if (temporary == true)
+                {
+                    region.tempMaterial = material;
+                }
+                //Иначе
+                else
+                {
+                    region.customMaterial = material;
+                }
+            }
+
+            //Если материал подсветки не пуст и регион - это последний подсвеченный регион
+            if (mapGenerationData.Value.hoverRegionHighlightMaterial != null && inputData.Value.lastHighlightedRegionIndex == region.Index)
+            {
+                //Задаём рендереру материал подсветки наведения
+                region.hoverRenderer.sharedMaterial = mapGenerationData.Value.hoverRegionHighlightMaterial;
+
+                //Берём исходный материал 
+                Material sourceMaterial = null;
+                if (region.tempMaterial != null)
+                {
+                    sourceMaterial = region.tempMaterial;
+                }
+                else if (region.customMaterial != null)
+                {
+                    sourceMaterial = region.customMaterial;
+                }
+
+                //Если исходный материал не пуст
+                if (sourceMaterial != null)
+                {
+                    //Берём цвет исходного материала
+                    Color32 color = Color.white;
+                    if (sourceMaterial.HasProperty(ShaderParameters.Color) == true)
+                    {
+                        color = sourceMaterial.color;
+                    }
+                    else if (sourceMaterial.HasProperty(ShaderParameters.BaseColor))
+                    {
+                        color = sourceMaterial.GetColor(ShaderParameters.BaseColor);
+                    }
+                    //Устанавливаем вторичный цвет материалу подсветки наведения
+                    mapGenerationData.Value.hoverRegionHighlightMaterial.SetColor(ShaderParameters.Color2, color);
+
+                    //Берём текстуру исходного материала
+                    Texture tempMaterialTexture = null;
+                    if (sourceMaterial.HasProperty(ShaderParameters.MainTex))
+                    {
+                        tempMaterialTexture = sourceMaterial.mainTexture;
+                    }
+                    else if (sourceMaterial.HasProperty(ShaderParameters.BaseMap))
+                    {
+                        tempMaterialTexture = sourceMaterial.GetTexture(ShaderParameters.BaseMap);
+                    }
+
+                    //Если текстура не пуста
+                    if (tempMaterialTexture != null)
+                    {
+                        mapGenerationData.Value.hoverRegionHighlightMaterial.mainTexture = tempMaterialTexture;
+                    }
+                }
+            }
+
+            return true;
         }
 
         void MapMaterialPropertiesUpdate(

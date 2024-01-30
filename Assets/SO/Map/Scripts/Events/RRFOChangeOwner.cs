@@ -1,7 +1,7 @@
 
 using Leopotam.EcsLite;
 
-namespace SO.Economy.RFO.Events
+namespace SO.Map.RFO.Events
 {
     public enum RegionChangeOwnerType : byte
     {

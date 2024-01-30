@@ -1,7 +1,7 @@
 
 using Leopotam.EcsLite;
 
-namespace SO.Economy.RFO
+namespace SO.Map.RFO
 {
     public struct CRegionFO
     {
@@ -11,10 +11,14 @@ namespace SO.Economy.RFO
             this.selfPE = selfPE;
 
             ownerFactionPE = new();
+
+            factionRFOs = new DFactionRFO[0];
         }
 
         public readonly EcsPackedEntity selfPE;
 
         public EcsPackedEntity ownerFactionPE;
+
+        public DFactionRFO[] factionRFOs;
     }
 }

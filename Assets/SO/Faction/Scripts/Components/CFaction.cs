@@ -16,6 +16,8 @@ namespace SO.Faction
             this.selfName = selfName;
 
             ownedRFOPEs = new();
+
+            observerPEs = new();
         }
 
         public readonly EcsPackedEntity selfPE;
@@ -24,5 +26,7 @@ namespace SO.Faction
         public string selfName;
 
         public List<EcsPackedEntity> ownedRFOPEs;
+
+        public List<EcsPackedEntity> observerPEs;
     }
 }

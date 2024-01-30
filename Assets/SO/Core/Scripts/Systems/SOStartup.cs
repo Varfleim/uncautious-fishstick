@@ -9,8 +9,8 @@ using Leopotam.EcsLite.Unity.Ugui;
 using SO.UI;
 using SO.Time;
 using SO.Map;
+using SO.Map.RFO;
 using SO.Faction;
-using SO.Economy.RFO;
 
 namespace SO
 {
@@ -68,7 +68,7 @@ namespace SO
                 //Применение инициализаторов регионов
                 new SMapRegionInitializerControl(),
                 
-                //Обработка событий RFO
+                //Управление RFO
                 new SRFOControl())
                 //Группа выключается в SEventControl в том же кадре
 
@@ -98,6 +98,12 @@ namespace SO
                 .Inject(sOUI);
 
             perTickSystems
+
+                //Управление RFO
+                .Add(new SRFOControl())
+
+                //Подсчёт исследования от наблюдателей
+                .Add(new SMTObserverExplorationCalc())
 
                 //Обновление интерфейса после тика
                 .Add(new SUITickUpdate())
