@@ -2909,6 +2909,7 @@ GameObject:
   - component: {fileID: 2105182965}
   - component: {fileID: 2105182963}
   - component: {fileID: 2105182964}
+  - component: {fileID: 2105182970}
   - component: {fileID: 2105182967}
   - component: {fileID: 2105182966}
   - component: {fileID: 2105182969}
@@ -2952,6 +2953,7 @@ MonoBehaviour:
   uguiUIEmitter: {fileID: 199122800}
   staticData: {fileID: 11400000, guid: c7a11c41853ed6440b8dac1346f2bcf5, type: 2}
   sceneData: {fileID: 2105182964}
+  uIData: {fileID: 2105182970}
   mapGenerationData: {fileID: 2105182967}
   regionsData: {fileID: 2105182966}
   factionsData: {fileID: 2105182969}
@@ -3000,7 +3002,7 @@ MonoBehaviour:
   needRefreshPathMatrix: 000000000000000000000000
   openRegionValues: 000000000000000000000000
   closeRegionValues: 000000000000000000000000
-  pathfindingSearchLimit: 30000
+  pathfindingSearchLimits: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   needRefreshRouteMatrix: 0
   openRegionValue: 1
   closeRegionValue: 2
@@ -3017,7 +3019,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1783720cc54d1ea4ca5b43532c801941, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  regionPrefab: {fileID: 3872802071885926373, guid: d9190ad3472f7894a9412fa2765519c6, type: 3}
   subdivisions: 0
   extrudeMultiplier: 0.05
   hexasphereScale: 100
@@ -3121,6 +3122,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 143eaa67a1476ef4ebdf1da20c9c82c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2105182970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2105182961}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ce503b1f7117b74a928552187931123, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  regionPrefab: {fileID: 3872802071885926373, guid: d9190ad3472f7894a9412fa2765519c6, type: 3}
+  mapPanelGroup: {fileID: 6594349263422155975, guid: 3f0a78a1fae501a4585683bc105b9425, type: 3}
+  mapPanelAltitude: 0.2
+  rCMainMapPanelPrefab: {fileID: 8938394213872120736, guid: fe74c27f2a6168044bbffb0db420f74a, type: 3}
 --- !u!1001 &283627025941335466
 PrefabInstance:
   m_ObjectHideFlags: 0

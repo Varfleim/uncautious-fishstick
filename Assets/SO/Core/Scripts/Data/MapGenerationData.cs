@@ -1,6 +1,8 @@
 
 using System.Collections.Generic;
 
+using SO.Map.Hexasphere;
+
 using UnityEngine;
 
 namespace SO.Map
@@ -80,9 +82,6 @@ namespace SO.Map
             new Vector2 (0.375f, 0.5f),
             new Vector2 (0.625f, 0.5f)
         };
-
-        public GORegionPrefab regionPrefab;
-
 
         public int subdivisions;
         public static float ExtrudeMultiplier;

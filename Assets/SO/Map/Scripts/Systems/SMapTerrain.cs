@@ -17,8 +17,8 @@ namespace SO.Map
         readonly EcsWorldInject world = default;
 
         //Карта
-        readonly EcsFilterInject<Inc<CRegion>> regionFilter = default;
-        readonly EcsPoolInject<CRegion> regionPool = default;
+        readonly EcsFilterInject<Inc<CRegionCore>> regionFilter = default;
+        readonly EcsPoolInject<CRegionCore> rCPool = default;
 
         //События карты
         readonly EcsFilterInject<Inc<RMapGenerating>> mapGeneratingRequestFilter = default;
@@ -141,15 +141,15 @@ namespace SO.Map
 
             //Берём случайный регион
             regionsData.Value.GetRegionRandom().Unpack(world.Value, out int firstRegionEntity);
-            ref CRegion firstRegion = ref regionPool.Value.Get(firstRegionEntity);
+            ref CRegionCore firstRC = ref rCPool.Value.Get(firstRegionEntity);
 
             //Устанавливаем его фазу поиска на текущую
-            regions[firstRegion.Index].distance = 0;
-            regions[firstRegion.Index].priority = 2;
-            regions[firstRegion.Index].status = regionsData.Value.openRegionValue;
+            regions[firstRC.Index].distance = 0;
+            regions[firstRC.Index].priority = 2;
+            regions[firstRC.Index].status = regionsData.Value.openRegionValue;
 
             //Заносим регион в очередь
-            queue.Push(firstRegion.Index);
+            queue.Push(firstRC.Index);
 
             //Определяем, будет это высоким поднятием суши или обычным
             int rise = Random.value < mapGenerationData.Value.highRiseProbability ? 2 : 1;
@@ -162,10 +162,10 @@ namespace SO.Map
                 //Берём первый регион в очереди
                 int currentRegionIndex = queue.Pop();
                 regionsData.Value.regionPEs[currentRegionIndex].Unpack(world.Value, out int currentRegionEntity);
-                ref CRegion currentRegion = ref regionPool.Value.Get(currentRegionEntity);
+                ref CRegionCore currentRC = ref rCPool.Value.Get(currentRegionEntity);
 
                 //Запоминаем исходную высоту региона
-                int originalElevation = currentRegion.Elevation;
+                int originalElevation = currentRC.Elevation;
                 //Определяем новую высоту региона
                 int newElevation = originalElevation + rise;
 
@@ -176,8 +176,7 @@ namespace SO.Map
                 }
 
                 //Увеличиваем высоту региона
-                currentRegion.Elevation = newElevation;
-                currentRegion.ExtrudeAmount = (float)currentRegion.Elevation / (mapGenerationData.Value.elevationMaximum + 1);
+                currentRC.Elevation = newElevation;
 
                 //Если исходная высота региона меньше уровня моря
                 if (originalElevation < mapGenerationData.Value.waterLevel
@@ -193,23 +192,23 @@ namespace SO.Map
                 currentSize += 1;
 
                 //Для каждого соседа текущего региона
-                for (int i = 0; i < currentRegion.neighbourRegionPEs.Length; i++)
+                for (int i = 0; i < currentRC.neighbourRegionPEs.Length; i++)
                 {
                     //Берём соседа
-                    currentRegion.neighbourRegionPEs[i].Unpack(world.Value, out int neighbourRegionEntity);
-                    ref CRegion neighbourRegion = ref regionPool.Value.Get(neighbourRegionEntity);
+                    currentRC.neighbourRegionPEs[i].Unpack(world.Value, out int neighbourRegionEntity);
+                    ref CRegionCore neighbourRC = ref rCPool.Value.Get(neighbourRegionEntity);
 
                     //Если фаза поиска соседа меньше текущей
-                    if (regions[neighbourRegion.Index].status < regionsData.Value.openRegionValue)
+                    if (regions[neighbourRC.Index].status < regionsData.Value.openRegionValue)
                     {
                         //Устанавливаем фазу поиска на текущую
-                        regions[neighbourRegion.Index].status = regionsData.Value.openRegionValue;
-                        regions[neighbourRegion.Index].distance = 0;
-                        regions[neighbourRegion.Index].priority = Vector3.Angle(firstRegion.center, neighbourRegion.center) * 2f;
-                        regions[neighbourRegion.Index].priority += Random.value < mapGenerationData.Value.jitterProbability ? 1 : 0;
+                        regions[neighbourRC.Index].status = regionsData.Value.openRegionValue;
+                        regions[neighbourRC.Index].distance = 0;
+                        regions[neighbourRC.Index].priority = Vector3.Angle(firstRC.center, neighbourRC.center) * 2f;
+                        regions[neighbourRC.Index].priority += Random.value < mapGenerationData.Value.jitterProbability ? 1 : 0;
 
                         //Заносим регион в очередь
-                        queue.Push(neighbourRegion.Index);
+                        queue.Push(neighbourRC.Index);
                     }
                 }
             }
@@ -243,15 +242,15 @@ namespace SO.Map
 
             //Берём случайный регион
             regionsData.Value.GetRegionRandom().Unpack(world.Value, out int firstRegionEntity);
-            ref CRegion firstRegion = ref regionPool.Value.Get(firstRegionEntity);
+            ref CRegionCore firstRC = ref rCPool.Value.Get(firstRegionEntity);
 
             //Устанавливаем его фазу поиска на текущую
-            regions[firstRegion.Index].distance = 0;
-            regions[firstRegion.Index].priority = 2;
-            regions[firstRegion.Index].status = regionsData.Value.openRegionValue;
+            regions[firstRC.Index].distance = 0;
+            regions[firstRC.Index].priority = 2;
+            regions[firstRC.Index].status = regionsData.Value.openRegionValue;
 
             //Заносим регион в очередь
-            queue.Push(firstRegion.Index);
+            queue.Push(firstRC.Index);
 
             //Определяем, будет это высотным утоплением суши или обычным
             int sink = Random.value < mapGenerationData.Value.highRiseProbability ? 2 : 1;
@@ -264,12 +263,12 @@ namespace SO.Map
                 //Берём первый регион в очереди
                 int currentRegionIndex = queue.Pop();
                 regionsData.Value.regionPEs[currentRegionIndex].Unpack(world.Value, out int currentRegionEntity);
-                ref CRegion currentRegion = ref regionPool.Value.Get(currentRegionEntity);
+                ref CRegionCore currentRC = ref rCPool.Value.Get(currentRegionEntity);
 
                 //Запоминаем исходную высоту региона
-                int originalElevation = currentRegion.Elevation;
+                int originalElevation = currentRC.Elevation;
                 //Определяем новую высоту региона
-                int newElevation = currentRegion.Elevation - sink;
+                int newElevation = currentRC.Elevation - sink;
 
                 //Если новая высота региона меньше минимальной
                 if (newElevation < mapGenerationData.Value.elevationMinimum)
@@ -278,16 +277,7 @@ namespace SO.Map
                 }
 
                 //Увеличиваем высоту региона
-                currentRegion.Elevation = newElevation;
-
-                if (currentRegion.Elevation > 0)
-                {
-                    currentRegion.ExtrudeAmount = (float)currentRegion.Elevation / (mapGenerationData.Value.elevationMaximum + 1);
-                }
-                else
-                {
-                    currentRegion.ExtrudeAmount = 0;
-                }
+                currentRC.Elevation = newElevation;
 
                 //Если исходная высота региона больше или равна уровню моря
                 if (originalElevation >= mapGenerationData.Value.waterLevel
@@ -302,23 +292,23 @@ namespace SO.Map
                 currentSize += 1;
 
                 //Для каждого соседа текущего региона
-                for (int i = 0; i < currentRegion.neighbourRegionPEs.Length; i++)
+                for (int i = 0; i < currentRC.neighbourRegionPEs.Length; i++)
                 {
                     //Берём соседа
-                    currentRegion.neighbourRegionPEs[i].Unpack(world.Value, out int neighbourRegionEntity);
-                    ref CRegion neighbourRegion = ref regionPool.Value.Get(neighbourRegionEntity);
+                    currentRC.neighbourRegionPEs[i].Unpack(world.Value, out int neighbourRegionEntity);
+                    ref CRegionCore neighbourRC = ref rCPool.Value.Get(neighbourRegionEntity);
 
                     //Если фаза поиска соседа меньше текущей
-                    if (regions[neighbourRegion.Index].status < regionsData.Value.openRegionValue)
+                    if (regions[neighbourRC.Index].status < regionsData.Value.openRegionValue)
                     {
                         //Устанавливаем фазу поиска на текущую
-                        regions[neighbourRegion.Index].status = regionsData.Value.openRegionValue;
-                        regions[neighbourRegion.Index].distance = 0;
-                        regions[neighbourRegion.Index].priority = Vector3.Angle(firstRegion.center, neighbourRegion.center) * 2f;
-                        regions[neighbourRegion.Index].priority += Random.value < mapGenerationData.Value.jitterProbability ? 1 : 0;
+                        regions[neighbourRC.Index].status = regionsData.Value.openRegionValue;
+                        regions[neighbourRC.Index].distance = 0;
+                        regions[neighbourRC.Index].priority = Vector3.Angle(firstRC.center, neighbourRC.center) * 2f;
+                        regions[neighbourRC.Index].priority += Random.value < mapGenerationData.Value.jitterProbability ? 1 : 0;
 
                         //Заносим регион в очередь
-                        queue.Push(neighbourRegion.Index);
+                        queue.Push(neighbourRC.Index);
                     }
                 }
             }
@@ -336,10 +326,10 @@ namespace SO.Map
             foreach (int regionEntity in regionFilter.Value)
             {
                 //Берём регион
-                ref CRegion region = ref regionPool.Value.Get(regionEntity);
+                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
                 //Если регион подлежит эрозии, заносим его в список
-                if (RegionIsErodible(ref region) == true)
+                if (RegionIsErodible(ref rC) == true)
                 {
                     erodibleRegions.Add(regionEntity);
                 }
@@ -353,34 +343,18 @@ namespace SO.Map
             {
                 //Выбираем случайный регион в списке
                 int index = Random.Range(0, erodibleRegions.Count);
-                ref CRegion region = ref regionPool.Value.Get(erodibleRegions[index]);
+                ref CRegionCore rC = ref rCPool.Value.Get(erodibleRegions[index]);
 
                 //Выбираем одного соседа как цель эрозии
-                int targetRegionEntity = RegionGetErosionTarget(ref region);
-                ref CRegion targetRegion = ref regionPool.Value.Get(targetRegionEntity);
+                int targetRegionEntity = RegionGetErosionTarget(ref rC);
+                ref CRegionCore targetRC = ref rCPool.Value.Get(targetRegionEntity);
 
                 //Уменьшаем высоту исходного региона и увеличиваем высоту целевого
-                region.Elevation -= 1;
-                if (region.Elevation > 0)
-                {
-                    region.ExtrudeAmount = (float)region.Elevation / (mapGenerationData.Value.elevationMaximum + 1);
-                }
-                else
-                {
-                    region.ExtrudeAmount = 0;
-                }
-                targetRegion.Elevation += 1;
-                if (targetRegion.Elevation > 0)
-                {
-                    targetRegion.ExtrudeAmount = (float)targetRegion.Elevation / (mapGenerationData.Value.elevationMaximum + 1);
-                }
-                else
-                {
-                    targetRegion.ExtrudeAmount = 0;
-                }
+                rC.Elevation -= 1;
+                targetRC.Elevation += 1;
 
                 //Если регион больше не подлежит эрозии
-                if (RegionIsErodible(ref region) == false)
+                if (RegionIsErodible(ref rC) == false)
                 {
                     //Удаляем его сущность из списка, заменяя последним регионом в списке
                     erodibleRegions[index] = erodibleRegions[erodibleRegions.Count - 1];
@@ -388,16 +362,16 @@ namespace SO.Map
                 }
 
                 //Для каждого соседа
-                for (int a = 0; a < region.neighbourRegionPEs.Length; a++)
+                for (int a = 0; a < rC.neighbourRegionPEs.Length; a++)
                 {
                     //Берём соседа
-                    region.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
-                    ref CRegion neighbourRegion = ref regionPool.Value.Get(neighbourRegionEntity);
+                    rC.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
+                    ref CRegionCore neighbourRC = ref rCPool.Value.Get(neighbourRegionEntity);
 
                     //Если высота соседа на 2 больше эрозируемого региона
-                    if (neighbourRegion.Elevation == region.Elevation + 2
+                    if (neighbourRC.Elevation == rC.Elevation + 2
                         //Если сосед подлежит эрозии
-                        && RegionIsErodible(ref neighbourRegion) == true
+                        && RegionIsErodible(ref neighbourRC) == true
                         //И если список не содержит сущности соседа
                         && erodibleRegions.Contains(neighbourRegionEntity) == false)
                     {
@@ -407,7 +381,7 @@ namespace SO.Map
                 }
 
                 //Если целевой регион подлежит эрозии
-                if (RegionIsErodible(ref targetRegion)
+                if (RegionIsErodible(ref targetRC)
                     //И список сущностей подлежащих эрозии регионов не содержит его
                     && erodibleRegions.Contains(targetRegionEntity) == false)
                 {
@@ -416,20 +390,20 @@ namespace SO.Map
                 }
 
                 //Для каждого соседа
-                for (int a = 0; a < targetRegion.neighbourRegionPEs.Length; a++)
+                for (int a = 0; a < targetRC.neighbourRegionPEs.Length; a++)
                 {
                     //Если сосед существует
-                    if (targetRegion.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity)
+                    if (targetRC.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity)
                         //И если сосед - не исходный эрозируемый регион
-                        && region.selfPE.EqualsTo(targetRegion.neighbourRegionPEs[a]) == false)
+                        && rC.selfPE.EqualsTo(targetRC.neighbourRegionPEs[a]) == false)
                     {
                         //Берём соседа
-                        ref CRegion neighbourRegion = ref regionPool.Value.Get(neighbourRegionEntity);
+                        ref CRegionCore neighbourRC = ref rCPool.Value.Get(neighbourRegionEntity);
 
                         //Если высота соседа на единицу больше, чем высота целевого региона
-                        if (neighbourRegion.Elevation == targetRegion.Elevation + 1
+                        if (neighbourRC.Elevation == targetRC.Elevation + 1
                             //И если сосед не подлежит эрозии
-                            && RegionIsErodible(ref neighbourRegion) == false
+                            && RegionIsErodible(ref neighbourRC) == false
                             //И если список содержит сущность соседа
                             && erodibleRegions.Contains(neighbourRegionEntity) == true)
                         {
@@ -445,20 +419,20 @@ namespace SO.Map
         }
 
         bool RegionIsErodible(
-            ref CRegion region)
+            ref CRegionCore rC)
         {
             //Определяем высоту, при которой произойдёт эрозия
-            int erodibleElevation = region.Elevation - 2;
+            int erodibleElevation = rC.Elevation - 2;
 
             //Для каждого соседа 
-            for (int a = 0; a < region.neighbourRegionPEs.Length; a++)
+            for (int a = 0; a < rC.neighbourRegionPEs.Length; a++)
             {
                 //Берём соседа
-                region.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
-                ref CRegion neighbourRegion = ref regionPool.Value.Get(neighbourRegionEntity);
+                rC.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
+                ref CRegionCore neighbourRC = ref rCPool.Value.Get(neighbourRegionEntity);
 
                 //Если высота соседа меньше или равна высоте эрозии
-                if (neighbourRegion.Elevation <= erodibleElevation)
+                if (neighbourRC.Elevation <= erodibleElevation)
                 {
                     //Возвращаем, что эрозия возможна
                     return true;
@@ -470,23 +444,23 @@ namespace SO.Map
         }
 
         int RegionGetErosionTarget(
-            ref CRegion region)
+            ref CRegionCore rC)
         {
             //Создаём список кандидатов целей эрозии
             List<int> candidateEntities = ListPool<int>.Get();
 
             //Определяем высоту, при которой произойдёт эрозия
-            int erodibleElevation = region.Elevation - 2;
+            int erodibleElevation = rC.Elevation - 2;
 
             //Для каждого соседа
-            for (int a = 0; a < region.neighbourRegionPEs.Length; a++)
+            for (int a = 0; a < rC.neighbourRegionPEs.Length; a++)
             {
                 //Берём соседа
-                region.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
-                ref CRegion neighbourRegion = ref regionPool.Value.Get(neighbourRegionEntity);
+                rC.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
+                ref CRegionCore neighbourRC = ref rCPool.Value.Get(neighbourRegionEntity);
 
                 //Если высота соседа меньше или равна высоте эрозии
-                if (neighbourRegion.Elevation <= erodibleElevation)
+                if (neighbourRC.Elevation <= erodibleElevation)
                 {
                     //Заносим соседа в список
                     candidateEntities.Add(neighbourRegionEntity);

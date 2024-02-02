@@ -15,7 +15,7 @@ namespace SO.Faction
             
             this.selfName = selfName;
 
-            ownedRFOPEs = new();
+            ownedRCPEs = new();
 
             observerPEs = new();
         }
@@ -25,7 +25,7 @@ namespace SO.Faction
         
         public string selfName;
 
-        public List<EcsPackedEntity> ownedRFOPEs;
+        public List<EcsPackedEntity> ownedRCPEs;
 
         public List<EcsPackedEntity> observerPEs;
     }

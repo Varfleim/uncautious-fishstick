@@ -14,12 +14,13 @@ using SO.UI.Events;
 using SO.UI.MainMenu;
 using SO.UI.MainMenu.Events;
 using SO.UI.Game;
+using SO.UI.Game.Map;
 using SO.UI.Game.Events;
 using SO.UI.Game.Object;
 using SO.UI.Game.Object.Events;
 using SO.Map;
 using SO.Faction;
-using SO.Map.RFO;
+using SO.Map.Hexasphere;
 
 namespace SO.UI
 {
@@ -30,11 +31,12 @@ namespace SO.UI
 
 
         //Карта
-        readonly EcsPoolInject<CRegion> regionPool = default;
+        readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
+        readonly EcsPoolInject<CRegionCore> rCPool = default;
+        readonly EcsFilterInject<Inc<CRegionHexasphere, CRegionDisplayedMapPanels>> regionDisplayedMapPanelsFilter = default;
+        readonly EcsPoolInject<CRegionDisplayedMapPanels> regionDisplayedMapPanelsPool = default;
 
-        readonly EcsPoolInject<CRegionFO> rFOPool = default;
-
-        readonly EcsPoolInject<CExplorationFRFO> exFRFOPool = default;
+        readonly EcsPoolInject<CExplorationRegionFractionObject> exRFOPool = default;
 
         //Фракции
         readonly EcsPoolInject<CFaction> factionPool = default;
@@ -47,6 +49,8 @@ namespace SO.UI
         readonly EcsPoolInject<EcsGroupSystemState> ecsGroupSystemStatePool = default;
 
         //Данные
+        readonly EcsCustomInject<UIData> uIData = default;
+        readonly EcsCustomInject<MapGenerationData> mapGenerationData = default;
         readonly EcsCustomInject<InputData> inputData = default;
         readonly EcsCustomInject<RuntimeData> runtimeData = default;
 
@@ -54,6 +58,9 @@ namespace SO.UI
 
         public void Init(IEcsSystems systems)
         {
+            //Заносим префабы в их графы
+            UIRCMainMapPanel.panelPrefab = uIData.Value.rCMainMapPanelPrefab;
+
             //Открываем окно главного меню
             MainMenuOpenWindow();
         }
@@ -83,6 +90,9 @@ namespace SO.UI
             {
                 //Проверяем события в окне игры
                 GameEventCheck();
+
+                //Обновляем панели карты
+                MapUIMapPanelsUpdate();
             }
             //Иначе, если активно окно главного меню
             else if(sOUI.Value.activeMainWindowType == MainWindowType.MainMenu)
@@ -162,11 +172,77 @@ namespace SO.UI
         #region Game
         void GameEventCheck()
         {
+            //Проверяем запросы создания панелей
+            GameCreatePanelRequest();
+
             //Проверяем запросы действий в игре
             GameAction();
 
             //Проверяем запросы действия в панели объекта
             ObjPnAction();
+
+            //Проверяем самозапросы обновления интерфейса объектов
+            GameRefreshUISelfRequest();
+
+            //Проверяем запросы удаления панелей
+            GameDeletePanelRequest();
+        }
+
+        readonly EcsFilterInject<Inc<RGameCreatePanel>> gameCreatePanelRequestFilter = default;
+        readonly EcsPoolInject<RGameCreatePanel> gameCreatePanelRequestPool = default;
+        void GameCreatePanelRequest()
+        {
+            //Для каждого запроса создания панели
+            foreach(int requestEntity in gameCreatePanelRequestFilter.Value)
+            {
+                //Берём запрос
+                ref RGameCreatePanel requestComp = ref gameCreatePanelRequestPool.Value.Get(requestEntity);
+
+                //Если запрашивается создание главной панели карты региона
+                if(requestComp.panelType == GamePanelType.RegionMainMapPanel)
+                {
+                    //Создаём главную панель карты региона
+                    MapUICreateRegionMainMapPanel(ref requestComp);
+                }
+
+                gameCreatePanelRequestPool.Value.Del(requestEntity);
+            }
+        }
+
+        readonly EcsFilterInject<Inc<SRGameRefreshPanels>> gameRefreshPanelsSelfRequestFilter = default;
+        readonly EcsPoolInject<SRGameRefreshPanels> gameRefreshPanelsSelfRequestPool = default;
+        void GameRefreshUISelfRequest()
+        {
+            //Обновляем интерфейс регионов и RC
+            GameRefreshUIRegionAndRC();
+
+            //Для каждой сущности с самозапросом обновления панелей
+            foreach (int entity in gameRefreshPanelsSelfRequestFilter.Value)
+            {
+                //Удаляем самозапрос обновления панелей
+                gameRefreshPanelsSelfRequestPool.Value.Del(entity);
+            }
+        }
+
+        readonly EcsFilterInject<Inc<RGameDeletePanel>> gameDeletePanelRequestFilter = default;
+        readonly EcsPoolInject<RGameDeletePanel> gameDeletePanelRequestPool = default;
+        void GameDeletePanelRequest()
+        {
+            //Для каждого запроса удаления панели
+            foreach(int requestEntity in gameDeletePanelRequestFilter.Value)
+            {
+                //Берём запрос
+                ref RGameDeletePanel requestComp = ref gameDeletePanelRequestPool.Value.Get(requestEntity);
+
+                //Если запрашивается удаление главной панели карты региона
+                if (requestComp.panelType == GamePanelType.RegionMainMapPanel)
+                {
+                    //Удаляем главную панель карты региона
+                    MapUIDeleteRegionMainMapPanel(ref requestComp);
+                }
+
+                gameDeletePanelRequestPool.Value.Del(requestEntity);
+            }
         }
 
         readonly EcsFilterInject<Inc<RGameAction>> gameActionRequestFilter = default;
@@ -221,6 +297,153 @@ namespace SO.UI
                 runtimeData.Value.isGameActive = true;
             }
         }
+
+        readonly EcsFilterInject<Inc<CRegionCore, CRegionDisplayedMapPanels, SRGameRefreshPanels>> regionRefreshMapPanelsSelfRequestFilter = default;
+        void GameRefreshUIRegionAndRC()
+        {
+            //Для каждого региона с компонентом панелей карты и самозапросом обновления панелей
+            foreach(int regionEntity in regionRefreshMapPanelsSelfRequestFilter.Value)
+            {
+                //Берём регион, компонент панелей и самозапрос обновления
+                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
+                ref SRGameRefreshPanels selfRequestComp = ref gameRefreshPanelsSelfRequestPool.Value.Get(regionEntity);
+
+                //Если регион имеет отображаемую главную панель
+                if(regionDisplayedMapPanels.mainMapPanel != null)
+                {
+                    //Обновляем её
+                    regionDisplayedMapPanels.mainMapPanel.RefreshPanel(ref rC);
+                }
+            }
+        }
+
+        #region MapUI
+        void MapUIMapPanelsUpdate()
+        {
+            //Для каждого региона с панелями карты
+            foreach(int regionEntity in regionDisplayedMapPanelsFilter.Value)
+            {
+                //Берём компонент панелей карты
+                ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
+
+                float d = Vector3.Dot(
+                    Camera.main.transform.position.normalized, 
+                    regionDisplayedMapPanels.mapPanelGroup.transform.position.normalized);
+
+                regionDisplayedMapPanels.mapPanelGroup.transform.LookAt(Vector3.zero, Vector3.up);
+                d = Mathf.Clamp01(d);
+                regionDisplayedMapPanels.mapPanelGroup.transform.rotation = Quaternion.Lerp(
+                    regionDisplayedMapPanels.mapPanelGroup.transform.rotation, 
+                    Quaternion.LookRotation(
+                        regionDisplayedMapPanels.mapPanelGroup.transform.position - Camera.main.transform.position, 
+                        Camera.main.transform.up), 
+                    d);
+            }
+        }
+
+        void MapUICreateRCMapPanelGroup(
+            ref CRegionCore rc)
+        {
+            //Берём сущность региона
+            rc.selfPE.Unpack(world.Value, out int regionEntity);
+
+            //Если регион не имеет компонент панелей карты
+            if (regionDisplayedMapPanelsPool.Value.Has(regionEntity) == false)
+            {
+                //Берём компонент визуализации региона и назначаем региону компонент панелей карты
+                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+                ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Add(regionEntity);
+
+                //Создаём новый объект группы панелей карты
+                regionDisplayedMapPanels.mapPanelGroup = MonoBehaviour.Instantiate(uIData.Value.mapPanelGroup);
+
+                //Привязываем группу к региону
+                regionDisplayedMapPanels.mapPanelGroup.transform.SetParent(rHS.selfObject.transform);
+
+                //Задаём положение группы
+                Vector3 regionCenter = rHS.GetRegionCenter() * mapGenerationData.Value.hexasphereScale;
+                Vector3 direction = regionCenter.normalized * uIData.Value.mapPanelAltitude;
+                regionDisplayedMapPanels.mapPanelGroup.transform.position = regionCenter + direction;
+            } 
+        }
+
+        void MapUIDeleteRCMapPanelGroup(
+            EcsPackedEntity regionPE)
+        {
+            //Берём сущность региона и компонент панелей карты
+            regionPE.Unpack(world.Value, out int regionEntity);
+            ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Add(regionEntity);
+
+            //Если никакая из панелей не существует
+            if(regionDisplayedMapPanels.mainMapPanel == null)
+            {
+                //Удаляем объект группы панелей
+                MonoBehaviour.Destroy(regionDisplayedMapPanels.mapPanelGroup);
+
+                //Удаляем с сущности региона компонент панелей карты
+                regionDisplayedMapPanelsPool.Value.Del(regionEntity);
+            }
+        }
+
+        void MapUICreateRegionMainMapPanel(
+            ref RGameCreatePanel requestComp)
+        {
+            //Берём RC
+            requestComp.objectPE.Unpack(world.Value, out int regionEntity);
+            ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+
+            //Создаём компонент панелей карты, если необходимо
+            MapUICreateRCMapPanelGroup(ref rC);
+
+            //Берём компонент панелей карты
+            ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
+
+            //Создаём главную панель карты
+            UIRCMainMapPanel.InstantiatePanel(
+                ref rC, ref regionDisplayedMapPanels);
+        }
+
+        void MapUIDeleteRegionMainMapPanel(
+            ref RGameDeletePanel requestComp)
+        {
+            //Берём RC и компонент панелей карты
+            requestComp.objectPE.Unpack(world.Value, out int regionEntity);
+            ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
+
+            //Удаляем главную панель карты
+            UIRCMainMapPanel.CachePanel(
+                ref regionDisplayedMapPanels);
+
+            //Удаляем компонент панелей карты, если необходимо
+            MapUIDeleteRCMapPanelGroup(requestComp.objectPE);
+        }
+
+        void ParentAndAlignToRegion(
+            GameObject go,
+            ref CRegionHexasphere rHS,
+            float altitude = 0)
+        {
+            //Берём центр региона
+            Vector3 regionCenter = rHS.GetRegionCenter() * mapGenerationData.Value.hexasphereScale;
+
+            //Если высота не равна нулю
+            if(altitude != 0)
+            {
+                Vector3 direction = regionCenter.normalized * altitude;
+                go.transform.position = regionCenter + direction;
+            }
+            //Иначе
+            else
+            {
+                go.transform.position = regionCenter;
+            }
+
+            //Привязываем объект к региону
+            go.transform.SetParent(rHS.selfObject.transform, true);
+            go.transform.LookAt(rHS.selfObject.transform.position);
+        }
+        #endregion
 
         #region ObjectPanel
         readonly EcsFilterInject<Inc<RGameObjectPanelAction>> gameObjectPanelRequestFilter = default;
@@ -296,15 +519,15 @@ namespace SO.UI
                 {
                     //Берём регион
                     requestComp.objectPE.Unpack(world.Value, out int regionEntity);
-                    ref CRegion region = ref regionPool.Value.Get(regionEntity);
-                    ref CRegionFO rFO = ref rFOPool.Value.Get(regionEntity);
+                    ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+                    ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
                     //Если запрашивается отображение обзорной вкладки
                     if (requestComp.requestType == ObjectPanelActionRequestType.RegionOverview)
                     {
                         //Отображаем обзорную вкладку региона
                         RegionSbpnShowOverviewTab(
-                            ref region, ref rFO,
+                            ref rHS, ref rC,
                             requestComp.isRefresh);
                     }
                 }
@@ -446,8 +669,8 @@ namespace SO.UI
         {
             //Берём регион
             requestComp.objectPE.Unpack(world.Value, out int regionEntity);
-            ref CRegion region = ref regionPool.Value.Get(regionEntity);
-            ref CRegionFO rFO = ref rFOPool.Value.Get(regionEntity);
+            ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+            ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
@@ -457,15 +680,15 @@ namespace SO.UI
                 ObjectSubpanelType.Region, objectPanel.regionSubpanel);
 
             //Указываем PE региона
-            objectPanel.activeObjectPE = region.selfPE;
+            objectPanel.activeObjectPE = rHS.selfPE;
 
             //Отображаем, что это подпанель региона
-            objectPanel.objectName.text = region.Index.ToString();
+            objectPanel.objectName.text = rC.Index.ToString();
 
 
             //Отображаем обзорную вкладку
             RegionSbpnShowOverviewTab(
-                ref region, ref rFO,
+                ref rHS, ref rC,
                 false);
         }
 
@@ -475,7 +698,7 @@ namespace SO.UI
         }
 
         void RegionSbpnShowOverviewTab(
-            ref CRegion region, ref CRegionFO rFO,
+            ref CRegionHexasphere rHS, ref CRegionCore rC,
             bool isRefresh)
         {
             //Берём подпанель региона
@@ -494,12 +717,12 @@ namespace SO.UI
             //Если производится обновление
             if(isRefresh == true)
             {
-                //Берём ExFRFO фракции игрока
-                rFO.factionRFOs[faction.selfIndex].fRFOPE.Unpack(world.Value, out int fRFOEntity);
-                ref CExplorationFRFO exFRFO = ref exFRFOPool.Value.Get(fRFOEntity);
+                //Берём ExRFO фракции игрока
+                rC.rFOPEs[faction.selfIndex].rFOPE.Unpack(world.Value, out int rFOEntity);
+                ref CExplorationRegionFractionObject exRFO = ref exRFOPool.Value.Get(rFOEntity);
 
                 //Отображаем уровень исследования региона
-                overviewTab.explorationLevel.text = exFRFO.explorationLevel.ToString();
+                overviewTab.explorationLevel.text = exRFO.explorationLevel.ToString();
             }
         }
         #endregion

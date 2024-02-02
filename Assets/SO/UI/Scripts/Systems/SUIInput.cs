@@ -15,8 +15,8 @@ using SO.UI.Game.Events;
 using SO.UI.Game.Object.Events;
 using SO.Map;
 using SO.Map.Events;
-using SO.Map.RFO;
 using SO.Faction;
+using SO.Map.Hexasphere;
 
 namespace SO.UI
 {
@@ -29,11 +29,9 @@ namespace SO.UI
 
 
         //Карта
-        readonly EcsFilterInject<Inc<CRegion>> regionFilter = default;
-        readonly EcsPoolInject<CRegion> regionPool = default;
-        readonly EcsPoolInject<CRegionFO> rFOPool = default;
-
-        readonly EcsPoolInject<CExplorationFRFO> exFRFOPool = default;
+        readonly EcsFilterInject<Inc<CRegionHexasphere>> regionFilter = default;
+        readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
+        readonly EcsPoolInject<CRegionCore> rCPool = default;
 
         //Фракции
         readonly EcsPoolInject<CFaction> factionPool = default;
@@ -123,8 +121,8 @@ namespace SO.UI
 
             foreach (int regionEntity in regionFilter.Value)
             {
-                ref CRegion region = ref regionPool.Value.Get(regionEntity);
-                ref CRegionFO rFO = ref rFOPool.Value.Get(regionEntity);
+                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
                 //if (region.Elevation < mapGenerationData.Value.waterLevel)
                 //{
@@ -515,7 +513,7 @@ namespace SO.UI
             {
                 //Берём регион под курсором
                 regionPE.Unpack(world.Value, out int regionEntity);
-                ref CRegion currentRegion = ref regionPool.Value.Get(regionEntity);
+                ref CRegionHexasphere currentRHS = ref rHSPool.Value.Get(regionEntity);
 
                 //Если нажата ЛКМ
                 if(inputData.Value.leftMouseButtonClick)
@@ -523,7 +521,7 @@ namespace SO.UI
                     //Запрашиваем отображение подпанели региона
                     ObjPnActionRequest(
                         ObjectPanelActionRequestType.Region,
-                        currentRegion.selfPE);
+                        currentRHS.selfPE);
                 }
             }
         }
@@ -550,10 +548,11 @@ namespace SO.UI
                 {
                     //Берём регион
                     regionsData.Value.regionPEs[regionIndex].Unpack(world.Value, out int regionEntity);
-                    ref CRegion region = ref regionPool.Value.Get(regionEntity);
+                    ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+                    ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
                     //Если индекс региона не равен индексу последнего подсвеченного
-                    if (region.Index != inputData.Value.lastHighlightedRegionIndex)
+                    if (rC.Index != inputData.Value.lastHighlightedRegionIndex)
                     {
                         //Если индекс последнего подсвеченного региона больше нуля
                         if (inputData.Value.lastHighlightedRegionIndex > 0)
@@ -563,14 +562,14 @@ namespace SO.UI
                         }
 
                         //Обновляем подсвеченный регион
-                        inputData.Value.lastHighlightedRegionPE = region.selfPE;
-                        inputData.Value.lastHighlightedRegionIndex = region.Index;
+                        inputData.Value.lastHighlightedRegionPE = rC.selfPE;
+                        inputData.Value.lastHighlightedRegionIndex = rC.Index;
 
                         //Подсвечиваем регион
-                        RegionShowHoverHighlight(ref region);
+                        RegionShowHoverHighlight(ref rHS);
                     }
 
-                    regionPE = region.selfPE;
+                    regionPE = rC.selfPE;
 
                     return true;
                 }
@@ -672,11 +671,11 @@ namespace SO.UI
 
             //Берём ближайший регион
             regionsData.Value.regionPEs[nearestRegionIndex].Unpack(world.Value, out int nearestRegionEntity);
-            ref CRegion nearestRegion = ref regionPool.Value.Get(nearestRegionEntity);
+            ref CRegionHexasphere nearestRHS = ref rHSPool.Value.Get(nearestRegionEntity);
 
             //Определяем верхнюю точку региона
             Vector3 regionTop = SceneData.HexashpereGO.transform.TransformPoint(
-                nearestRegion.center * (1.0f + nearestRegion.ExtrudeAmount * mapGenerationData.Value.extrudeMultiplier));
+                nearestRHS.center * (1.0f + nearestRHS.ExtrudeAmount * mapGenerationData.Value.extrudeMultiplier));
 
             //Определяем высоту региона и высоту луча
             float regionHeight = regionTop.sqrMagnitude;
@@ -721,10 +720,10 @@ namespace SO.UI
 
                 //Обновляем ближайший регион
                 regionsData.Value.regionPEs[nearestRegionIndex].Unpack(world.Value, out nearestRegionEntity);
-                nearestRegion = ref regionPool.Value.Get(nearestRegionEntity);
+                nearestRHS = ref rHSPool.Value.Get(nearestRegionEntity);
 
                 regionTop = SceneData.HexashpereGO.transform.TransformPoint(
-                    nearestRegion.center * (1.0f + nearestRegion.ExtrudeAmount * mapGenerationData.Value.extrudeMultiplier));
+                    nearestRHS.center * (1.0f + nearestRHS.ExtrudeAmount * mapGenerationData.Value.extrudeMultiplier));
 
                 //Определяем высоту региона и высоту луча
                 regionHeight = regionTop.sqrMagnitude;
@@ -758,22 +757,22 @@ namespace SO.UI
             {
                 //Берём последний регион
                 regionsData.Value.regionPEs[inputData.Value.lastHitRegionIndex].Unpack(world.Value, out int lastHitRegionEntity);
-                ref CRegion lastHitRegion = ref regionPool.Value.Get(lastHitRegionEntity);
+                ref CRegionCore lastHitRC = ref rCPool.Value.Get(lastHitRegionEntity);
 
                 //Определяем расстояние до центра региона
-                float distance = Vector3.SqrMagnitude(lastHitRegion.center - localPosition);
+                float distance = Vector3.SqrMagnitude(lastHitRC.center - localPosition);
 
                 bool isValid = true;
 
                 //Для каждого соседнего региона
-                for (int a = 0; a < lastHitRegion.neighbourRegionPEs.Length; a++)
+                for (int a = 0; a < lastHitRC.neighbourRegionPEs.Length; a++)
                 {
                     //Берём соседний регион
-                    lastHitRegion.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
-                    ref CRegion neighbourRegion = ref regionPool.Value.Get(neighbourRegionEntity);
+                    lastHitRC.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
+                    ref CRegionHexasphere neighbourRHS = ref rHSPool.Value.Get(neighbourRegionEntity);
 
                     //Определяем расстояние до центре региона
-                    float otherDistance = Vector3.SqrMagnitude(neighbourRegion.center - localPosition);
+                    float otherDistance = Vector3.SqrMagnitude(neighbourRHS.center - localPosition);
 
                     //Если оно меньше расстояния до последнего региона
                     if (otherDistance < distance)
@@ -799,7 +798,7 @@ namespace SO.UI
 
             //Следуем кратчайшему пути к минимальному расстоянию
             regionsData.Value.regionPEs[inputData.Value.lastHitRegionIndex].Unpack(world.Value, out int nearestRegionEntity);
-            ref CRegion nearestRegion = ref regionPool.Value.Get(nearestRegionEntity);
+            ref CRegionCore nearestRC = ref rCPool.Value.Get(nearestRegionEntity);
 
             float minDist = 1e6f;
 
@@ -808,7 +807,7 @@ namespace SO.UI
             {
                 //Берём ближайший регион 
                 RegionGetNearestToPosition(
-                    ref nearestRegion.neighbourRegionPEs,
+                    ref nearestRC.neighbourRegionPEs,
                     localPosition,
                     out float regionDistance).Unpack(world.Value, out int newNearestRegionEntity);
 
@@ -816,7 +815,7 @@ namespace SO.UI
                 if (regionDistance < minDist)
                 {
                     //Обновляем регион и минимальное расстояние 
-                    nearestRegion = ref regionPool.Value.Get(newNearestRegionEntity);
+                    nearestRC = ref rCPool.Value.Get(newNearestRegionEntity);
 
                     minDist = regionDistance;
                 }
@@ -828,7 +827,7 @@ namespace SO.UI
             }
 
             //Индекс последнего региона - это индекс ближайшего
-            inputData.Value.lastHitRegionIndex = nearestRegion.Index;
+            inputData.Value.lastHitRegionIndex = nearestRC.Index;
 
             return inputData.Value.lastHitRegionIndex;
         }
@@ -847,10 +846,10 @@ namespace SO.UI
             {
                 //Берём регион
                 regionPEs[a].Unpack(world.Value, out int regionEntity);
-                ref CRegion region = ref regionPool.Value.Get(regionEntity);
+                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
 
                 //Берём центр региона
-                Vector3 center = region.center;
+                Vector3 center = rHS.center;
 
                 //Рассчитываем расстояние
                 float distance
@@ -862,7 +861,7 @@ namespace SO.UI
                 if (distance < minDistance)
                 {
                     //Обновляем регион и минимальное расстояние
-                    nearestRegionPE = region.selfPE;
+                    nearestRegionPE = rHS.selfPE;
                     minDistance = distance;
                 }
             }
@@ -871,10 +870,10 @@ namespace SO.UI
         }
 
         void RegionShowHoverHighlight(
-            ref CRegion region)
+            ref CRegionHexasphere rHS)
         {
             //Активируем рендерер наведения
-            region.hoverRenderer.enabled = true;
+            rHS.hoverRenderer.enabled = true;
         }
 
         void RegionHideHoverHighlight()
@@ -883,10 +882,10 @@ namespace SO.UI
             if (inputData.Value.lastHighlightedRegionPE.Unpack(world.Value, out int highlightedRegionEntity))
             {
                 //Берём регион
-                ref CRegion highlightedRegion = ref regionPool.Value.Get(highlightedRegionEntity);
+                ref CRegionHexasphere highlightedRHS = ref rHSPool.Value.Get(highlightedRegionEntity);
 
                 //Отключаем рендерер наведения
-                highlightedRegion.hoverRenderer.enabled = false;
+                highlightedRHS.hoverRenderer.enabled = false;
             }
 
             //Удаляем последний подсвеченный регион
@@ -895,7 +894,7 @@ namespace SO.UI
         }
 
         void RegionSetColor(
-            ref CRegion region,
+            ref CRegionCore rC,
             Color color)
         {
             //Берём кэшированный материал
@@ -922,7 +921,7 @@ namespace SO.UI
 
             //Устанавливаем материал региона
             RegionSetMaterial(
-                region.Index,
+                rC.Index,
                 material);
         }
 
@@ -933,27 +932,28 @@ namespace SO.UI
         {
             //Берём регион
             regionsData.Value.regionPEs[regionIndex].Unpack(world.Value, out int regionEntity);
-            ref CRegion region = ref regionPool.Value.Get(regionEntity);
+            ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+            ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
             //Если назначается временный материал
             if (temporary == true)
             {
                 //Если этот временный материал уже назначен региону
-                if (region.tempMaterial == material)
+                if (rHS.tempMaterial == material)
                 {
                     //То ничего не меняется
                     return false;
                 }
 
                 //Назначаем временный материал рендереру региона
-                region.hoverRenderer.sharedMaterial = material;
-                region.hoverRenderer.enabled = true;
+                rHS.hoverRenderer.sharedMaterial = material;
+                rHS.hoverRenderer.enabled = true;
             }
             //Иначе
             else
             {
                 //Если этот основной материал уже назначен региону
-                if (region.customMaterial == material)
+                if (rHS.customMaterial == material)
                 {
                     //То ничего не меняется
                     return false;
@@ -993,12 +993,12 @@ namespace SO.UI
                 //Иначе
                 else
                 {
-                    List<Color32> colorChunk = mapGenerationData.Value.colorShaded[region.uvShadedChunkIndex];
-                    for (int k = 0; k < region.uvShadedChunkLength; k++)
+                    List<Color32> colorChunk = mapGenerationData.Value.colorShaded[rHS.uvShadedChunkIndex];
+                    for (int k = 0; k < rHS.uvShadedChunkLength; k++)
                     {
-                        colorChunk[region.uvShadedChunkStart + k] = materialColor;
+                        colorChunk[rHS.uvShadedChunkStart + k] = materialColor;
                     }
-                    mapGenerationData.Value.colorShadedDirty[region.uvShadedChunkIndex] = true;
+                    mapGenerationData.Value.colorShadedDirty[rHS.uvShadedChunkIndex] = true;
                 }
             }
 
@@ -1008,30 +1008,30 @@ namespace SO.UI
                 //Если это временный материал
                 if (temporary == true)
                 {
-                    region.tempMaterial = material;
+                    rHS.tempMaterial = material;
                 }
                 //Иначе
                 else
                 {
-                    region.customMaterial = material;
+                    rHS.customMaterial = material;
                 }
             }
 
             //Если материал подсветки не пуст и регион - это последний подсвеченный регион
-            if (mapGenerationData.Value.hoverRegionHighlightMaterial != null && inputData.Value.lastHighlightedRegionIndex == region.Index)
+            if (mapGenerationData.Value.hoverRegionHighlightMaterial != null && inputData.Value.lastHighlightedRegionIndex == rC.Index)
             {
                 //Задаём рендереру материал подсветки наведения
-                region.hoverRenderer.sharedMaterial = mapGenerationData.Value.hoverRegionHighlightMaterial;
+                rHS.hoverRenderer.sharedMaterial = mapGenerationData.Value.hoverRegionHighlightMaterial;
 
                 //Берём исходный материал 
                 Material sourceMaterial = null;
-                if (region.tempMaterial != null)
+                if (rHS.tempMaterial != null)
                 {
-                    sourceMaterial = region.tempMaterial;
+                    sourceMaterial = rHS.tempMaterial;
                 }
-                else if (region.customMaterial != null)
+                else if (rHS.customMaterial != null)
                 {
-                    sourceMaterial = region.customMaterial;
+                    sourceMaterial = rHS.customMaterial;
                 }
 
                 //Если исходный материал не пуст

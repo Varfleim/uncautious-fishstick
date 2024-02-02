@@ -5,7 +5,7 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
 using SO.Map.Events;
-using SO.Map.RFO.Events;
+using SO.Map.Hexasphere;
 
 namespace SO.Map
 {
@@ -16,7 +16,7 @@ namespace SO.Map
 
 
         //Карта
-        readonly EcsPoolInject<CRegion> regionPool = default;
+        readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
 
 
         //События экономики
@@ -73,10 +73,10 @@ namespace SO.Map
                     if(initializedRegions.ContainsKey(regionEntity) == false)
                     {
                         //Берём регион
-                        ref CRegion region = ref regionPool.Value.Get(regionEntity);
+                        ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
 
                         //Сохраняем сущность региона в инициализаторе
-                        requestComp.regionPE = region.selfPE;
+                        requestComp.regionPE = rHS.selfPE;
 
                         //Заносим регион и инициализатор в словарь
                         initializedRegions.Add(regionEntity, requestEntity);
@@ -101,27 +101,27 @@ namespace SO.Map
                 RegionActionRequest(
                     requestOwnerComp.ownerFactionPE,
                     requestCoreComp.regionPE,
-                    RegionChangeOwnerType.Initialization);
+                    RCChangeOwnerType.Initialization);
 
                 regionInitializerOwnerRequestPool.Value.Del(requestEntity);
             }
         }
 
-        readonly EcsPoolInject<RRFOChangeOwner> regionChangeOwnerRequestPool = default;
+        readonly EcsPoolInject<RRCChangeOwner> rCChangeOwnerRequestPool = default;
         void RegionActionRequest(
             EcsPackedEntity factionPE,
             EcsPackedEntity regionPE,
-            RegionChangeOwnerType actionType)
+            RCChangeOwnerType requestType)
         {
             //Создаём новую сущность и назначаем ей запрос смены владельца региона
             int requestEntity = world.Value.NewEntity();
-            ref RRFOChangeOwner requestComp = ref regionChangeOwnerRequestPool.Value.Add(requestEntity);
+            ref RRCChangeOwner requestComp = ref rCChangeOwnerRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
             requestComp = new(
                 factionPE,
                 regionPE,
-                actionType);
+                requestType);
         }
     }
 }

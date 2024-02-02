@@ -3,7 +3,6 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
 using SO.Map.Events;
-using SO.Map.RFO.Events;
 using SO.Faction.Events;
 
 namespace SO.Faction
@@ -63,6 +62,9 @@ namespace SO.Faction
 
             //Запрашиваем инициализацию стартового региона фракции
             FactionStartRegionInitializerRequest(faction.selfPE);
+
+            //Создаём событие, сообщающее о создании новой фракции
+            ObjectNewCreatedEvent(faction.selfPE, ObjectNewCreatedType.Faction);
         }
 
         readonly EcsPoolInject<RRegionInitializer> regionInitializerRequestPool = default;
@@ -84,15 +86,27 @@ namespace SO.Faction
             requestOwnerComp = new(factionPE);
         }
 
-        readonly EcsPoolInject<SRExFRFOsCreating> exFRFOsCreatingSelfRequestPool = default;
+        readonly EcsPoolInject<SRExRFOsCreating> exFRFOsCreatingSelfRequestPool = default;
         void FactionExFRFOsCreatingSelfRequest(
             int factionEntity)
         {
             //Назначаем фракции самозапрос создания ExFRFO
-            ref SRExFRFOsCreating selfRequestComp = ref exFRFOsCreatingSelfRequestPool.Value.Add(factionEntity);
+            ref SRExRFOsCreating selfRequestComp = ref exFRFOsCreatingSelfRequestPool.Value.Add(factionEntity);
 
             //Заполняем данные запроса
             selfRequestComp = new();
+        }
+
+        readonly EcsPoolInject<EObjectNewCreated> objectNewCreatedEventPool = default;
+        void ObjectNewCreatedEvent(
+            EcsPackedEntity objectPE, ObjectNewCreatedType objectType)
+        {
+            //Создаём новую сущность и назначаем ей событие создания нового объекта
+            int eventEntity = world.Value.NewEntity();
+            ref EObjectNewCreated eventComp = ref objectNewCreatedEventPool.Value.Add(eventEntity);
+
+            //Заполняем данные события
+            eventComp = new(objectPE, objectType);
         }
     }
 }

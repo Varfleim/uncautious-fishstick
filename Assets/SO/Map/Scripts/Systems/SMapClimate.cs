@@ -17,8 +17,8 @@ namespace SO.Map
         readonly EcsWorldInject world = default;
 
         //Карта
-        readonly EcsFilterInject<Inc<CRegion>> regionFilter = default;
-        readonly EcsPoolInject<CRegion> regionPool = default;
+        readonly EcsFilterInject<Inc<CRegionCore>> regionFilter = default;
+        readonly EcsPoolInject<CRegionCore> rCPool = default;
         readonly EcsPoolInject<CRegionGenerationData> regionGenerationDataPool = default;
 
         //События карты
@@ -54,10 +54,10 @@ namespace SO.Map
             foreach (int regionEntity in regionFilter.Value)
             {
                 //Назначаем сущности компонент данных генерации
-                CRegionGenerationData regionGenerationData = regionGenerationDataPool.Value.Add(regionEntity);
+                CRegionGenerationData rGD = regionGenerationDataPool.Value.Add(regionEntity);
 
                 //Заполняем основные данные генерации
-                regionGenerationData = new(new(0, mapGenerationData.Value.startingMoisture), new(0, 0));
+                rGD = new(new(0, mapGenerationData.Value.startingMoisture), new(0, 0));
             }
 
             //Генерируем температуру и влажность
@@ -88,38 +88,38 @@ namespace SO.Map
                 //Для каждого региона
                 foreach (int regionEntity in regionFilter.Value)
                 {
-                    //Берём регион и данные генерации
-                    ref CRegion region = ref regionPool.Value.Get(regionEntity);
-                    ref CRegionGenerationData regionGenerationData = ref regionGenerationDataPool.Value.Get(regionEntity);
+                    //Берём RC и данные генерации
+                    ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                    ref CRegionGenerationData rGD = ref regionGenerationDataPool.Value.Get(regionEntity);
 
                     //Рассчитываем климатические данные
                     RegionEvolveClimate(
-                        ref region,
-                        ref regionGenerationData);
+                        ref rC,
+                        ref rGD);
                 }
 
                 //Для каждого региона
                 foreach (int regionEntity in regionFilter.Value)
                 {
                     //Берём данные генерации
-                    ref CRegionGenerationData regionGenerationData = ref regionGenerationDataPool.Value.Get(regionEntity);
+                    ref CRegionGenerationData rGD = ref regionGenerationDataPool.Value.Get(regionEntity);
 
                     //Переносим следующие данные климата в текущие, затем следующие приводим к значению по умолчанию
-                    regionGenerationData.currentClimate = regionGenerationData.nextClimate;
-                    regionGenerationData.nextClimate = new();
+                    rGD.currentClimate = rGD.nextClimate;
+                    rGD.nextClimate = new();
                 }
             }
         }
 
         void RegionEvolveClimate(
-            ref CRegion region,
-            ref CRegionGenerationData regionGenerationData)
+            ref CRegionCore rC,
+            ref CRegionGenerationData rGD)
         {
             //Берём данные климата
-            ref DRegionClimate regionClimate = ref regionGenerationData.currentClimate;
+            ref DRegionClimate regionClimate = ref rGD.currentClimate;
 
             //Если регион находится под водой
-            if (region.IsUnderwater == true)
+            if (rC.IsUnderwater == true)
             {
                 //Определяем влажность
                 regionClimate.moisture = 1f;
@@ -143,7 +143,7 @@ namespace SO.Map
             regionClimate.moisture += precipitation;
 
             //Рассчитываем максимум облаков для региона
-            float cloudMaximum = 1f - region.ViewElevation / (mapGenerationData.Value.elevationMaximum + 1);
+            float cloudMaximum = 1f - rC.ViewElevation / (mapGenerationData.Value.elevationMaximum + 1);
             //Если облаков больше возможного
             if (regionClimate.clouds > cloudMaximum)
             {
@@ -163,19 +163,19 @@ namespace SO.Map
             float seepage = regionClimate.moisture * mapGenerationData.Value.seepageFactor * (1f / 6f);
 
             //Для каждого соседа
-            for (int a = 0; a < region.neighbourRegionPEs.Length; a++)
+            for (int a = 0; a < rC.neighbourRegionPEs.Length; a++)
             {
                 //Берём соседа и следующие данные климата
-                region.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
-                ref CRegion neighbourRegion = ref regionPool.Value.Get(neighbourRegionEntity);
-                ref CRegionGenerationData neighbourRegionGenerationData = ref regionGenerationDataPool.Value.Get(neighbourRegionEntity);
-                ref DRegionClimate neighbourRegionClimate = ref neighbourRegionGenerationData.nextClimate;
+                rC.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
+                ref CRegionCore neighbourRC = ref rCPool.Value.Get(neighbourRegionEntity);
+                ref CRegionGenerationData neighbourRGD = ref regionGenerationDataPool.Value.Get(neighbourRegionEntity);
+                ref DRegionClimate neighbourRegionClimate = ref neighbourRGD.nextClimate;
 
                 //Рассеивается обычный объём облаков
                 neighbourRegionClimate.clouds += cloudDispersal;
 
                 //Рассчитываем разницу в высоте между регионами
-                int elevationDelta = neighbourRegion.ViewElevation - region.ViewElevation;
+                int elevationDelta = neighbourRC.ViewElevation - rC.ViewElevation;
                 //Если разница меньше нуля
                 if (elevationDelta < 0)
                 {
@@ -193,7 +193,7 @@ namespace SO.Map
             }
 
             //Берём следующие данные климата
-            ref DRegionClimate regionNextClimate = ref regionGenerationData.nextClimate;
+            ref DRegionClimate regionNextClimate = ref rGD.nextClimate;
 
             //Переносим влажность из текущего
             regionNextClimate.moisture = regionClimate.moisture;
@@ -216,17 +216,17 @@ namespace SO.Map
             foreach (int regionEntity in regionFilter.Value)
             {
                 //Берём регион и данные генерации
-                ref CRegion region = ref regionPool.Value.Get(regionEntity);
-                ref CRegionGenerationData regionGenerationData = ref regionGenerationDataPool.Value.Get(regionEntity);
+                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                ref CRegionGenerationData rGD = ref regionGenerationDataPool.Value.Get(regionEntity);
 
                 //Берём данные климата
-                ref DRegionClimate regionClimate = ref regionGenerationData.currentClimate;
+                ref DRegionClimate regionClimate = ref rGD.currentClimate;
 
                 //Рассчитываем температуру региона
-                float temperature = RegionDetermineTemperature(ref region);
+                float temperature = RegionDetermineTemperature(ref rC);
 
                 //Если регион не под водой
-                if (region.IsUnderwater == false)
+                if (rC.IsUnderwater == false)
                 {
                     //Определяем уровень температуры региона
                     int t = 0;
@@ -261,29 +261,29 @@ namespace SO.Map
                     if (biome.terrainTypeIndex == 0)
                     {
                         //Если высота региона больше или равна высоты, требуемой для каменистой пустыни
-                        if (region.Elevation >= rockDesertElevation)
+                        if (rC.Elevation >= rockDesertElevation)
                         {
                             //Устанавливаем тип ландшафта региона на камень
-                            region.TerrainTypeIndex = 3;
+                            rC.TerrainTypeIndex = 3;
                         }
                         //Иначе
                         else
                         {
                             //Устанавливаем тип ландшафта по стандартным правилам
-                            region.TerrainTypeIndex = biome.terrainTypeIndex;
+                            rC.TerrainTypeIndex = biome.terrainTypeIndex;
                         }
                     }
                     //Иначе, если высота региона равна максимальной
-                    else if (region.Elevation == mapGenerationData.Value.elevationMaximum)
+                    else if (rC.Elevation == mapGenerationData.Value.elevationMaximum)
                     {
                         //Устанавливаем тип ландшафта региона на снег
-                        region.TerrainTypeIndex = 4;
+                        rC.TerrainTypeIndex = 4;
                     }
                     //Иначе
                     else
                     {
                         //Устанавливаем тип ландшафта региона
-                        region.TerrainTypeIndex = biome.terrainTypeIndex;
+                        rC.TerrainTypeIndex = biome.terrainTypeIndex;
                     }
                 }
                 //Иначе
@@ -293,20 +293,20 @@ namespace SO.Map
                     int terrainTypeIndex;
 
                     //Если регион на один уровень ниже уровня моря
-                    if (region.Elevation == mapGenerationData.Value.waterLevel - 1)
+                    if (rC.Elevation == mapGenerationData.Value.waterLevel - 1)
                     {
                         //Определяем количество соседей со склонами и обрывами
                         int cliffs = 0, slopes = 0;
 
                         //Для каждого соседа
-                        for (int a = 0; a < region.neighbourRegionPEs.Length; a++)
+                        for (int a = 0; a < rC.neighbourRegionPEs.Length; a++)
                         {
                             //Берём соседа
-                            region.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
-                            ref CRegion neighbourRegion = ref regionPool.Value.Get(neighbourRegionEntity);
+                            rC.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
+                            ref CRegionCore neighbourRC = ref rCPool.Value.Get(neighbourRegionEntity);
 
                             //Определяем разницу в высоте с уровнем воды
-                            int elevationDelta = neighbourRegion.Elevation - region.WaterLevel;
+                            int elevationDelta = neighbourRC.Elevation - rC.WaterLevel;
 
                             //Если разница равна нулю
                             if (elevationDelta == 0)
@@ -348,13 +348,13 @@ namespace SO.Map
                         }
                     }
                     //Иначе, если высота региона больше уровня моря
-                    else if (region.Elevation >= mapGenerationData.Value.waterLevel)
+                    else if (rC.Elevation >= mapGenerationData.Value.waterLevel)
                     {
                         //Тип ландшафта - трава
                         terrainTypeIndex = 1;
                     }
                     //Иначе, если высота региона отрицательна
-                    else if (region.Elevation < 0)
+                    else if (rC.Elevation < 0)
                     {
                         //Тип ландшафта - камень
                         terrainTypeIndex = 3;
@@ -374,18 +374,18 @@ namespace SO.Map
                     }
 
                     //Устанавливаем тип ландшафта
-                    region.TerrainTypeIndex = terrainTypeIndex;
+                    rC.TerrainTypeIndex = terrainTypeIndex;
                 }
             }
         }
 
         float RegionDetermineTemperature(
-            ref CRegion region)
+            ref CRegionCore rC)
         {
             //Рассчитываем широту региона
-            float latitude = (float)region.centerPoint.z / 1f;
+            float latitude = (float)rC.center.z / 1f;
             latitude *= 2f;
-            //Если широта больше единицы, то это другое полушарин
+            //Если широта больше единицы, то это другое полушарие
             if (latitude > 1f)
             {
                 latitude = 2f - latitude;
@@ -395,7 +395,7 @@ namespace SO.Map
             //По широте
             float temperature = Mathf.LerpUnclamped(mapGenerationData.Value.lowTemperature, mapGenerationData.Value.highTemperature, latitude);
             //По высоте
-            temperature *= 1f - (region.ViewElevation - mapGenerationData.Value.waterLevel)
+            temperature *= 1f - (rC.ViewElevation - mapGenerationData.Value.waterLevel)
                 / (mapGenerationData.Value.elevationMaximum - mapGenerationData.Value.waterLevel + 1f);
             //Возвращаем температуру
             return temperature;

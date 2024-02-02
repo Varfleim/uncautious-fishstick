@@ -9,7 +9,7 @@ using Leopotam.EcsLite.Unity.Ugui;
 using SO.UI;
 using SO.Time;
 using SO.Map;
-using SO.Map.RFO;
+using SO.Map.Hexasphere;
 using SO.Faction;
 
 namespace SO
@@ -26,6 +26,7 @@ namespace SO
         public StaticData staticData;
 
         public SceneData sceneData;
+        public UIData uIData;
         public MapGenerationData mapGenerationData;
         public RegionsData regionsData;
         public FactionsData factionsData;
@@ -59,17 +60,14 @@ namespace SO
                 //Генерация климата
                 new SMapClimate(),
 
-                //Инициализация RFO
-                new SRFOInitialization(),
-
                 //Управление фракциями
                 new SFactionControl(),
                 
                 //Применение инициализаторов регионов
                 new SMapRegionInitializerControl(),
                 
-                //Управление RFO
-                new SRFOControl())
+                //Управление RC
+                new SRCControl())
                 //Группа выключается в SEventControl в том же кадре
 
                 //Обработка ввода
@@ -79,8 +77,11 @@ namespace SO
                 .Add(new SEventControl())
 
                 //Визуализация
-                .Add(new SUIDisplay())
                 .Add(new SMapControl())
+                .Add(new SUIDisplay())
+
+                //Очитска событий
+                .Add(new SEventClear())
 
                 .AddWorld(new EcsWorld(), "uguiMapEventsWorld")
                 .InjectUgui(uguiMapEmitter, "uguiMapEventsWorld")
@@ -90,6 +91,7 @@ namespace SO
                 .Inject(
                 staticData,
                 sceneData,
+                uIData,
                 mapGenerationData,
                 regionsData,
                 factionsData,
@@ -99,8 +101,8 @@ namespace SO
 
             perTickSystems
 
-                //Управление RFO
-                .Add(new SRFOControl())
+                //Управление RC
+                .Add(new SRCControl())
 
                 //Подсчёт исследования от наблюдателей
                 .Add(new SMTObserverExplorationCalc())
@@ -111,6 +113,7 @@ namespace SO
                 .Inject(
                 staticData,
                 sceneData,
+                uIData,
                 mapGenerationData,
                 regionsData,
                 factionsData,

@@ -8,8 +8,8 @@ using Leopotam.EcsLite.Di;
 
 using SO.UI;
 using SO.Map.Events;
-using SO.Map.RFO;
 using SO.Faction;
+using SO.Map.Hexasphere;
 
 namespace SO.Map
 {
@@ -20,11 +20,11 @@ namespace SO.Map
 
 
         //Карта
-        readonly EcsFilterInject<Inc<CRegionFO>> regionFilter = default; 
-        readonly EcsPoolInject<CRegion> regionPool = default;
-        readonly EcsPoolInject<CRegionFO> rFOPool = default;
+        readonly EcsFilterInject<Inc<CRegionCore>> regionFilter = default; 
+        readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
+        readonly EcsPoolInject<CRegionCore> rCPool = default;
 
-        readonly EcsPoolInject<CExplorationFRFO> exFRFOPool = default;
+        readonly EcsPoolInject<CExplorationRegionFractionObject> exFRFOPool = default;
 
         //Фракции
         readonly EcsPoolInject<CFaction> factionPool = default;
@@ -127,25 +127,25 @@ namespace SO.Map
 
         void MapDisplayModeExploration()
         {
-            //Берём организацию игрока
+            //Берём фракцию игрока
             inputData.Value.playerFactionPE.Unpack(world.Value, out int factionEntity);
             ref CFaction faction = ref factionPool.Value.Get(factionEntity);
 
             //Для каждого региона
             foreach (int regionEntity in regionFilter.Value)
             {
-                //Берём RFO
-                ref CRegion region = ref regionPool.Value.Get(regionEntity);
-                ref CRegionFO rFO = ref rFOPool.Value.Get(regionEntity);
+                //Берём регион
+                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
                 //Берём ExFRFO фракции
-                rFO.factionRFOs[faction.selfIndex].fRFOPE.Unpack(world.Value, out int fRFOEntity);
-                ref CExplorationFRFO exFRFO = ref exFRFOPool.Value.Get(fRFOEntity);
+                rC.rFOPEs[faction.selfIndex].rFOPE.Unpack(world.Value, out int fRFOEntity);
+                ref CExplorationRegionFractionObject exFRFO = ref exFRFOPool.Value.Get(fRFOEntity);
 
                 //ТЕСТ
                 //Устанавливаем цвет региона соответственно его уровню исследования
                 RegionSetColor(
-                    ref region,
+                    ref rC,
                     new Color32(
                         exFRFO.explorationLevel, exFRFO.explorationLevel, exFRFO.explorationLevel,
                         255));
@@ -155,7 +155,7 @@ namespace SO.Map
 
 
         void RegionSetColor(
-            ref CRegion region,
+            ref CRegionCore rC,
             Color color)
         {
             //Берём кэшированный материал
@@ -182,7 +182,7 @@ namespace SO.Map
 
             //Устанавливаем материал региона
             RegionSetMaterial(
-                region.Index,
+                rC.Index,
                 material);
         }
 
@@ -193,27 +193,28 @@ namespace SO.Map
         {
             //Берём регион
             regionsData.Value.regionPEs[regionIndex].Unpack(world.Value, out int regionEntity);
-            ref CRegion region = ref regionPool.Value.Get(regionEntity);
+            ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+            ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
             //Если назначается временный материал
             if (temporary == true)
             {
                 //Если этот временный материал уже назначен региону
-                if (region.tempMaterial == material)
+                if (rHS.tempMaterial == material)
                 {
                     //То ничего не меняется
                     return false;
                 }
 
                 //Назначаем временный материал рендереру региона
-                region.hoverRenderer.sharedMaterial = material;
-                region.hoverRenderer.enabled = true;
+                rHS.hoverRenderer.sharedMaterial = material;
+                rHS.hoverRenderer.enabled = true;
             }
             //Иначе
             else
             {
                 //Если этот основной материал уже назначен региону
-                if (region.customMaterial == material)
+                if (rHS.customMaterial == material)
                 {
                     //То ничего не меняется
                     return false;
@@ -253,12 +254,12 @@ namespace SO.Map
                 //Иначе
                 else
                 {
-                    List<Color32> colorChunk = mapGenerationData.Value.colorShaded[region.uvShadedChunkIndex];
-                    for (int k = 0; k < region.uvShadedChunkLength; k++)
+                    List<Color32> colorChunk = mapGenerationData.Value.colorShaded[rHS.uvShadedChunkIndex];
+                    for (int k = 0; k < rHS.uvShadedChunkLength; k++)
                     {
-                        colorChunk[region.uvShadedChunkStart + k] = materialColor;
+                        colorChunk[rHS.uvShadedChunkStart + k] = materialColor;
                     }
-                    mapGenerationData.Value.colorShadedDirty[region.uvShadedChunkIndex] = true;
+                    mapGenerationData.Value.colorShadedDirty[rHS.uvShadedChunkIndex] = true;
                 }
             }
 
@@ -268,30 +269,30 @@ namespace SO.Map
                 //Если это временный материал
                 if (temporary == true)
                 {
-                    region.tempMaterial = material;
+                    rHS.tempMaterial = material;
                 }
                 //Иначе
                 else
                 {
-                    region.customMaterial = material;
+                    rHS.customMaterial = material;
                 }
             }
 
             //Если материал подсветки не пуст и регион - это последний подсвеченный регион
-            if (mapGenerationData.Value.hoverRegionHighlightMaterial != null && inputData.Value.lastHighlightedRegionIndex == region.Index)
+            if (mapGenerationData.Value.hoverRegionHighlightMaterial != null && inputData.Value.lastHighlightedRegionIndex == rC.Index)
             {
                 //Задаём рендереру материал подсветки наведения
-                region.hoverRenderer.sharedMaterial = mapGenerationData.Value.hoverRegionHighlightMaterial;
+                rHS.hoverRenderer.sharedMaterial = mapGenerationData.Value.hoverRegionHighlightMaterial;
 
                 //Берём исходный материал 
                 Material sourceMaterial = null;
-                if (region.tempMaterial != null)
+                if (rHS.tempMaterial != null)
                 {
-                    sourceMaterial = region.tempMaterial;
+                    sourceMaterial = rHS.tempMaterial;
                 }
-                else if (region.customMaterial != null)
+                else if (rHS.customMaterial != null)
                 {
-                    sourceMaterial = region.customMaterial;
+                    sourceMaterial = rHS.customMaterial;
                 }
 
                 //Если исходный материал не пуст
@@ -404,7 +405,7 @@ namespace SO.Map
             {
                 //Берём компонент региона
                 regionsData.Value.regionPEs[k].Unpack(world.Value, out int regionEntity);
-                ref CRegion region = ref regionPool.Value.Get(regionEntity);
+                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
 
                 //Если количество вершин больше максимального количества вершин на чанк
                 if (verticesCount > MapGenerationData.maxVertexCountPerChunk)
@@ -422,7 +423,7 @@ namespace SO.Map
                 }
 
                 //Берём массив вершин региона
-                DHexaspherePoint[] tileVertices = region.vertexPoints;
+                DHexaspherePoint[] tileVertices = rHS.vertexPoints;
 
                 //Определяем количество вершин
                 int tileVerticesCount = tileVertices.Length;
@@ -572,7 +573,8 @@ namespace SO.Map
             {
                 //Берём компонент региона
                 regionsData.Value.regionPEs[k].Unpack(world.Value, out int regionEntity);
-                ref CRegion region = ref regionPool.Value.Get(regionEntity);
+                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
                 //Если количество вершин больше максимального количества вершин на чанк
                 if (verticesCount > MapGenerationData.maxVertexCountPerChunk)
@@ -589,7 +591,7 @@ namespace SO.Map
                 }
 
                 //Берём массив вершин региона
-                DHexaspherePoint[] tileVertices = region.vertexPoints;
+                DHexaspherePoint[] tileVertices = rHS.vertexPoints;
 
                 //Определяем количество вершин
                 int tileVerticesCount = tileVertices.Length;
@@ -619,13 +621,13 @@ namespace SO.Map
                 Vector2 textureOffset;
 
                 //Если регион имеет собственный материал, этот материал имеет текстуру и текстура не пуста
-                if (region.customMaterial && region.customMaterial.HasProperty(ShaderParameters.MainTex) && region.customMaterial.mainTexture != null)
+                if (rHS.customMaterial && rHS.customMaterial.HasProperty(ShaderParameters.MainTex) && rHS.customMaterial.mainTexture != null)
                 {
                     //Берём параметры этой текстуры
-                    tileTexture = (Texture2D)region.customMaterial.mainTexture;
+                    tileTexture = (Texture2D)rHS.customMaterial.mainTexture;
                     textureIndex = mapGenerationData.Value.texArray.IndexOf(tileTexture);
-                    textureScale = region.customMaterial.mainTextureScale;
-                    textureOffset = region.customMaterial.mainTextureOffset;
+                    textureScale = rHS.customMaterial.mainTextureScale;
+                    textureOffset = rHS.customMaterial.mainTextureOffset;
                 }
                 //Иначе
                 else
@@ -648,9 +650,9 @@ namespace SO.Map
                 if (mapGenerationData.Value.isColorUpdated == true)
                 {
                     //Если регион имеет собственный материал, то берём его цвет
-                    if (region.customMaterial != null)
+                    if (rHS.customMaterial != null)
                     {
-                        color = region.customMaterial.color;
+                        color = rHS.customMaterial.color;
                     }
                     //Иначе берём стандартный цвет
                     else
@@ -663,9 +665,19 @@ namespace SO.Map
                 if (isInitializationUpdate == true)
                 {
                     //Заполняем индексы UV-координат региона
-                    region.uvShadedChunkStart = verticesCount;
-                    region.uvShadedChunkIndex = chunkIndex;
-                    region.uvShadedChunkLength = uvArray.Length;
+                    rHS.uvShadedChunkStart = verticesCount;
+                    rHS.uvShadedChunkIndex = chunkIndex;
+                    rHS.uvShadedChunkLength = uvArray.Length;
+                }
+
+                //Обновляем визуальную выдавленность региона
+                if (rC.Elevation > 0)
+                {
+                    rHS.ExtrudeAmount = (float)rC.Elevation / (mapGenerationData.Value.elevationMaximum + 1);
+                }
+                else
+                {
+                    rHS.ExtrudeAmount = 0;
                 }
 
                 //Для каждых UV-координат в списке
@@ -676,7 +688,7 @@ namespace SO.Map
                     uv4.x = uvArray[b].x * textureScale.x + textureOffset.x;
                     uv4.y = uvArray[b].y * textureScale.y + textureOffset.y;
                     uv4.z = textureIndex;
-                    uv4.w = region.ExtrudeAmount;
+                    uv4.w = rHS.ExtrudeAmount;
 
                     //Если это не обновление на этапе инициализации
                     if (isInitializationUpdate == false)
