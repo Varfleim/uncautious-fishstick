@@ -383,67 +383,6 @@ namespace SO.Map.Hexasphere
 
             //Даём региону ссылку на свой GO
             currentRHS.selfObject = regionGO.gameObject;
-
-            //Создаём рендереры региона
-            currentRHS.fleetRenderer = RegionCreateRenderer(ref currentRHS, regionGO.fleetRenderer);
-            currentRHS.hoverRenderer = RegionCreateRenderer(ref currentRHS, regionGO.hoverRenderer);
-            currentRHS.currentRenderer = RegionCreateRenderer(ref currentRHS, regionGO.currentRenderer);
-        }
-
-        MeshRenderer RegionCreateRenderer(
-            ref CRegionHexasphere rHS, MeshRenderer renderer)
-        {
-            //Создаём новые мешфильтр и меш
-            MeshFilter meshFilter = renderer.gameObject.AddComponent<MeshFilter>();
-            Mesh mesh = new();
-            mesh.hideFlags = HideFlags.DontSave;
-
-            //Определяем высоту рендерера
-            float extrusionAmount = rHS.ExtrudeAmount * MapGenerationData.ExtrudeMultiplier;
-
-            //Рассчитываем выдавленные вершины региона
-            Vector3[] extrudedVertices = new Vector3[rHS.vertexPoints.Length];
-            //Для каждой вершины
-            for (int a = 0; a < rHS.vertices.Length; a++)
-            {
-                //Рассчитываем положение выдавленной вершины
-                extrudedVertices[a] = rHS.vertices[a] * (1f + extrusionAmount);
-            }
-            //Назначаем вершины мешу
-            mesh.vertices = extrudedVertices;
-
-            //Если у региона шесть вершин
-            if (rHS.vertices.Length == 6)
-            {
-                mesh.SetIndices(
-                    mapGenerationData.Value.hexagonIndices,
-                    MeshTopology.Triangles,
-                    0,
-                    false);
-                mesh.uv = mapGenerationData.Value.hexagonUVs;
-            }
-            //Иначе
-            else
-            {
-                mesh.SetIndices(
-                    mapGenerationData.Value.pentagonIndices,
-                    MeshTopology.Triangles,
-                    0,
-                    false);
-                mesh.uv = mapGenerationData.Value.pentagonUVs;
-            }
-
-            //Рассчитываем нормали меша
-            mesh.normals = rHS.vertices;
-            mesh.RecalculateNormals();
-
-            //Назначаем меш рендереру и отключаем визуализацию
-            meshFilter.sharedMesh = mesh;
-            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            renderer.enabled = false;
-
-            //Возвращаем рендерер
-            return renderer;
         }
     }
 }

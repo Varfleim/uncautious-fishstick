@@ -58,7 +58,11 @@ namespace SO.UI
 
         public void Init(IEcsSystems systems)
         {
+            ListPool<int>.Init();
+
             //Заносим префабы в их графы
+            GORegionRenderer.regionRendererPrefab = uIData.Value.regionRendererPrefab;
+            CRegionDisplayedMapPanels.mapPanelGroupPrefab = uIData.Value.mapPanelGroup;
             UIRCMainMapPanel.panelPrefab = uIData.Value.rCMainMapPanelPrefab;
 
             //Открываем окно главного меню
@@ -356,15 +360,10 @@ namespace SO.UI
                 ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Add(regionEntity);
 
                 //Создаём новый объект группы панелей карты
-                regionDisplayedMapPanels.mapPanelGroup = MonoBehaviour.Instantiate(uIData.Value.mapPanelGroup);
-
-                //Привязываем группу к региону
-                regionDisplayedMapPanels.mapPanelGroup.transform.SetParent(rHS.selfObject.transform);
-
-                //Задаём положение группы
-                Vector3 regionCenter = rHS.GetRegionCenter() * mapGenerationData.Value.hexasphereScale;
-                Vector3 direction = regionCenter.normalized * uIData.Value.mapPanelAltitude;
-                regionDisplayedMapPanels.mapPanelGroup.transform.position = regionCenter + direction;
+                CRegionDisplayedMapPanels.InstantiateMapPanelGroup(
+                    ref rHS, ref regionDisplayedMapPanels,
+                    mapGenerationData.Value.hexasphereScale,
+                    uIData.Value.mapPanelAltitude);
             } 
         }
 
@@ -378,8 +377,8 @@ namespace SO.UI
             //Если никакая из панелей не существует
             if(regionDisplayedMapPanels.mainMapPanel == null)
             {
-                //Удаляем объект группы панелей
-                MonoBehaviour.Destroy(regionDisplayedMapPanels.mapPanelGroup);
+                //Кэшируем группу панелей
+                CRegionDisplayedMapPanels.CacheMapPanelGroup(ref regionDisplayedMapPanels);
 
                 //Удаляем с сущности региона компонент панелей карты
                 regionDisplayedMapPanelsPool.Value.Del(regionEntity);
@@ -411,7 +410,7 @@ namespace SO.UI
             requestComp.objectPE.Unpack(world.Value, out int regionEntity);
             ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
 
-            //Удаляем главную панель карты
+            //Кэшируем главную панель карты
             UIRCMainMapPanel.CachePanel(
                 ref regionDisplayedMapPanels);
 

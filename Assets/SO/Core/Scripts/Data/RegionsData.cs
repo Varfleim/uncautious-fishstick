@@ -52,7 +52,7 @@ namespace SO.Map
             int maxSteps)
         {
             //Создаём промежуточный список
-            List<int> candidates = new();
+            List<int> candidates = ListPool<int>.Get();
 
             //Для каждого соседа региона
             for (int a = 0; a < rc.neighbourRegionPEs.Length; a++)
@@ -72,7 +72,7 @@ namespace SO.Map
             processed.Add(rc.Index, true);
 
             //Создаём итоговый список
-            List<int> results = new();
+            List<int> results = ListPool<int>.Get();
 
             //Создаём обратный счётчик для обрабатываемых регионов
             int candidatesLast = candidates.Count - 1;
@@ -87,37 +87,47 @@ namespace SO.Map
                 regionPEs[candidateIndex].Unpack(world, out int regionEntity);
                 ref CRegionCore candidateRC = ref rCPool.Get(regionEntity);
 
-                //Находим путь до него
-                List<int> pathRegions = PathFind(
+                //Если словарь ещё не содержит его
+                if (processed.ContainsKey(candidateIndex) == false)
+                {
+                    //Находим путь до него
+                    List<int> pathRegions = PathFind(
                     world,
                     regionFilter, rCPool,
                     ref rc, ref candidateRC,
                     maxSteps);
 
-                //Если словарь ещё не содержит его и существует путь 
-                if (processed.ContainsKey(candidateIndex) == false && pathRegions != null)
-                {
-                    //Заносим кандидата в итоговый список и словарь
-                    results.Add(candidateRC.Index);
-                    processed.Add(candidateRC.Index, true);
-
-                    //Для каждого соседнего региона
-                    for (int a = 0; a < candidateRC.neighbourRegionPEs.Length; a++)
+                    //Если существует путь 
+                    if (pathRegions != null)
                     {
-                        //Берём соседа
-                        candidateRC.neighbourRegionPEs[a].Unpack(world, out int neighbourRegionEntity);
-                        ref CRegionCore neighbourRC = ref rCPool.Get(neighbourRegionEntity);
+                        //Заносим кандидата в итоговый список и словарь
+                        results.Add(candidateRC.Index);
+                        processed.Add(candidateRC.Index, true);
 
-                        //Если словарь не содержит его
-                        if (processed.ContainsKey(neighbourRC.Index) == false)
+                        //Для каждого соседнего региона
+                        for (int a = 0; a < candidateRC.neighbourRegionPEs.Length; a++)
                         {
-                            //Заносим его в список и увеличиваем счётчик
-                            candidates.Add(neighbourRC.Index);
-                            candidatesLast++;
+                            //Берём соседа
+                            candidateRC.neighbourRegionPEs[a].Unpack(world, out int neighbourRegionEntity);
+                            ref CRegionCore neighbourRC = ref rCPool.Get(neighbourRegionEntity);
+
+                            //Если словарь не содержит его
+                            if (processed.ContainsKey(neighbourRC.Index) == false)
+                            {
+                                //Заносим его в список и увеличиваем счётчик
+                                candidates.Add(neighbourRC.Index);
+                                candidatesLast++;
+                            }
                         }
+
+                        //Возвращаем список в пул
+                        ListPool<int>.Add(pathRegions);
                     }
                 }
             }
+
+            //Возвращаем список в пул
+            ListPool<int>.Add(candidates);
 
             return results;
         }
@@ -129,7 +139,7 @@ namespace SO.Map
             int minSteps, int maxSteps)
         {
             //Создаём промежуточный список
-            List<int> candidates = new();
+            List<int> candidates = ListPool<int>.Get();
 
             //Для каждого соседа региона
             for (int a = 0; a < rC.neighbourRegionPEs.Length; a++)
@@ -149,7 +159,7 @@ namespace SO.Map
             processed.Add(rC.Index, true);
 
             //Создаём итоговый список
-            List<int> results = new();
+            List<int> results = ListPool<int>.Get();
 
             //Создаём обратный счётчик для обрабатываемых регионов
             int candidatesLast = candidates.Count - 1;
@@ -164,43 +174,53 @@ namespace SO.Map
                 regionPEs[candidateIndex].Unpack(world, out int regionEntity);
                 ref CRegionCore candidateRC = ref rCPool.Get(regionEntity);
 
-                //Находим путь до него
-                List<int> pathRegions = PathFind(
-                    world,
-                    regionFilter, rCPool,
-                    ref rC, ref candidateRC,
-                    maxSteps);
-
-                //Если словарь ещё не содержит его и существует путь 
-                if (processed.ContainsKey(candidateIndex) == false && pathRegions != null)
+                //Если словарь ещё не содержит его
+                if(processed.ContainsKey(candidateIndex) == false)
                 {
-                    //Если длина пути больше или равна минимальной и меньше или равна максимальной
-                    if (pathRegions.Count >= minSteps && pathRegions.Count <= maxSteps)
+                    //Находим путь до него
+                    List<int> pathRegions = PathFind(
+                        world,
+                        regionFilter, rCPool,
+                        ref rC, ref candidateRC,
+                        maxSteps);
+
+                    //Если существует путь 
+                    if (pathRegions != null)
                     {
-                        //Заносим кандидата в итоговый список
-                        results.Add(candidateRC.Index);
-                    }
-
-                    //Заносим кандидата в словарь обработанных
-                    processed.Add(candidateRC.Index, true);
-
-                    //Для каждого соседнего региона
-                    for (int a = 0; a < candidateRC.neighbourRegionPEs.Length; a++)
-                    {
-                        //Берём соседа
-                        candidateRC.neighbourRegionPEs[a].Unpack(world, out int neighbourRegionEntity);
-                        ref CRegionCore neighbourRC = ref rCPool.Get(neighbourRegionEntity);
-
-                        //Если словарь не содержит его
-                        if (processed.ContainsKey(neighbourRC.Index) == false)
+                        //Если длина пути больше или равна минимальной и меньше или равна максимальной
+                        if (pathRegions.Count >= minSteps && pathRegions.Count <= maxSteps)
                         {
-                            //Заносим его в список и увеличиваем счётчик
-                            candidates.Add(neighbourRC.Index);
-                            candidatesLast++;
+                            //Заносим кандидата в итоговый список
+                            results.Add(candidateRC.Index);
                         }
+
+                        //Заносим кандидата в словарь обработанных
+                        processed.Add(candidateRC.Index, true);
+
+                        //Для каждого соседнего региона
+                        for (int a = 0; a < candidateRC.neighbourRegionPEs.Length; a++)
+                        {
+                            //Берём соседа
+                            candidateRC.neighbourRegionPEs[a].Unpack(world, out int neighbourRegionEntity);
+                            ref CRegionCore neighbourRC = ref rCPool.Get(neighbourRegionEntity);
+
+                            //Если словарь не содержит его
+                            if (processed.ContainsKey(neighbourRC.Index) == false)
+                            {
+                                //Заносим его в список и увеличиваем счётчик
+                                candidates.Add(neighbourRC.Index);
+                                candidatesLast++;
+                            }
+                        }
+
+                        //Возвращаем список в пул
+                        ListPool<int>.Add(pathRegions);
                     }
                 }
             }
+
+            //Возвращаем список в пул
+            ListPool<int>.Add(candidates);
 
             return results;
         }
@@ -213,7 +233,7 @@ namespace SO.Map
             int maxSteps) 
         {
             //Создаём промежуточный список
-            List<int> candidates = new();
+            List<int> candidates = ListPool<int>.Get(threadId);
 
             //Для каждого соседа региона
             for (int a = 0; a < rC.neighbourRegionPEs.Length; a++)
@@ -233,7 +253,7 @@ namespace SO.Map
             processed.Add(rC.Index, true);
 
             //Создаём итоговый список
-            List<int> results = new();
+            List<int> results = ListPool<int>.Get(threadId);
 
             //Создаём обратный счётчик для обрабатываемых регионов
             int candidatesLast = candidates.Count - 1;
@@ -248,38 +268,52 @@ namespace SO.Map
                 regionPEs[candidateIndex].Unpack(world, out int regionEntity);
                 ref CRegionCore candidateRC = ref rCPool[rCIndices[regionEntity]];
 
-                //Находим путь до него
-                List<int> pathRegions = PathFindThreads(
-                    world,
-                    ref rCPool, ref rCIndices,
-                    threadId,
-                    ref rC, ref candidateRC,
-                    maxSteps);
-
-                //Если словарь ещё не содержит его и существует путь 
-                if (processed.ContainsKey(candidateIndex) == false && pathRegions != null)
+                //Если словарь ещё не содержит его
+                if(processed.ContainsKey(candidateIndex) == false)
                 {
-                    //Заносим кандидата в итоговый список и словарь
-                    results.Add(candidateRC.Index);
-                    processed.Add(candidateRC.Index, true);
+                    //Находим путь до него
+                    List<int> pathRegions = PathFindThreads(
+                        world,
+                        ref rCPool, ref rCIndices,
+                        threadId,
+                        ref rC, ref candidateRC,
+                        maxSteps);
 
-                    //Для каждого соседнего региона
-                    for (int a = 0; a < candidateRC.neighbourRegionPEs.Length; a++)
+                    //Если существует путь 
+                    if (pathRegions != null)
                     {
-                        //Берём соседа
-                        candidateRC.neighbourRegionPEs[a].Unpack(world, out int neighbourRegionEntity);
-                        ref CRegionCore neighbourRC = ref rCPool[rCIndices[neighbourRegionEntity]];
+                        //Заносим кандидата в итоговый список и словарь
+                        results.Add(candidateRC.Index);
+                        processed.Add(candidateRC.Index, true);
 
-                        //Если словарь не содержит его
-                        if (processed.ContainsKey(neighbourRC.Index) == false)
+                        //Для каждого соседнего региона
+                        for (int a = 0; a < candidateRC.neighbourRegionPEs.Length; a++)
                         {
-                            //Заносим его в список и увеличиваем счётчик
-                            candidates.Add(neighbourRC.Index);
-                            candidatesLast++;
+                            //Берём соседа
+                            candidateRC.neighbourRegionPEs[a].Unpack(world, out int neighbourRegionEntity);
+                            ref CRegionCore neighbourRC = ref rCPool[rCIndices[neighbourRegionEntity]];
+
+                            //Если словарь не содержит его
+                            if (processed.ContainsKey(neighbourRC.Index) == false)
+                            {
+                                //Заносим его в список и увеличиваем счётчик
+                                candidates.Add(neighbourRC.Index);
+                                candidatesLast++;
+                            }
                         }
+
+                        //Возвращаем список в пул
+                        ListPool<int>.Add(
+                            threadId,
+                            pathRegions);
                     }
                 }
             }
+
+            //Возвращаем список в пул
+            ListPool<int>.Add(
+                threadId,
+                candidates);
 
             return results;
         }
@@ -292,7 +326,7 @@ namespace SO.Map
             int minSteps, int maxSteps)
         {
             //Создаём промежуточный список
-            List<int> candidates = new();
+            List<int> candidates = ListPool<int>.Get(threadId);
 
             //Для каждого соседа региона
             for (int a = 0; a < rC.neighbourRegionPEs.Length; a++)
@@ -312,7 +346,7 @@ namespace SO.Map
             processed.Add(rC.Index, true);
 
             //Создаём итоговый список
-            List<int> results = new();
+            List<int> results = ListPool<int>.Get(threadId);
 
             //Создаём обратный счётчик для обрабатываемых регионов
             int candidatesLast = candidates.Count - 1;
@@ -327,44 +361,58 @@ namespace SO.Map
                 regionPEs[candidateIndex].Unpack(world, out int regionEntity);
                 ref CRegionCore candidateRC = ref rCPool[rCIndices[regionEntity]];
 
-                //Находим путь до него
-                List<int> pathRegions = PathFindThreads(
-                    world,
-                    ref rCPool, ref rCIndices,
-                    threadId,
-                    ref rC, ref candidateRC,
-                    maxSteps);
-
-                //Если словарь ещё не содержит его и существует путь 
-                if (processed.ContainsKey(candidateIndex) == false && pathRegions != null)
+                //Если словарь ещё не содержит его
+                if(processed.ContainsKey(candidateIndex) == false)
                 {
-                    //Если длина пути больше или равна минимальной и меньше или равна максимальной
-                    if (pathRegions.Count >= minSteps && pathRegions.Count <= maxSteps)
+                    //Находим путь до него
+                    List<int> pathRegions = PathFindThreads(
+                        world,
+                        ref rCPool, ref rCIndices,
+                        threadId,
+                        ref rC, ref candidateRC,
+                        maxSteps);
+
+                    //Если существует путь 
+                    if (pathRegions != null)
                     {
-                        //Заносим кандидата в итоговый список
-                        results.Add(candidateRC.Index);
-                    }
-
-                    //Заносим кандидата в словарь обработанных
-                    processed.Add(candidateRC.Index, true);
-
-                    //Для каждого соседнего региона
-                    for (int a = 0; a < candidateRC.neighbourRegionPEs.Length; a++)
-                    {
-                        //Берём соседа
-                        candidateRC.neighbourRegionPEs[a].Unpack(world, out int neighbourRegionEntity);
-                        ref CRegionCore neighbourRC = ref rCPool[rCIndices[neighbourRegionEntity]];
-
-                        //Если словарь не содержит его
-                        if (processed.ContainsKey(neighbourRC.Index) == false)
+                        //Если длина пути больше или равна минимальной и меньше или равна максимальной
+                        if (pathRegions.Count >= minSteps && pathRegions.Count <= maxSteps)
                         {
-                            //Заносим его в список и увеличиваем счётчик
-                            candidates.Add(neighbourRC.Index);
-                            candidatesLast++;
+                            //Заносим кандидата в итоговый список
+                            results.Add(candidateRC.Index);
                         }
+
+                        //Заносим кандидата в словарь обработанных
+                        processed.Add(candidateRC.Index, true);
+
+                        //Для каждого соседнего региона
+                        for (int a = 0; a < candidateRC.neighbourRegionPEs.Length; a++)
+                        {
+                            //Берём соседа
+                            candidateRC.neighbourRegionPEs[a].Unpack(world, out int neighbourRegionEntity);
+                            ref CRegionCore neighbourRC = ref rCPool[rCIndices[neighbourRegionEntity]];
+
+                            //Если словарь не содержит его
+                            if (processed.ContainsKey(neighbourRC.Index) == false)
+                            {
+                                //Заносим его в список и увеличиваем счётчик
+                                candidates.Add(neighbourRC.Index);
+                                candidatesLast++;
+                            }
+                        }
+
+                        //Возвращаем список в пул
+                        ListPool<int>.Add(
+                            threadId,
+                            pathRegions);
                     }
-                }
+                } 
             }
+
+            //Возвращаем список в пул
+            ListPool<int>.Add(
+                threadId,
+                candidates);
 
             return results;
         }
@@ -382,17 +430,17 @@ namespace SO.Map
             needRefreshRouteMatrix = false;
 
             //Для каждого региона
-            foreach (int regionEntity in regionFilter)
-            {
-                //Берём регион
-                ref CRegionCore rC = ref rCPool.Get(regionEntity);
+            //foreach (int regionEntity in regionFilter)
+            //{
+            //    //Берём регион
+            //    ref CRegionCore rC = ref rCPool.Get(regionEntity);
 
-                //Рассчитываем стоимость прохода по региону
-                float cost = rC.crossCost;
+            //    //Рассчитываем стоимость прохода по региону
+            //    float cost = rC.crossCost;
 
-                //Обновляем стоимость прохода по региону
-                rC.crossCost = cost;
-            }
+            //    //Обновляем стоимость прохода по региону
+            //    rC.crossCost = cost;
+            //}
 
             //Если массив для поиска пуст
             if (pfCalc == null)
@@ -425,7 +473,7 @@ namespace SO.Map
             int searchLimit = 0)
         {
             //Создаём список для индексов регионов пути
-            List<int> results = new();
+            List<int> results = ListPool<int>.Get();
 
             //Находим путь и определяем количество регионов в пути
             int count = PathFind(
@@ -520,7 +568,7 @@ namespace SO.Map
             close.Clear();
 
             //Берём конечный регион
-            Vector3 destinationCenter = toRC.center;
+            ref Vector3 destinationCenter = ref toRC.center;
 
             //Создаём переменную для следующего региона
             int nextRegionIndex;
@@ -623,7 +671,7 @@ namespace SO.Map
                 int pos = toRC.Index;
 
                 //Создаём временную структуру и заносим в неё данные конечного региона
-                DPathfindingNodeFast tempRegion = pfCalc[toRC.Index];
+                ref DPathfindingNodeFast tempRegion = ref pfCalc[toRC.Index];
                 DPathfindingClosedNode stepRegion;
 
                 //Переносим данные из активных в итоговые
@@ -641,7 +689,7 @@ namespace SO.Map
 
                     //Берём активные данные предыдущего региона
                     pos = stepRegion.prevIndex;
-                    tempRegion = pfCalc[pos];
+                    tempRegion = ref pfCalc[pos];
 
                     //Переносим данные из активных в итоговые
                     stepRegion.priority = tempRegion.priority;
@@ -661,6 +709,12 @@ namespace SO.Map
         void PathMatrixRefreshThreads(
             int threadId)
         {
+            //Если матрица пути не требует обновления, то выходим из функции
+            if (needRefreshPathMatrix[threadId] == false)
+            {
+                return;
+            }
+
             //Отмечаем, что матрица пути не требует обновления
             needRefreshPathMatrix[threadId] = false;
 
@@ -722,7 +776,7 @@ namespace SO.Map
                 if (path != null)
                 {
                     //Создаём список для возврата
-                    List<int> results = new();
+                    List<int> results = ListPool<int>.Get(threadId);
 
                     //Для каждого региона в пути
                     for (int a = 0; a < path.Count - 1; a++)
@@ -770,7 +824,7 @@ namespace SO.Map
             closedNodes[threadId].Clear();
 
             //Берём центр конечного региона
-            Vector3 destinationCenter = endRC.center;
+            ref Vector3 destinationCenter = ref endRC.center;
 
             //Создаём переменную для следующего региона
             int nextRegionIndex;
@@ -873,7 +927,7 @@ namespace SO.Map
                 int pos = endRC.Index;
 
                 //Создаём временную структуру и заносим в неё данные конечного региона
-                DPathfindingNodeFast tempRegion = pathfindingArray[threadId][endRC.Index];
+                ref DPathfindingNodeFast tempRegion = ref pathfindingArray[threadId][endRC.Index];
                 DPathfindingClosedNode stepRegion;
 
                 //Переносим данные из активных в итоговые
@@ -891,7 +945,7 @@ namespace SO.Map
 
                     //Берём активные данные предыдущего региона
                     pos = stepRegion.prevIndex;
-                    tempRegion = pathfindingArray[threadId][pos];
+                    tempRegion = ref pathfindingArray[threadId][pos];
 
                     //Переносим данные из активных в итоговые
                     stepRegion.priority = tempRegion.priority;

@@ -18,7 +18,7 @@ namespace SO.Map
         public const int maxVertexCountPerChunk = 65500;
         const int vertexArraySize = 65530;
 
-        public readonly int[] hexagonIndices = new int[] {
+        public static readonly int[] hexagonIndices = new int[] {
             0, 1, 5,
             1, 2, 5,
             4, 5, 2,
@@ -33,7 +33,7 @@ namespace SO.Map
             2, 3, 7,
             3, 4, 7
         };
-        public readonly Vector2[] hexagonUVs = new Vector2[] {
+        public static readonly Vector2[] hexagonUVs = new Vector2[] {
             new Vector2 (0, 0.5f),
             new Vector2 (0.25f, 1f),
             new Vector2 (0.75f, 1f),
@@ -52,7 +52,7 @@ namespace SO.Map
             new Vector2 (0.25f, 0.5f),
             new Vector2 (0.75f, 0.5f)
         };
-        public readonly int[] pentagonIndices = new int[] {
+        public static readonly int[] pentagonIndices = new int[] {
             0, 1, 4,
             1, 2, 4,
             3, 4, 2
@@ -65,7 +65,7 @@ namespace SO.Map
             2, 3, 6,
             3, 4, 6
         };
-        public readonly Vector2[] pentagonUVs = new Vector2[] {
+        public static readonly Vector2[] pentagonUVs = new Vector2[] {
             new Vector2 (0, 0.33f),
             new Vector2 (0.25f, 1f),
             new Vector2 (0.75f, 1f),

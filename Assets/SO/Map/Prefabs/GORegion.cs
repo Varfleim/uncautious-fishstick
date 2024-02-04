@@ -1,7 +1,7 @@
 
 using UnityEngine;
 
-namespace SO.Map
+namespace SO.Map.Hexasphere
 {
     public class GORegion : MonoBehaviour
     {

@@ -94,7 +94,7 @@ namespace SO.Map.Pathfinding
 
         public int Push(int item)
         {
-            //Создаём временный переменные
+            //Создаём временные переменные
             int p = regionsCount, p2;
 
             //Заносим переданный регион на последнее место

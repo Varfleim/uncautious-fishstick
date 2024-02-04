@@ -3135,6 +3135,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   regionPrefab: {fileID: 3872802071885926373, guid: d9190ad3472f7894a9412fa2765519c6, type: 3}
+  regionRendererPrefab: {fileID: 5453556824984065676, guid: 60b48bccd974509429a742c6a404faf7, type: 3}
   mapPanelGroup: {fileID: 6594349263422155975, guid: 3f0a78a1fae501a4585683bc105b9425, type: 3}
   mapPanelAltitude: 0.2
   rCMainMapPanelPrefab: {fileID: 8938394213872120736, guid: fe74c27f2a6168044bbffb0db420f74a, type: 3}

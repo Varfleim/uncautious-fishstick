@@ -66,7 +66,6 @@ namespace SO.UI
         public bool isMouseOver;
         public int lastHitRegionIndex;
         public EcsPackedEntity lastHighlightedRegionPE;
-        public int lastHighlightedRegionIndex;
 
         public EcsPackedEntity searchFromRegion;
         public EcsPackedEntity searchToRegion;

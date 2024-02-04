@@ -1,17 +1,16 @@
 using System.Collections.Generic;
 
 using UnityEngine;
-using UnityEngine.UI;
 
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using Leopotam.EcsLite.Unity.Ugui;
 
 using SO.UI.Events;
-using SO.UI.MainMenu;
 using SO.UI.MainMenu.Events;
 using SO.UI.Game;
 using SO.UI.Game.Events;
+using SO.UI.Game.Map.Events;
 using SO.UI.Game.Object.Events;
 using SO.Map;
 using SO.Map.Events;
@@ -551,33 +550,41 @@ namespace SO.UI
                     ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
                     ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
-                    //Если индекс региона не равен индексу последнего подсвеченного
-                    if (rC.Index != inputData.Value.lastHighlightedRegionIndex)
+                    //Если сущность региона не равна сущности последнего подсвеченного
+                    if(inputData.Value.lastHighlightedRegionPE.EqualsTo(rC.selfPE) == false)
                     {
-                        //Если индекс последнего подсвеченного региона больше нуля
-                        if (inputData.Value.lastHighlightedRegionIndex > 0)
+                        //Если последний подсвеченный регион существует
+                        if(inputData.Value.lastHighlightedRegionPE.Unpack(world.Value, out int lastHighlightRegionEntity))
                         {
-                            //Скрываем подсветку наведения
-                            RegionHideHoverHighlight();
+                            //Запрашиваем отключение подсветки для него
+                            RegionHideHighlightRequest(
+                                inputData.Value.lastHighlightedRegionPE,
+                                RegionHighlightRequestType.Hover);
                         }
 
                         //Обновляем подсвеченный регион
                         inputData.Value.lastHighlightedRegionPE = rC.selfPE;
-                        inputData.Value.lastHighlightedRegionIndex = rC.Index;
 
-                        //Подсвечиваем регион
-                        RegionShowHoverHighlight(ref rHS);
+                        //Запрашиваем включение подсветки для него
+                        RegionShowHighlightRequest(
+                            rC.selfPE,
+                            RegionHighlightRequestType.Hover);
                     }
 
                     regionPE = rC.selfPE;
 
                     return true;
                 }
-                //Иначе, если индекс региона меньше нуля и индекс последнего подсвеченного региона больше нуля
-                else if (regionIndex < 0 && inputData.Value.lastHighlightedRegionIndex >= 0)
+                //Иначе, если индекс региона меньше нуля и последний подсвеченный регион существует
+                else if(regionIndex < 0 && inputData.Value.lastHighlightedRegionPE.Unpack(world.Value, out int lastHighlightRegionEntity))
                 {
-                    //Скрываем подсветку наведения
-                    RegionHideHoverHighlight();
+                    //Запрашиваем отключение подсветки для него
+                    RegionHideHighlightRequest(
+                        inputData.Value.lastHighlightedRegionPE,
+                        RegionHighlightRequestType.Hover);
+
+                    //Удаляем последний подсвеченный регион
+                    inputData.Value.lastHighlightedRegionPE = new();
                 }
             }
 
@@ -869,207 +876,34 @@ namespace SO.UI
             return nearestRegionPE;
         }
 
-        void RegionShowHoverHighlight(
-            ref CRegionHexasphere rHS)
+        readonly EcsPoolInject<RGameShowRegionHighlight> gameShowRegionHighlightRequestPool = default;
+        void RegionShowHighlightRequest(
+            EcsPackedEntity regionPE,
+            RegionHighlightRequestType requestType)
         {
-            //Активируем рендерер наведения
-            rHS.hoverRenderer.enabled = true;
+            //Создаём новую сущность и назначаем ей запрос включения подсветки региона
+            int requestEntity = world.Value.NewEntity();
+            ref RGameShowRegionHighlight requestComp = ref gameShowRegionHighlightRequestPool.Value.Add(requestEntity);
+
+            //Заполняем данные запроса
+            requestComp = new(
+                regionPE,
+                requestType);
         }
 
-        void RegionHideHoverHighlight()
+        readonly EcsPoolInject<RGameHideRegionHighlight> gameHideRegionHighlightRequestPool = default;
+        void RegionHideHighlightRequest(
+            EcsPackedEntity regionPE,
+            RegionHighlightRequestType requestType)
         {
-            //Если подсвеченный регион существует
-            if (inputData.Value.lastHighlightedRegionPE.Unpack(world.Value, out int highlightedRegionEntity))
-            {
-                //Берём регион
-                ref CRegionHexasphere highlightedRHS = ref rHSPool.Value.Get(highlightedRegionEntity);
+            //Создаём новую сущность и назначаем ей запрос выключения подсветки региона
+            int requestEntity = world.Value.NewEntity();
+            ref RGameHideRegionHighlight requestComp = ref gameHideRegionHighlightRequestPool.Value.Add(requestEntity);
 
-                //Отключаем рендерер наведения
-                highlightedRHS.hoverRenderer.enabled = false;
-            }
-
-            //Удаляем последний подсвеченный регион
-            inputData.Value.lastHighlightedRegionPE = new();
-            inputData.Value.lastHighlightedRegionIndex = -1;
-        }
-
-        void RegionSetColor(
-            ref CRegionCore rC,
-            Color color)
-        {
-            //Берём кэшированный материал
-            Material material;
-
-            //Если материал такого цвета уже существует в кэше цветных материалов
-            if (mapGenerationData.Value.colorCache.ContainsKey(color) == false)
-            {
-                //То создаём новый материал и кэшируем его
-                material = GameObject.Instantiate(mapGenerationData.Value.regionColoredMaterial);
-                mapGenerationData.Value.colorCache.Add(color, material);
-
-                //Заполняем основные данные материала
-                material.hideFlags = HideFlags.DontSave;
-                material.color = color;
-                material.SetFloat(ShaderParameters.RegionAlpha, 1f);
-            }
-            //Иначе
-            else
-            {
-                //Берём материал из словаря
-                material = mapGenerationData.Value.colorCache[color];
-            }
-
-            //Устанавливаем материал региона
-            RegionSetMaterial(
-                rC.Index,
-                material);
-        }
-
-        bool RegionSetMaterial(
-            int regionIndex,
-            Material material,
-            bool temporary = false)
-        {
-            //Берём регион
-            regionsData.Value.regionPEs[regionIndex].Unpack(world.Value, out int regionEntity);
-            ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
-            ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
-
-            //Если назначается временный материал
-            if (temporary == true)
-            {
-                //Если этот временный материал уже назначен региону
-                if (rHS.tempMaterial == material)
-                {
-                    //То ничего не меняется
-                    return false;
-                }
-
-                //Назначаем временный материал рендереру региона
-                rHS.hoverRenderer.sharedMaterial = material;
-                rHS.hoverRenderer.enabled = true;
-            }
-            //Иначе
-            else
-            {
-                //Если этот основной материал уже назначен региону
-                if (rHS.customMaterial == material)
-                {
-                    //То ничего не меняется
-                    return false;
-                }
-
-                //Берём цвет материала
-                Color32 materialColor = Color.white;
-                if (material.HasProperty(ShaderParameters.Color) == true)
-                {
-                    materialColor = material.color;
-                }
-                else if (material.HasProperty(ShaderParameters.BaseColor))
-                {
-                    materialColor = material.GetColor(ShaderParameters.BaseColor);
-                }
-
-                //Отмечаем, что требуется обновление цветов
-                mapGenerationData.Value.isColorUpdated = true;
-
-                //Берём текстуру материала
-                Texture materialTexture = null;
-                if (material.HasProperty(ShaderParameters.MainTex))
-                {
-                    materialTexture = material.mainTexture;
-                }
-                else if (material.HasProperty(ShaderParameters.BaseMap))
-                {
-                    materialTexture = material.GetTexture(ShaderParameters.BaseMap);
-                }
-
-                //Если текстура не пуста
-                if (materialTexture != null)
-                {
-                    //Отмечаем, что требуется обновление массива текстур
-                    mapGenerationData.Value.isTextureArrayUpdated = true;
-                }
-                //Иначе
-                else
-                {
-                    List<Color32> colorChunk = mapGenerationData.Value.colorShaded[rHS.uvShadedChunkIndex];
-                    for (int k = 0; k < rHS.uvShadedChunkLength; k++)
-                    {
-                        colorChunk[rHS.uvShadedChunkStart + k] = materialColor;
-                    }
-                    mapGenerationData.Value.colorShadedDirty[rHS.uvShadedChunkIndex] = true;
-                }
-            }
-
-            //Если материал - не материал подсветки наведения
-            if (material != mapGenerationData.Value.hoverRegionHighlightMaterial)
-            {
-                //Если это временный материал
-                if (temporary == true)
-                {
-                    rHS.tempMaterial = material;
-                }
-                //Иначе
-                else
-                {
-                    rHS.customMaterial = material;
-                }
-            }
-
-            //Если материал подсветки не пуст и регион - это последний подсвеченный регион
-            if (mapGenerationData.Value.hoverRegionHighlightMaterial != null && inputData.Value.lastHighlightedRegionIndex == rC.Index)
-            {
-                //Задаём рендереру материал подсветки наведения
-                rHS.hoverRenderer.sharedMaterial = mapGenerationData.Value.hoverRegionHighlightMaterial;
-
-                //Берём исходный материал 
-                Material sourceMaterial = null;
-                if (rHS.tempMaterial != null)
-                {
-                    sourceMaterial = rHS.tempMaterial;
-                }
-                else if (rHS.customMaterial != null)
-                {
-                    sourceMaterial = rHS.customMaterial;
-                }
-
-                //Если исходный материал не пуст
-                if (sourceMaterial != null)
-                {
-                    //Берём цвет исходного материала
-                    Color32 color = Color.white;
-                    if (sourceMaterial.HasProperty(ShaderParameters.Color) == true)
-                    {
-                        color = sourceMaterial.color;
-                    }
-                    else if (sourceMaterial.HasProperty(ShaderParameters.BaseColor))
-                    {
-                        color = sourceMaterial.GetColor(ShaderParameters.BaseColor);
-                    }
-                    //Устанавливаем вторичный цвет материалу подсветки наведения
-                    mapGenerationData.Value.hoverRegionHighlightMaterial.SetColor(ShaderParameters.Color2, color);
-
-                    //Берём текстуру исходного материала
-                    Texture tempMaterialTexture = null;
-                    if (sourceMaterial.HasProperty(ShaderParameters.MainTex))
-                    {
-                        tempMaterialTexture = sourceMaterial.mainTexture;
-                    }
-                    else if (sourceMaterial.HasProperty(ShaderParameters.BaseMap))
-                    {
-                        tempMaterialTexture = sourceMaterial.GetTexture(ShaderParameters.BaseMap);
-                    }
-
-                    //Если текстура не пуста
-                    if (tempMaterialTexture != null)
-                    {
-                        mapGenerationData.Value.hoverRegionHighlightMaterial.mainTexture = tempMaterialTexture;
-                    }
-                }
-            }
-
-            return true;
+            //Заполняем данные запроса
+            requestComp = new(
+                regionPE,
+                requestType);
         }
         #endregion
         #endregion

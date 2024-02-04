@@ -83,10 +83,6 @@ namespace SO.Map.Hexasphere
 
             selfObject = null;
 
-            fleetRenderer = null;
-            hoverRenderer = null;
-            currentRenderer = null;
-
             customMaterial = null;
             tempMaterial = null;
 
@@ -108,16 +104,10 @@ namespace SO.Map.Hexasphere
         public Vector3[] vertices;
 
         public GameObject selfObject;
-        public Renderer fleetRenderer;
-        public Renderer hoverRenderer;
-        public Renderer currentRenderer;
 
         public Material customMaterial;
         public Material tempMaterial;
 
-        /// <summary>
-        /// Нельзя изменять в потоке
-        /// </summary>
         public float ExtrudeAmount
         {
             get
@@ -127,15 +117,6 @@ namespace SO.Map.Hexasphere
             set
             {
                 extrudeAmount = value;
-
-                //Обновляем рендерер подсветки флота региона
-                RefreshRenderer(fleetRenderer);
-
-                //Обновляем рендерер подсветки наведения региона
-                RefreshRenderer(hoverRenderer);
-
-                //Обновляем рендерер подсветки выбранного региона
-                RefreshRenderer(currentRenderer);
             }
         }
         float extrudeAmount;
@@ -143,31 +124,6 @@ namespace SO.Map.Hexasphere
         public int uvShadedChunkIndex;
         public int uvShadedChunkStart;
         public int uvShadedChunkLength;
-
-        void RefreshRenderer(
-            Renderer renderer)
-        {
-            //Берём мешфильтр и меш
-            MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
-            Mesh mesh = meshFilter.sharedMesh;
-
-            //Рассчитываем новое положение вершин рендерера
-            Vector3[] extrudedVertices = new Vector3[vertices.Length];
-            for (int a = 0; a < vertices.Length; a++)
-            {
-                extrudedVertices[a] = vertices[a] * (1f + extrudeAmount * MapGenerationData.ExtrudeMultiplier);
-            }
-            //Назначаем вершины мешу
-            mesh.vertices = extrudedVertices;
-
-            //Рассчитываем нормали меша
-            mesh.normals = vertices;
-            mesh.RecalculateNormals();
-
-            //Обновляем меш мешфильтра
-            meshFilter.sharedMesh = null;
-            meshFilter.sharedMesh = mesh;
-        }
 
         public Vector3 GetRegionCenter()
         {
