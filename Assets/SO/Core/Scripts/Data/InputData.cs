@@ -72,5 +72,8 @@ namespace SO.UI
 
 
         public EcsPackedEntity playerFactionPE;
+
+
+        public List<EcsPackedEntity> activeTaskForcePEs = new();
     }
 }

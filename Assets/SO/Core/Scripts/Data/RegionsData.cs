@@ -15,6 +15,22 @@ namespace SO.Map
         //Данные регионов
         public EcsPackedEntity[] regionPEs;
 
+        public const float regionRadius = 25;
+        public const float regionDistance = regionRadius * 2;
+
+        public EcsPackedEntity GetRegion(
+            int regionIndex)
+        {
+            //Возвращаем PE запрошенного региона
+            return regionPEs[regionIndex];
+        }
+        public EcsPackedEntity GetRegionRandom()
+        {
+            //Возвращаем PE случайного региона
+            return GetRegion(UnityEngine.Random.Range(0, regionPEs.Length));
+        }
+
+        #region Pathfinding
         //Данные поиска пути
         public bool[] needRefreshPathMatrix = new bool[Environment.ProcessorCount];
         public DPathfindingNodeFast[][] pathfindingArray = new DPathfindingNodeFast[Environment.ProcessorCount][];
@@ -32,18 +48,6 @@ namespace SO.Map
         public byte closeRegionValue = 2;
         public const int pathFindingSearchLimitBase = 30000;
         public int pathFindingSearchLimit;
-
-        public EcsPackedEntity GetRegion(
-            int regionIndex)
-        {
-            //Возвращаем PE запрошенного региона
-            return regionPEs[regionIndex];
-        }
-        public EcsPackedEntity GetRegionRandom()
-        {
-            //Возвращаем PE случайного региона
-            return GetRegion(UnityEngine.Random.Range(0, regionPEs.Length));
-        }
 
         public List<int> GetRegionIndicesWithinSteps(
             EcsWorld world,
@@ -749,7 +753,7 @@ namespace SO.Map
             }
         }
 
-        List<int> PathFindThreads(
+        public List<int> PathFindThreads(
             EcsWorld world,
             ref CRegionCore[] rCPool, ref int[] rCIndices,
             int threadId,
@@ -961,5 +965,6 @@ namespace SO.Map
             }
             return null;
         }
+        #endregion
     }
 }

@@ -136,7 +136,7 @@ namespace SO.Map
 
 
                 //Создаём событие, сообщающее о смене владельца RC
-                RCChangeOwnerEvent(
+                RegionCoreChangeOwnerEvent(
                     rC.selfPE,
                     faction.selfPE, rC.ownerFactionPE);
 
@@ -144,10 +144,10 @@ namespace SO.Map
                 //Указываем фракцию-владельца RC
                 rC.ownerFactionPE = faction.selfPE;
 
+                //ТЕСТ
                 //Заносим PE региона в список фракции
                 faction.ownedRCPEs.Add(rC.selfPE);
 
-                //ТЕСТ
                 //Берём ExRFO фракции игрока
                 rC.rFOPEs[faction.selfIndex].rFOPE.Unpack(world.Value, out int rFOEntity);
                 ref CExplorationRegionFractionObject exRFO = ref exRFOPool.Value.Get(rFOEntity);
@@ -166,14 +166,14 @@ namespace SO.Map
 
         }
 
-        readonly EcsPoolInject<ERCChangeOwner> rCChangeOwnerEventPool = default;
-        void RCChangeOwnerEvent(
+        readonly EcsPoolInject<ERegionCoreChangeOwner> rCChangeOwnerEventPool = default;
+        void RegionCoreChangeOwnerEvent(
             EcsPackedEntity regionPE,
             EcsPackedEntity newOwnerFactionPE, EcsPackedEntity oldOwnerFactionPE = new())
         {
             //Создаём новую сущность и назначаем ей событие смены владельца RC
             int eventEntity = world.Value.NewEntity();
-            ref ERCChangeOwner eventComp = ref rCChangeOwnerEventPool.Value.Add(eventEntity);
+            ref ERegionCoreChangeOwner eventComp = ref rCChangeOwnerEventPool.Value.Add(eventEntity);
 
             //Заполняем данные события
             eventComp = new(

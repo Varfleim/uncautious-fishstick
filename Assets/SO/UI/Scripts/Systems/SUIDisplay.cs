@@ -15,12 +15,18 @@ using SO.UI.MainMenu;
 using SO.UI.MainMenu.Events;
 using SO.UI.Game;
 using SO.UI.Game.Map;
+using SO.UI.Game.Map.Events;
+using SO.UI.Game.GUI;
 using SO.UI.Game.Events;
-using SO.UI.Game.Object;
-using SO.UI.Game.Object.Events;
+using SO.UI.Game.GUI.Object;
+using SO.UI.Game.GUI.Object.Faction;
+using SO.UI.Game.GUI.Object.Region;
+using SO.UI.Game.GUI.Object.FleetManager;
+using SO.UI.Game.GUI.Object.Events;
 using SO.Map;
-using SO.Faction;
 using SO.Map.Hexasphere;
+using SO.Faction;
+using SO.Warfare.Fleet;
 
 namespace SO.UI
 {
@@ -41,6 +47,10 @@ namespace SO.UI
         //Фракции
         readonly EcsPoolInject<CFaction> factionPool = default;
 
+        //Военное дело
+        readonly EcsPoolInject<CTaskForce> tFPool = default;
+        readonly EcsPoolInject<CTaskForceDisplayedGUIPanels> tFDisplayedGUIPanelsPool = default;
+        readonly EcsPoolInject<CTaskForceDisplayedMapPanels> tFDisplayedMapPanelsPool = default;
 
         //Общие события
         readonly EcsFilterInject<Inc<RGeneralAction>> generalActionRequestFilter = default;
@@ -64,6 +74,8 @@ namespace SO.UI
             GORegionRenderer.regionRendererPrefab = uIData.Value.regionRendererPrefab;
             CRegionDisplayedMapPanels.mapPanelGroupPrefab = uIData.Value.mapPanelGroup;
             UIRCMainMapPanel.panelPrefab = uIData.Value.rCMainMapPanelPrefab;
+            Game.GUI.Object.FleetManager.Fleets.UITaskForceSummaryPanel.panelPrefab = uIData.Value.fMSbpnFleetsTabTaskForceSummaryPanelPrefab;
+            UITFMainMapPanel.panelPrefab = uIData.Value.tFMainMapPanelPrefab;
 
             //Открываем окно главного меню
             MainMenuOpenWindow();
@@ -78,7 +90,7 @@ namespace SO.UI
                 ref RGeneralAction requestComp = ref generalActionRequestPool.Value.Get(requestEntity);
 
                 //Если запрашивается закрытие игры
-                if(requestComp.actionType == GeneralActionType.QuitGame)
+                if (requestComp.actionType == GeneralActionType.QuitGame)
                 {
                     Debug.LogError("Выход из игры!");
 
@@ -90,7 +102,7 @@ namespace SO.UI
             }
 
             //Если активно окно игры
-            if(sOUI.Value.activeMainWindowType == MainWindowType.Game)
+            if (sOUI.Value.activeMainWindowType == MainWindowType.Game)
             {
                 //Проверяем события в окне игры
                 GameEventCheck();
@@ -99,7 +111,7 @@ namespace SO.UI
                 MapUIMapPanelsUpdate();
             }
             //Иначе, если активно окно главного меню
-            else if(sOUI.Value.activeMainWindowType == MainWindowType.MainMenu)
+            else if (sOUI.Value.activeMainWindowType == MainWindowType.MainMenu)
             {
                 //Проверяем события в окне главного меню
                 MainMenuAction();
@@ -109,7 +121,7 @@ namespace SO.UI
         void CloseMainWindow()
         {
             //Если какое-либо главное окно было активным
-            if(sOUI.Value.activeMainWindowType != MainWindowType.None)
+            if (sOUI.Value.activeMainWindowType != MainWindowType.None)
             {
                 sOUI.Value.activeMainWindow.gameObject.SetActive(false);
                 sOUI.Value.activeMainWindow = null;
@@ -129,7 +141,7 @@ namespace SO.UI
                 ref RMainMenuAction requestComp = ref mainMenuActionRequestPool.Value.Get(requestEntity);
 
                 //Если запрашивается открытие окна игры
-                if(requestComp.actionType == MainMenuActionType.OpenGame)
+                if (requestComp.actionType == MainMenuActionType.OpenGame)
                 {
                     //Создаём запрос создания новой игры
                     NewGameMenuStartNewGame();
@@ -174,6 +186,8 @@ namespace SO.UI
         #endregion
 
         #region Game
+        readonly EcsPoolInject<CNonDeletedUI> nonDeletedUIPool = default;
+
         void GameEventCheck()
         {
             //Проверяем запросы создания панелей
@@ -183,10 +197,13 @@ namespace SO.UI
             GameAction();
 
             //Проверяем запросы действия в панели объекта
-            ObjPnAction();
+            ObjectPnAction();
 
             //Проверяем самозапросы обновления интерфейса объектов
             GameRefreshUISelfRequest();
+
+            //Проверяем самозапросы обновления родителей панелей карты
+            GameRefreshMapPanelsParentSelfRequest();
 
             //Проверяем запросы удаления панелей
             GameDeletePanelRequest();
@@ -197,16 +214,28 @@ namespace SO.UI
         void GameCreatePanelRequest()
         {
             //Для каждого запроса создания панели
-            foreach(int requestEntity in gameCreatePanelRequestFilter.Value)
+            foreach (int requestEntity in gameCreatePanelRequestFilter.Value)
             {
                 //Берём запрос
                 ref RGameCreatePanel requestComp = ref gameCreatePanelRequestPool.Value.Get(requestEntity);
 
                 //Если запрашивается создание главной панели карты региона
-                if(requestComp.panelType == GamePanelType.RegionMainMapPanel)
+                if (requestComp.panelType == GamePanelType.RegionMainMapPanel)
                 {
                     //Создаём главную панель карты региона
                     MapUICreateRegionMainMapPanel(ref requestComp);
+                }
+                //Иначе, если запрашивается создание обзорной панели оперативной группы вкладки флотов менеджера флотов
+                else if (requestComp.panelType == GamePanelType.TaskForceSummaryPanelFMSbpnFleetsTab)
+                {
+                    //Создаём обзорную панель группы
+                    FMSbpnFleetsTabCreateTaskForceSummaryPanel(ref requestComp);
+                }
+                //Иначе, если запрашивается создание главной панели карты оперативной группы
+                else if (requestComp.panelType == GamePanelType.TaskForceMainMapPanel)
+                {
+                    //Создаём главную панель карты
+                    MapUICreateTaskForceMainMapPanel(ref requestComp);
                 }
 
                 gameCreatePanelRequestPool.Value.Del(requestEntity);
@@ -217,14 +246,32 @@ namespace SO.UI
         readonly EcsPoolInject<SRGameRefreshPanels> gameRefreshPanelsSelfRequestPool = default;
         void GameRefreshUISelfRequest()
         {
-            //Обновляем интерфейс регионов и RC
-            GameRefreshUIRegionAndRC();
+            //Обновляем интерфейс регионов
+            GameRefreshUIRegion();
+
+            //Обновляем интерфейс оперативных групп
+            GameRefreshUITaskForce();
 
             //Для каждой сущности с самозапросом обновления панелей
             foreach (int entity in gameRefreshPanelsSelfRequestFilter.Value)
             {
-                //Удаляем самозапрос обновления панелей
+                //Удаляем самозапрос 
                 gameRefreshPanelsSelfRequestPool.Value.Del(entity);
+            }
+        }
+
+        readonly EcsFilterInject<Inc<SRRefreshMapPanelsParent>> refreshMapPanelsParentSelfRequestFilter = default;
+        readonly EcsPoolInject<SRRefreshMapPanelsParent> refreshMapPanelsParentSelfRequestPool = default;
+        void GameRefreshMapPanelsParentSelfRequest()
+        {
+            //Обновляем панели оперативных групп
+            GameRefreshTaskForceMapPanelsParent();
+
+            //Для каждой сущности с самозапросом обновления родителя панелей карты
+            foreach(int entity in refreshMapPanelsParentSelfRequestFilter.Value)
+            {
+                //Удаляем самозапрос
+                refreshMapPanelsParentSelfRequestPool.Value.Del(entity);
             }
         }
 
@@ -233,7 +280,7 @@ namespace SO.UI
         void GameDeletePanelRequest()
         {
             //Для каждого запроса удаления панели
-            foreach(int requestEntity in gameDeletePanelRequestFilter.Value)
+            foreach (int requestEntity in gameDeletePanelRequestFilter.Value)
             {
                 //Берём запрос
                 ref RGameDeletePanel requestComp = ref gameDeletePanelRequestPool.Value.Get(requestEntity);
@@ -241,8 +288,20 @@ namespace SO.UI
                 //Если запрашивается удаление главной панели карты региона
                 if (requestComp.panelType == GamePanelType.RegionMainMapPanel)
                 {
-                    //Удаляем главную панель карты региона
-                    MapUIDeleteRegionMainMapPanel(ref requestComp);
+                    //Удаляем панель карты
+                    MapUIDeleteRegionMainMapPanel(requestComp.objectPE);
+                }
+                //Иначе, если запрашивается удаление обзорной панели оперативной группы вкладки флотов менеджера флотов
+                else if (requestComp.panelType == GamePanelType.TaskForceSummaryPanelFMSbpnFleetsTab)
+                {
+                    //Удаляем обзорную панель
+                    FMSbpnFleetsTabDeleteTaskForceSummaryPanel(requestComp.objectPE);
+                }
+                //Иначе, если запрашивается удаление главной панели карты оперативной группы
+                else if(requestComp.panelType == GamePanelType.TaskForceMainMapPanel)
+                {
+                    //Удаляем панель карты
+                    MapUIDeleteTaskForceMainMapPanel(requestComp.objectPE);
                 }
 
                 gameDeletePanelRequestPool.Value.Del(requestEntity);
@@ -254,13 +313,13 @@ namespace SO.UI
         void GameAction()
         {
             //Для каждого запроса действия в игре
-            foreach(int requestEntity in gameActionRequestFilter.Value)
+            foreach (int requestEntity in gameActionRequestFilter.Value)
             {
                 //Берём запрос
                 ref RGameAction requestComp = ref gameActionRequestPool.Value.Get(requestEntity);
 
                 //Применяем состояние паузы
-                if(requestComp.actionType == GameActionType.PauseOn || requestComp.actionType == GameActionType.PauseOff)
+                if (requestComp.actionType == GameActionType.PauseOn || requestComp.actionType == GameActionType.PauseOff)
                 {
                     GamePause(requestComp.actionType);
                 }
@@ -289,13 +348,13 @@ namespace SO.UI
             GameActionType pauseMode)
         {
             //Если требуется включить паузу
-            if(pauseMode == GameActionType.PauseOn)
+            if (pauseMode == GameActionType.PauseOn)
             {
                 //Указываем, что игра неактивна
                 runtimeData.Value.isGameActive = false;
             }
             //Иначе
-            else if(pauseMode == GameActionType.PauseOff)
+            else if (pauseMode == GameActionType.PauseOff)
             {
                 //Указываем, что игра активна
                 runtimeData.Value.isGameActive = true;
@@ -303,21 +362,74 @@ namespace SO.UI
         }
 
         readonly EcsFilterInject<Inc<CRegionCore, CRegionDisplayedMapPanels, SRGameRefreshPanels>> regionRefreshMapPanelsSelfRequestFilter = default;
-        void GameRefreshUIRegionAndRC()
+        void GameRefreshUIRegion()
         {
             //Для каждого региона с компонентом панелей карты и самозапросом обновления панелей
-            foreach(int regionEntity in regionRefreshMapPanelsSelfRequestFilter.Value)
+            foreach (int regionEntity in regionRefreshMapPanelsSelfRequestFilter.Value)
             {
-                //Берём регион, компонент панелей и самозапрос обновления
+                //Берём регион и компонент панелей
                 ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
                 ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
-                ref SRGameRefreshPanels selfRequestComp = ref gameRefreshPanelsSelfRequestPool.Value.Get(regionEntity);
 
                 //Если регион имеет отображаемую главную панель
-                if(regionDisplayedMapPanels.mainMapPanel != null)
+                if (regionDisplayedMapPanels.mainMapPanel != null)
                 {
                     //Обновляем её
                     regionDisplayedMapPanels.mainMapPanel.RefreshPanel(ref rC);
+                }
+            }
+        }
+
+        readonly EcsFilterInject<Inc<CTaskForce, CTaskForceDisplayedGUIPanels, SRGameRefreshPanels>> tFRefreshGUIPanelsSelfRequestFilter = default;
+        readonly EcsFilterInject<Inc<CTaskForce, CTaskForceDisplayedMapPanels, SRGameRefreshPanels>> tFRefreshMapPanelsSelfRequestFilter = default;
+        void GameRefreshUITaskForce()
+        {
+            //Для каждой оперативной группы с компонентом панелей GUI и самозапросом обновления панелей
+            foreach (int tFEntity in tFRefreshGUIPanelsSelfRequestFilter.Value)
+            {
+                //Берём оперативную группу и компонент панелей
+                ref CTaskForce tF = ref tFPool.Value.Get(tFEntity);
+                ref CTaskForceDisplayedGUIPanels tFDisplayedGUIPanels = ref tFDisplayedGUIPanelsPool.Value.Get(tFEntity);
+
+                //Если группа имеет отображаемую обзорную панель вкладки флотов менеджера флотов
+                if (tFDisplayedGUIPanels.fMSbpnFleetsTabSummaryPanel != null)
+                {
+                    //Обновляем её
+                    tFDisplayedGUIPanels.fMSbpnFleetsTabSummaryPanel.RefreshPanel(ref tF);
+                }
+            }
+
+            //Для каждой группы с компонентом панелей карты и самозапросом обновления панелей
+            foreach(int tFEntity in tFRefreshMapPanelsSelfRequestFilter.Value)
+            {
+                //Берём оперативную группу и компонент панелей
+                ref CTaskForce tF = ref tFPool.Value.Get(tFEntity);
+                ref CTaskForceDisplayedMapPanels tFDisplayedMapPanels = ref tFDisplayedMapPanelsPool.Value.Get(tFEntity);
+
+                //Если группа имеет отображаемую главную панель карты
+                if(tFDisplayedMapPanels.mainMapPanel != null)
+                {
+                    //Обновляем её
+                    tFDisplayedMapPanels.mainMapPanel.RefreshPanel(ref tF);
+                }
+            }
+        }
+
+        readonly EcsFilterInject<Inc<CTaskForce, CTaskForceDisplayedMapPanels, SRRefreshMapPanelsParent>> tFRefreshMapPanelsParentSelfRequestFilter = default;
+        void GameRefreshTaskForceMapPanelsParent()
+        {
+            //Для каждой оперативной группы с компонентом панелей карты и самозапросом обновления родителей
+            foreach(int tFEntity in tFRefreshMapPanelsParentSelfRequestFilter.Value)
+            {
+                //Берём группу и компонент панелей карты
+                ref CTaskForce tF = ref tFPool.Value.Get(tFEntity);
+                ref CTaskForceDisplayedMapPanels tFDisplayedMapPanels = ref tFDisplayedMapPanelsPool.Value.Get(tFEntity);
+                
+                //Если группа имеет отображаемую главную панель карты
+                if(tFDisplayedMapPanels.mainMapPanel != null)
+                {
+                    //Обновляем её родителя
+                    MapUISetParentTaskForceMainMapPanel(ref tF, ref tFDisplayedMapPanels);
                 }
             }
         }
@@ -326,56 +438,58 @@ namespace SO.UI
         void MapUIMapPanelsUpdate()
         {
             //Для каждого региона с панелями карты
-            foreach(int regionEntity in regionDisplayedMapPanelsFilter.Value)
+            foreach (int regionEntity in regionDisplayedMapPanelsFilter.Value)
             {
                 //Берём компонент панелей карты
                 ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
 
                 float d = Vector3.Dot(
-                    Camera.main.transform.position.normalized, 
+                    Camera.main.transform.position.normalized,
                     regionDisplayedMapPanels.mapPanelGroup.transform.position.normalized);
 
                 regionDisplayedMapPanels.mapPanelGroup.transform.LookAt(Vector3.zero, Vector3.up);
                 d = Mathf.Clamp01(d);
                 regionDisplayedMapPanels.mapPanelGroup.transform.rotation = Quaternion.Lerp(
-                    regionDisplayedMapPanels.mapPanelGroup.transform.rotation, 
+                    regionDisplayedMapPanels.mapPanelGroup.transform.rotation,
                     Quaternion.LookRotation(
-                        regionDisplayedMapPanels.mapPanelGroup.transform.position - Camera.main.transform.position, 
-                        Camera.main.transform.up), 
+                        regionDisplayedMapPanels.mapPanelGroup.transform.position - Camera.main.transform.position,
+                        Camera.main.transform.up),
                     d);
             }
         }
 
-        void MapUICreateRCMapPanelGroup(
-            ref CRegionCore rc)
+        void MapUICreateRegionDisplayedMapPanels(
+            ref CRegionHexasphere rHS)
         {
             //Берём сущность региона
-            rc.selfPE.Unpack(world.Value, out int regionEntity);
+            rHS.selfPE.Unpack(world.Value, out int regionEntity);
 
-            //Если регион не имеет компонент панелей карты
+            //Если регион не имеет компонента панелей карты
             if (regionDisplayedMapPanelsPool.Value.Has(regionEntity) == false)
             {
-                //Берём компонент визуализации региона и назначаем региону компонент панелей карты
-                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+                //Назначаем региону компонент панелей карты
                 ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Add(regionEntity);
+
+                //Заполняем данные компонента
+                regionDisplayedMapPanels = new(0);
 
                 //Создаём новый объект группы панелей карты
                 CRegionDisplayedMapPanels.InstantiateMapPanelGroup(
                     ref rHS, ref regionDisplayedMapPanels,
                     mapGenerationData.Value.hexasphereScale,
                     uIData.Value.mapPanelAltitude);
-            } 
+            }
         }
 
-        void MapUIDeleteRCMapPanelGroup(
+        void MapUIDeleteRegionDisplayedMapPanels(
             EcsPackedEntity regionPE)
         {
             //Берём сущность региона и компонент панелей карты
             regionPE.Unpack(world.Value, out int regionEntity);
-            ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Add(regionEntity);
+            ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
 
             //Если никакая из панелей не существует
-            if(regionDisplayedMapPanels.mainMapPanel == null)
+            if (regionDisplayedMapPanels.mainMapPanel == null)
             {
                 //Кэшируем группу панелей
                 CRegionDisplayedMapPanels.CacheMapPanelGroup(ref regionDisplayedMapPanels);
@@ -388,12 +502,13 @@ namespace SO.UI
         void MapUICreateRegionMainMapPanel(
             ref RGameCreatePanel requestComp)
         {
-            //Берём RC
+            //Берём RC и компонент визуализации региона
             requestComp.objectPE.Unpack(world.Value, out int regionEntity);
             ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+            ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
 
             //Создаём компонент панелей карты, если необходимо
-            MapUICreateRCMapPanelGroup(ref rC);
+            MapUICreateRegionDisplayedMapPanels(ref rHS);
 
             //Берём компонент панелей карты
             ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
@@ -404,18 +519,121 @@ namespace SO.UI
         }
 
         void MapUIDeleteRegionMainMapPanel(
-            ref RGameDeletePanel requestComp)
+            EcsPackedEntity regionPE)
         {
-            //Берём RC и компонент панелей карты
-            requestComp.objectPE.Unpack(world.Value, out int regionEntity);
+            //Берём компонент панелей карты
+            regionPE.Unpack(world.Value, out int regionEntity);
             ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
 
             //Кэшируем главную панель карты
-            UIRCMainMapPanel.CachePanel(
-                ref regionDisplayedMapPanels);
+            UIRCMainMapPanel.CachePanel(ref regionDisplayedMapPanels);
 
             //Удаляем компонент панелей карты, если необходимо
-            MapUIDeleteRCMapPanelGroup(requestComp.objectPE);
+            MapUIDeleteRegionDisplayedMapPanels(regionPE);
+        }
+
+        void MapUICreateTaskForceDisplayedMapPanels(
+            ref CTaskForce tF)
+        {
+            //Берём сущность оперативной группы
+            tF.selfPE.Unpack(world.Value, out int tFEntity);
+
+            //Если группа не имеет компонента панелей карты
+            if (tFDisplayedMapPanelsPool.Value.Has(tFEntity) == false)
+            {
+                //Назначаем группе компонент панелей карты
+                ref CTaskForceDisplayedMapPanels tFDisplayedMapPanels = ref tFDisplayedMapPanelsPool.Value.Add(tFEntity);
+            }
+        }
+
+        void MapUIDeleteTaskForceDisplayedMapPanels(
+            EcsPackedEntity tFPE)
+        {
+            //Берём сущность оперативной группы и компонент панелей карты
+            tFPE.Unpack(world.Value, out int tFEntity);
+            ref CTaskForceDisplayedMapPanels tFDisplayedMapPanels = ref tFDisplayedMapPanelsPool.Value.Get(tFEntity);
+
+            //Если никакая из панелей не существует
+            if (tFDisplayedMapPanels.mainMapPanel == null)
+            {
+                //Удаляем с сущности группы компонент панелей карты
+                tFDisplayedMapPanelsPool.Value.Del(tFEntity);
+            }
+        }
+
+        void MapUICreateTaskForceMainMapPanel(
+            ref RGameCreatePanel requestComp)
+        {
+            //Берём оперативную группу
+            requestComp.objectPE.Unpack(world.Value, out int tFEntity);
+            ref CTaskForce tF = ref tFPool.Value.Get(tFEntity);
+
+            //Создаём компонент панелей карты, если необходимо
+            MapUICreateTaskForceDisplayedMapPanels(ref tF);
+
+            //Берём компонент панелей карты
+            ref CTaskForceDisplayedMapPanels tFDisplayedMapPanels = ref tFDisplayedMapPanelsPool.Value.Get(tFEntity);
+
+            //Создаём главную панель карты
+            UITFMainMapPanel.InstantiatePanel(
+                ref tF, ref tFDisplayedMapPanels);
+
+            //Прикрепляем панель к текущему региону группы
+            MapUISetParentTaskForceMainMapPanel(ref tF, ref tFDisplayedMapPanels);
+        }
+
+        void MapUISetParentTaskForceMainMapPanel(
+            ref CTaskForce tF, ref CTaskForceDisplayedMapPanels tFDisplayedMapPanels)
+        {
+            //Если предыдущий регион оперативной группы существует
+            if(tF.previousRegionPE.Unpack(world.Value, out int previousRegionEntity))
+            {
+                //Берём компонент панелей карты предыдущего региона 
+                ref CRegionDisplayedMapPanels previousRegionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(previousRegionEntity);
+
+                //Открепляем панель группы от него
+                previousRegionDisplayedMapPanels.CancelParentTaskForceMainMapPanel(tFDisplayedMapPanels.mainMapPanel);
+            }
+
+            //Обновляем текущий регион в компоненте панелей карты группы
+            tFDisplayedMapPanels.currentRegionPE = tF.currentRegionPE;
+
+            //Берём текущий регион группы
+            tF.currentRegionPE.Unpack(world.Value, out int currentRegionEntity);
+            ref CRegionHexasphere rHS = ref rHSPool.Value.Get(currentRegionEntity);
+
+            //Создаём компонент панелей карты, если необходимо
+            MapUICreateRegionDisplayedMapPanels(ref rHS);
+
+            //Берём компонент панелей карты
+            ref CRegionDisplayedMapPanels currentRegionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(currentRegionEntity);
+
+            //Прикрепляем к нему главную панель карты группы
+            currentRegionDisplayedMapPanels.SetParentTaskForceMainMapPanel(tFDisplayedMapPanels.mainMapPanel);
+        }
+
+        void MapUIDeleteTaskForceMainMapPanel(
+            EcsPackedEntity tFPE)
+        {
+            //Берём компонент панелей карты
+            tFPE.Unpack(world.Value, out int tFEntity);
+            ref CTaskForceDisplayedMapPanels tFDisplayedMapPanels = ref tFDisplayedMapPanelsPool.Value.Get(tFEntity);
+
+            //Берём компонент панелей карты текущего региона группы
+            tFDisplayedMapPanels.currentRegionPE.Unpack(world.Value, out int currentRegionEntity);
+            ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(currentRegionEntity);
+
+            //Открепляем панель группы от него
+            regionDisplayedMapPanels.CancelParentTaskForceMainMapPanel(tFDisplayedMapPanels.mainMapPanel);
+
+            //Кэшируем главную панель карты
+            UITFMainMapPanel.CachePanel(ref tFDisplayedMapPanels);
+
+            //Удаляем компонент панелей карты с группы, если необходимо
+            MapUIDeleteTaskForceDisplayedMapPanels(tFPE);
+
+            //Удаляем компонент панелей карты с региона, если необходимо
+            MapUIDeleteRegionDisplayedMapPanels(tFDisplayedMapPanels.currentRegionPE);
         }
 
         void ParentAndAlignToRegion(
@@ -444,61 +662,104 @@ namespace SO.UI
         }
         #endregion
 
+        #region GUI
+        readonly EcsFilterInject<Inc<CTaskForce, CNonDeletedUI>> taskForceNonDeletedUIFilter = default;
+        readonly EcsFilterInject<Inc<CTaskForceDisplayedGUIPanels, CNonDeletedUI>> taskForceDisplayedNonDeletedGUIFilter = default;
+        readonly EcsFilterInject<Inc<CTaskForceDisplayedGUIPanels>, Exc<CNonDeletedUI>> taskForceDisplayedDeletedGUIFilter = default;
+
+        void GUIOpenPanel(
+            GameObject currentPanel, MainPanelType currentPanelType,
+            out bool isSamePanel)
+        {
+            //Значение по умолчанию отрицательно
+            isSamePanel = false;
+
+            //Берём окно игры
+            UIGameWindow gameWindow = sOUI.Value.gameWindow;
+
+            //Если открыта необходимая панель
+            if(gameWindow.activeMainPanelType == currentPanelType)
+            {
+                //Сообщаем, что была открыта та же панель
+                isSamePanel = true;
+            }
+
+            //Если была открыта та же панель
+            if (isSamePanel == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+                //Отображаем запрошенную панель
+
+                //Если какая-либо панель была активна
+                if (gameWindow.activeMainPanelType != MainPanelType.None)
+                {
+                    //Скрываем её
+                    gameWindow.activeMainPanel.SetActive(false);
+                }
+
+                //Делаем запрошенную панель активной
+                currentPanel.SetActive(true);
+
+                //Указываем её как активную панель
+                gameWindow.activeMainPanelType = currentPanelType;
+                gameWindow.activeMainPanel = currentPanel;
+            }
+        }
+
+        void GUICreateTFUIPanels(
+            ref CTaskForce tF)
+        {
+            //Берём сущность группы
+            tF.selfPE.Unpack(world.Value, out int tFEntity);
+
+            //Если группа не имеет компонента панелей GUI
+            if (tFDisplayedGUIPanelsPool.Value.Has(tFEntity) == false)
+            {
+                //Назначаем ей компонент панелей GUI
+                ref CTaskForceDisplayedGUIPanels tFDisplayedGUIPanels = ref tFDisplayedGUIPanelsPool.Value.Add(tFEntity);
+            }
+        }
+
+        void GUIDeleteTaskForceGUIPanels(
+            EcsPackedEntity tFPE)
+        {
+            //Берём сущность оперативной группы и компонент панелей GUI
+            tFPE.Unpack(world.Value, out int tFEntity);
+            ref CTaskForceDisplayedGUIPanels tFDisplayedGUIPanels = ref tFDisplayedGUIPanelsPool.Value.Get(tFEntity);
+
+            //Если никакая из панелей не существует
+            if (tFDisplayedGUIPanels.fMSbpnFleetsTabSummaryPanel == null)
+            {
+                //Удаляем с сущности группы компонент панелей GUI
+                tFDisplayedGUIPanelsPool.Value.Del(tFEntity);
+            }
+        }
+
         #region ObjectPanel
         readonly EcsFilterInject<Inc<RGameObjectPanelAction>> gameObjectPanelRequestFilter = default;
         readonly EcsPoolInject<RGameObjectPanelAction> gameObjectPanelRequestPool = default;
-        void ObjPnAction()
+        void ObjectPnAction()
         {
-            //Берём панель объекта
-            UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
-
             //Для каждого запроса действия в игре
             foreach (int requestEntity in gameObjectPanelRequestFilter.Value)
             {
                 //Берём запрос
                 ref RGameObjectPanelAction requestComp = ref gameObjectPanelRequestPool.Value.Get(requestEntity);
 
-                //Отображаем панель объекта
-                ObjPnShow();
-
-                //Если запрашивается отображение панели фракции
-                if (requestComp.requestType == ObjectPanelActionRequestType.Faction)
+                //Если запрашивается закрытие панели объекта
+                if (requestComp.requestType == ObjectPanelActionRequestType.Close)
                 {
-                    //Отображаем подпанель фракции
-                    ObjPnShowFactionSubpanel(ref requestComp);
-                }
-                //Если запрашивается отображение панели региона
-                else if(requestComp.requestType == ObjectPanelActionRequestType.Region)
-                {
-                    //Отображаем подпанель региона
-                    ObjPnShowRegionSubpanel(ref requestComp);
+                    //Закрываем панель объекта
+                    ObjectPnClose();
                 }
 
-                //Иначе, если запрашивается закрытие панели объекта
-                else if(requestComp.requestType == ObjectPanelActionRequestType.Close)
-                {
-                    //Если активна подпанель фракции
-                    if(objectPanel.activeObjectSubpanelType == ObjectSubpanelType.Faction)
-                    {
-                        //Скрываем подпанель фракции 
-                        ObjPnHideFactionSubpanel();
-                    }
-                    //Иначе, если активна подпанель региона
-                    else if(objectPanel.activeObjectSubpanelType == ObjectSubpanelType.Region)
-                    {
-                        //Скрываем подпанель региона
-                        ObjPnHideRegionSubpanel();
-                    }
-
-                    //Скрываем подпанель объекта
-                    ObjPnHideObjectSubpanel();
-
-                    //Скрываем панель объекта
-                    ObjPnHide();
-                }
-
-                //Иначе, если активна подпанель фракции
-                else if(objectPanel.activeObjectSubpanelType == ObjectSubpanelType.Faction)
+                //Иначе, если запрашивается отображение вкладок фракции
+                else if(requestComp.requestType >= ObjectPanelActionRequestType.FactionOverview
+                    && requestComp.requestType <= ObjectPanelActionRequestType.FactionOverview)
                 {
                     //Берём фракцию
                     requestComp.objectPE.Unpack(world.Value, out int factionEntity);
@@ -508,13 +769,12 @@ namespace SO.UI
                     if (requestComp.requestType == ObjectPanelActionRequestType.FactionOverview)
                     {
                         //Отображаем обзорную вкладку фракции
-                        FactionSbpnShowOverviewTab(
-                            ref faction,
-                            requestComp.isRefresh);
+                        FactionSbpnShowOverviewTab(ref faction);
                     }
                 }
-                //Иначе, если активна подпанель региона
-                else if(objectPanel.activeObjectSubpanelType == ObjectSubpanelType.Region)
+                //Иначе, если запрашивается отображение вкладок региона
+                else if(requestComp.requestType >= ObjectPanelActionRequestType.RegionOverview
+                    && requestComp.requestType <= ObjectPanelActionRequestType.RegionOverview)
                 {
                     //Берём регион
                     requestComp.objectPE.Unpack(world.Value, out int regionEntity);
@@ -525,9 +785,22 @@ namespace SO.UI
                     if (requestComp.requestType == ObjectPanelActionRequestType.RegionOverview)
                     {
                         //Отображаем обзорную вкладку региона
-                        RegionSbpnShowOverviewTab(
-                            ref rHS, ref rC,
-                            requestComp.isRefresh);
+                        RegionSbpnShowOverviewTab(ref rHS, ref rC);
+                    }
+                }
+                //Иначе, если запрашивается отображение вкладок менеджера флотов
+                else if(requestComp.requestType >= ObjectPanelActionRequestType.FleetManagerFleets
+                    && requestComp.requestType <= ObjectPanelActionRequestType.FleetManagerFleets)
+                {
+                    //Берём фракцию
+                    requestComp.objectPE.Unpack(world.Value, out int factionEntity);
+                    ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+
+                    //Если запрашивается отображение вкладки флотов
+                    if (requestComp.requestType == ObjectPanelActionRequestType.FleetManagerFleets)
+                    {
+                        //Отображаем вкладку флотов
+                        FleetManagerSbpnShowFleetsTab(ref faction);
                     }
                 }
 
@@ -535,195 +808,609 @@ namespace SO.UI
             }
         }
 
-        void ObjPnShow()
-        {
-            //Берём окно игры
-            UIGameWindow gameWindow = sOUI.Value.gameWindow;
-
-            //Если какая-либо главная панель активна
-            if(gameWindow.activeMainPanelType != MainPanelType.None)
-            {
-                //Скрываем её
-                gameWindow.activeMainPanel.SetActive(false);
-            }
-
-            //Делаем панель объекта активной
-            gameWindow.objectPanel.gameObject.SetActive(true);
-
-            //Указываем её как активную главную панель
-            gameWindow.activeMainPanelType = MainPanelType.Object;
-            gameWindow.activeMainPanel = gameWindow.objectPanel.gameObject;
-        }
-
-        void ObjPnHide()
-        {
-            //Берём окно игры
-            UIGameWindow gameWindow = sOUI.Value.gameWindow;
-
-            //Скрываем панель объекта
-            gameWindow.objectPanel.gameObject.SetActive(false);
-
-            //Указываем, что нет активной главной панели
-            gameWindow.activeMainPanelType = MainPanelType.None;
-            gameWindow.activeMainPanel = null;
-        }
-
-        void ObjPnShowObjectSubpanel(
-            ObjectSubpanelType objectSubpanelType, UIAObjectSubpanel objectSubpanel)
+        void ObjectPnClose()
         {
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Если какая-либо подпанель активна, скрываем её
-            if(objectPanel.activeObjectSubpanelType != ObjectSubpanelType.None)
+            //Если активна подпанель фракции
+            if (objectPanel.activeSubpanelType == ObjectSubpanelType.Faction)
             {
-                objectPanel.activeObjectSubpanel.gameObject.SetActive(false);
+                //Скрываем активную вкладку
+                objectPanel.factionSubpanel.HideActiveTab();
+            }
+            //Иначе, если активна подпанель региона
+            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.Region)
+            {
+                //Скрываем активную вкладку
+                objectPanel.regionSubpanel.HideActiveTab();
+            }
+            //Иначе, если активна подпанель менеджера флотов
+            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.FleetManager)
+            {
+                //Скрываем активную вкладку
+                objectPanel.fleetManagerSubpanel.HideActiveTab();
             }
 
-            //Делаем запрошенную подпанель активной
-            objectSubpanel.gameObject.SetActive(true);
+            //Скрываем активную подпанель объекта
+            objectPanel.HideActiveSubpanel();
 
-            //Указываем её как активную подпанель
-            objectPanel.activeObjectSubpanelType = objectSubpanelType;
-            objectPanel.activeObjectSubpanel = objectSubpanel;
-
-            //Устанавливаем ширину панели заголовка соответственно запрошенной подпанели
-            objectPanel.titlePanel.offsetMax = new Vector2(
-                objectSubpanel.parentRect.offsetMax.x, objectPanel.titlePanel.offsetMax.y);
+            //Скрываем активную главную панель
+            sOUI.Value.gameWindow.HideActivePanel();
         }
 
-        void ObjPnHideObjectSubpanel()
+        void ObjectPnOpenSubpanel(
+            UIAObjectSubpanel currentSubpanel, ObjectSubpanelType currentSubpanelType,
+            out bool isSamePanel,
+            out bool isSameSubpanel)
         {
+            //Значение по умолчанию отрицательно
+            isSameSubpanel = false;
+
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Скрываем активную подпанель
-            objectPanel.activeObjectSubpanel.gameObject.SetActive(false);
+            //Отображаем панель объекта, если необходимо
+            GUIOpenPanel(
+                objectPanel.gameObject, MainPanelType.Object,
+                out isSamePanel);
 
-            //Указываем, что нет активной подпанели
-            objectPanel.activeObjectSubpanelType = ObjectSubpanelType.None;
-            objectPanel.activeObjectSubpanel = null;
+            //Если открыта необходимая подпанель
+            if(objectPanel.activeSubpanelType == currentSubpanelType)
+            {
+                //Если была открыта та же панель
+                if(isSamePanel == true)
+                {
+                    //Сообщаем, что была открыта та же подпанель
+                    isSameSubpanel = true;
+                }
+            }
 
-            //Очищаем PE активного объекта
-            objectPanel.activeObjectPE = new();
+            //Если была открыта та же панель
+            if (isSamePanel == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+
+            }
+
+            //Если была открыта та же подпанель 
+            if (isSameSubpanel == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+                //Отображаем запрошенную подпанель
+
+                //Если какая-либо подпанель была активна, скрываем её
+                if (objectPanel.activeSubpanelType != ObjectSubpanelType.None)
+                {
+                    objectPanel.activeSubpanel.gameObject.SetActive(false);
+                }
+
+                //Делаем запрошенную подпанель активной
+                currentSubpanel.gameObject.SetActive(true);
+
+                //Указываем её как активную подпанель
+                objectPanel.activeSubpanelType = currentSubpanelType;
+                objectPanel.activeSubpanel = currentSubpanel;
+
+                //Устанавливаем ширину панели заголовка соответственно запрошенной подпанели
+                objectPanel.titlePanel.offsetMax = new Vector2(
+                    currentSubpanel.parentRect.offsetMax.x, objectPanel.titlePanel.offsetMax.y);
+            }
         }
 
         #region FactionSubpanel
-        void ObjPnShowFactionSubpanel(
-            ref RGameObjectPanelAction requestComp)
+        void FactionSbpnShowTab(
+            UIASubpanelTab currentFactionTab,
+            ref CFaction currentFaction,
+            out bool isSamePanel,
+            out bool isSameSubpanel,
+            out bool isSameTab,
+            out bool isSameObject)
         {
-            //Берём фракцию
-            requestComp.objectPE.Unpack(world.Value, out int factionEntity);
-            ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+            //Значения по умолчанию отрицательны
+            isSameTab = false;
+            isSameObject = false;
 
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Отображаем подпанель
-            ObjPnShowObjectSubpanel(
-                ObjectSubpanelType.Faction, objectPanel.factionSubpanel);
+            //Берём подпанель фракции
+            UIFactionSubpanel factionSubpanel = objectPanel.factionSubpanel;
 
-            //Указываем PE фракции
-            objectPanel.activeObjectPE = faction.selfPE;
+            //Отображаем подпанель фракции, если необходимо
+            ObjectPnOpenSubpanel(
+                factionSubpanel, ObjectSubpanelType.Faction,
+                out isSamePanel,
+                out isSameSubpanel);
 
-            //Отображаем, что это подпанель фракции
-            objectPanel.objectName.text = "Faction";
+            //Если открыта необходимая вкладка
+            if (factionSubpanel.activeTab == currentFactionTab)
+            {
+                //Если была открыта та же подпанель
+                if(isSameSubpanel == true)
+                {
+                    //Сообщаем, что была открыта та же вкладка
+                    isSameTab = true;
 
+                    //Если вкладка была открыта для той же фракции
+                    if (factionSubpanel.activeTab.objectPE.EqualsTo(currentFaction.selfPE) == true)
+                    {
+                        //То сообщаем, что был отображён тот же объект
+                        isSameObject = true;
+                    }
+                }
+            }
 
-            //Отображаем обзорную вкладку
-            FactionSbpnShowOverviewTab(
-                ref faction,
-                false);
-        }
+            //Если была открыта та же панель
+            if (isSamePanel == true)
+            {
 
-        void ObjPnHideFactionSubpanel()
-        {
+            }
+            //Иначе
+            else
+            {
 
+            }
+
+            //Если была открыта та же подпанель 
+            if (isSameSubpanel == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+
+            }
+
+            //Если была открыта та же вкладка
+            if (isSameTab == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+                //Отображаем запрошенную вкладку
+                factionSubpanel.tabGroup.OnTabSelected(currentFactionTab.selfTabButton);
+
+                //Указываем её как активную вкладку
+                factionSubpanel.activeTab = currentFactionTab;
+            }
+
+            //Если был отображён тот же объект
+            if (isSameObject == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+                //Указываем PE текущей фракции
+                factionSubpanel.activeTab.objectPE = currentFaction.selfPE;
+
+                //Отображаем название панели - название фракции
+                objectPanel.objectName.text = currentFaction.selfIndex.ToString();
+            }
         }
 
         void FactionSbpnShowOverviewTab(
-            ref CFaction faction,
-            bool isRefresh)
+            ref CFaction faction)
         {
             //Берём подпанель фракции
             UIFactionSubpanel factionSubpanel = sOUI.Value.gameWindow.objectPanel.factionSubpanel;
 
             //Берём обзорную вкладку
-            Game.Object.Faction.UIOverviewTab overviewTab = factionSubpanel.overviewTab;
+            Game.GUI.Object.Faction.UIOverviewTab overviewTab = factionSubpanel.overviewTab;
 
             //Отображаем обзорную вкладку
-            factionSubpanel.tabGroup.OnTabSelected(overviewTab.selfTabButton);
-
-            //Если производится обновление
-            if(isRefresh == true)
-            {
-
-            }
+            FactionSbpnShowTab(
+                overviewTab,
+                ref faction,
+                out bool isSamePanel,
+                out bool isSameSubpanel,
+                out bool isSameTab,
+                out bool isSameObject);
         }
         #endregion
 
         #region RegionSubpanel
-        void ObjPnShowRegionSubpanel(
-            ref RGameObjectPanelAction requestComp)
+        void RegionSbpnShowTab(
+            UIASubpanelTab currentRegionTab,
+            ref CRegionCore currentRC,
+            out bool isSamePanel,
+            out bool isSameSubpanel,
+            out bool isSameTab,
+            out bool isSameObject)
         {
-            //Берём регион
-            requestComp.objectPE.Unpack(world.Value, out int regionEntity);
-            ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
-            ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+            //Значения по умолчанию отрицательны
+            isSameTab = false;
+            isSameObject = false;
 
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Отображаем подпанель
-            ObjPnShowObjectSubpanel(
-                ObjectSubpanelType.Region, objectPanel.regionSubpanel);
+            //Берём подпанель региона
+            UIRegionSubpanel regionSubpanel = objectPanel.regionSubpanel;
 
-            //Указываем PE региона
-            objectPanel.activeObjectPE = rHS.selfPE;
+            //Отображаем подпанель региона, если необходимо
+            ObjectPnOpenSubpanel(
+                regionSubpanel, ObjectSubpanelType.Region,
+                out isSamePanel,
+                out isSameSubpanel);
 
-            //Отображаем, что это подпанель региона
-            objectPanel.objectName.text = rC.Index.ToString();
+            //Если открыта необходимая вкладка
+            if (regionSubpanel.activeTab == currentRegionTab)
+            {
+                //Если была открыта та же подпанель
+                if (isSameSubpanel == true)
+                {
+                    //Сообщаем, что была открыта та же вкладка
+                    isSameTab = true;
 
+                    //Если вкладка была открыта для того же региона
+                    if (regionSubpanel.activeTab.objectPE.EqualsTo(currentRC.selfPE) == true)
+                    {
+                        //То сообщаем, что был отображён тот же объект
+                        isSameObject = true;
+                    }
+                }
+            }
 
-            //Отображаем обзорную вкладку
-            RegionSbpnShowOverviewTab(
-                ref rHS, ref rC,
-                false);
-        }
+            //Если была открыта та же панель
+            if (isSamePanel == true)
+            {
 
-        void ObjPnHideRegionSubpanel()
-        {
+            }
+            //Иначе
+            else
+            {
 
+            }
+
+            //Если была открыта та же подпанель 
+            if (isSameSubpanel == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+
+            }
+
+            //Если была открыта та же вкладка
+            if (isSameTab == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+                //Отображаем запрошенную вкладку
+                regionSubpanel.tabGroup.OnTabSelected(currentRegionTab.selfTabButton);
+
+                //Указываем её как активную вкладку
+                regionSubpanel.activeTab = currentRegionTab;
+            }
+
+            //Если был отображён тот же объект
+            if (isSameObject == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+                //Указываем PE текущего региона
+                regionSubpanel.activeTab.objectPE = currentRC.selfPE;
+
+                //Отображаем название панели - название региона
+                objectPanel.objectName.text = currentRC.Index.ToString();
+            }
         }
 
         void RegionSbpnShowOverviewTab(
-            ref CRegionHexasphere rHS, ref CRegionCore rC,
-            bool isRefresh)
+            ref CRegionHexasphere rHS, ref CRegionCore rC)
         {
             //Берём подпанель региона
             UIRegionSubpanel regionSubpanel = sOUI.Value.gameWindow.objectPanel.regionSubpanel;
 
             //Берём обзорную вкладку
-            Game.Object.Region.UIOverviewTab overviewTab = regionSubpanel.overviewTab;
+            Game.GUI.Object.Region.UIOverviewTab overviewTab = regionSubpanel.overviewTab;
 
             //Отображаем обзорную вкладку
-            regionSubpanel.tabGroup.OnTabSelected(overviewTab.selfTabButton);
+            RegionSbpnShowTab(
+                overviewTab,
+                ref rC,
+                out bool isSamePanel,
+                out bool isSameSubpanel,
+                out bool isSameTab,
+                out bool isSameObject);
 
             //Берём фракцию игрока
             inputData.Value.playerFactionPE.Unpack(world.Value, out int factionEntity);
             ref CFaction faction = ref factionPool.Value.Get(factionEntity);
 
-            //Если производится обновление
-            if(isRefresh == true)
-            {
-                //Берём ExRFO фракции игрока
-                rC.rFOPEs[faction.selfIndex].rFOPE.Unpack(world.Value, out int rFOEntity);
-                ref CExplorationRegionFractionObject exRFO = ref exRFOPool.Value.Get(rFOEntity);
+            //Берём ExRFO фракции игрока
+            rC.rFOPEs[faction.selfIndex].rFOPE.Unpack(world.Value, out int rFOEntity);
+            ref CExplorationRegionFractionObject exRFO = ref exRFOPool.Value.Get(rFOEntity);
 
-                //Отображаем уровень исследования региона
-                overviewTab.explorationLevel.text = exRFO.explorationLevel.ToString();
+            //Отображаем уровень исследования региона
+            overviewTab.explorationLevel.text = exRFO.explorationLevel.ToString();
+        }
+        #endregion
+
+        #region FleetManager
+        void FleetManagerSbpnShowTab(
+            UIASubpanelTab currentFleetManagerTab,
+            ref CFaction currentFaction,
+            out bool isSamePanel,
+            out bool isSameSubpanel,
+            out bool isSameTab,
+            out bool isSameObject)
+        {
+            //Значения по умолчанию отрицательны
+            isSameTab = false;
+            isSameObject = false;
+
+            //Берём панель объекта
+            UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
+
+            //Берём подпанель менеджера флотов
+            UIFleetManagerSubpanel fleetManagerSubpanel = objectPanel.fleetManagerSubpanel;
+
+            //Отображаем подпанель менеджера флотов, если необходимо
+            ObjectPnOpenSubpanel(
+                fleetManagerSubpanel, ObjectSubpanelType.FleetManager,
+                out isSamePanel,
+                out isSameSubpanel);
+
+            //Если открыта необходимая вкладка
+            if(fleetManagerSubpanel.activeTab == currentFleetManagerTab)
+            {
+                //Если была открыта та же подпанель
+                if (isSameSubpanel == true)
+                {
+                    //Сообщаем, что была открыта та же вкладка
+                    isSameTab = true;
+
+                    //Если вкладка была открыта для той же фракции
+                    if (fleetManagerSubpanel.activeTab.objectPE.EqualsTo(currentFaction.selfPE) == true)
+                    {
+                        //То сообщаем, что был отображён тот же объект
+                        isSameObject = true;
+                    }
+                }
+            }
+
+            //Если была открыта та же панель
+            if (isSamePanel == true)
+            {
+                
+            }
+            //Иначе
+            else
+            {
+
+            }
+
+            //Если была открыта та же подпанель 
+            if (isSameSubpanel == true)
+            {
+                
+            }
+            //Иначе
+            else
+            {
+                //Отображаем название панели - менеджер флотов
+                objectPanel.objectName.text = "FleetManager";
+            }
+
+            //Если была открыта та же вкладка
+            if (isSameTab == true)
+            {
+                
+            }
+            //Иначе
+            else
+            {
+                //Отображаем запрошенную вкладку
+                fleetManagerSubpanel.tabGroup.OnTabSelected(currentFleetManagerTab.selfTabButton);
+
+                //Указываем её как активную вкладку
+                fleetManagerSubpanel.activeTab = currentFleetManagerTab;
+            }
+
+            //Если был отображён тот же объект
+            if (isSameObject == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+                //Указываем PE текущей фракции
+                fleetManagerSubpanel.activeTab.objectPE = currentFaction.selfPE;
             }
         }
+
+        void FleetManagerSbpnShowFleetsTab(
+            ref CFaction faction)
+        {
+            //Берём подпанель менеджера флотов
+            UIFleetManagerSubpanel fleetManagerSubpanel = sOUI.Value.gameWindow.objectPanel.fleetManagerSubpanel;
+
+            //Берём вкладку флотов
+            UIFleetsTab fleetsTab = fleetManagerSubpanel.fleetsTab;
+
+            //Отображаем вкладку флотов
+            FleetManagerSbpnShowTab(
+                fleetsTab,
+                ref faction,
+                out bool isSamePanel,
+                out bool isSameSubpanel,
+                out bool isSameTab,
+                out bool isSameObject);
+
+            //Если была открыта та же панель
+            if (isSamePanel == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+
+            }
+
+            //Если была открыта та же подпанель 
+            if (isSameSubpanel == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+
+            }
+
+            //Если была открыта та же вкладка
+            if (isSameTab == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+
+            }
+
+            //Если был отображён тот же объект
+            if (isSameObject == true)
+            {
+
+            }
+            //Иначе
+            else
+            {
+                //Проверяем, какие оперативные группы должны быть отображены в этом списке
+                //Для каждой оперативной группы фракции
+                for(int a = 0; a < faction.ownedTaskForces.Count; a++)
+                {
+                    //Берём сущность оперативной группы и назначаем компонент "неудаляемый UI"
+                    faction.ownedTaskForces[a].Unpack(world.Value, out int tFEntity);
+                    ref CNonDeletedUI tFNonDeletedUI = ref nonDeletedUIPool.Value.Add(tFEntity);
+                }
+
+                //Удаляем обзорную панель вкладки флотов с каждой группы, которая не должна быть в списке
+                //Для каждой группы с отображаемыми панелями GUI, но без "неудаляемого UI"
+                foreach(int tFEntity in taskForceDisplayedDeletedGUIFilter.Value)
+                {
+                    //Берём компонент панелей GUI
+                    ref CTaskForceDisplayedGUIPanels tFDisplayedGUIPanels = ref tFDisplayedGUIPanelsPool.Value.Get(tFEntity);
+
+                    //Если у группы есть обзорная панель вкладки флотов
+                    if(tFDisplayedGUIPanels.fMSbpnFleetsTabSummaryPanel != null)
+                    {
+                        //Удаляем обзорную панель
+                        FMSbpnFleetsTabDeleteTaskForceSummaryPanel(tFDisplayedGUIPanels.fMSbpnFleetsTabSummaryPanel.selfPE);
+                    }
+                }
+
+                //Обновляем панели групп, которые уже имеют обзорные панели
+                //Для каждой группы с панелями GUI и "неудаляемым UI"
+                foreach (int tFEntity in taskForceDisplayedNonDeletedGUIFilter.Value)
+                {
+                    //Берём группу и компонент панелей GUI
+                    ref CTaskForce tF = ref tFPool.Value.Get(tFEntity);
+                    ref CTaskForceDisplayedGUIPanels tFDisplayedGUIPanels = ref tFDisplayedGUIPanelsPool.Value.Get(tFEntity);
+
+                    //Если у группы есть обзорная панель вкладки флотов
+                    if (tFDisplayedGUIPanels.fMSbpnFleetsTabSummaryPanel != null)
+                    {
+                        //Обновляем её данные
+                        tFDisplayedGUIPanels.fMSbpnFleetsTabSummaryPanel.RefreshPanel(ref tF);
+
+                        //И удаляем с группы "неудаляемый UI"
+                        nonDeletedUIPool.Value.Del(tFEntity);
+                    }
+                    //Иначе панель должна создаваться, но это оставляем на следующий цикл, в котором панели создаются
+                }
+
+                //Создаём обзорные панели для групп, которые не имеют их, но должны
+                //Для каждой группы с "неудаляемым UI"
+                foreach(int tFEntity in taskForceNonDeletedUIFilter.Value)
+                {
+                    //Берём группу
+                    ref CTaskForce tF = ref tFPool.Value.Get(tFEntity);
+
+                    //В данный момент у группы не может существовать обзорной панели вкладки флотов,
+                    //поэтому можно запросить её создание, не беспокоясь
+
+                    //Создаём обзорную панель
+                    FMSbpnFleetsTabCreateTaskForceSummaryPanel(ref tF);
+
+                    //И удаляем с группы "неудаляемый UI"
+                    nonDeletedUIPool.Value.Del(tFEntity);
+                }
+            }
+        }
+
+        void FMSbpnFleetsTabCreateTaskForceSummaryPanel(
+            ref RGameCreatePanel requestComp)
+        {
+            //Берём оперативную группу
+            requestComp.objectPE.Unpack(world.Value, out int tFEntity);
+            ref CTaskForce tF = ref tFPool.Value.Get(tFEntity);
+
+            //Создаём обзорную панель
+            FMSbpnFleetsTabCreateTaskForceSummaryPanel(ref tF);
+        }
+
+        void FMSbpnFleetsTabCreateTaskForceSummaryPanel(
+            ref CTaskForce tF)
+        {
+            //Берём сущность оперативной группы
+            tF.selfPE.Unpack(world.Value, out int tFEntity);
+
+            //Создаём компонент панелей GUI, если необходимо
+            GUICreateTFUIPanels(ref tF);
+
+            //Берём компонент панелей GUI
+            ref CTaskForceDisplayedGUIPanels tFDisplayedGUIPanels = ref tFDisplayedGUIPanelsPool.Value.Get(tFEntity);
+
+            //Берём вкладку флотов
+            UIFleetsTab fleetsTab = sOUI.Value.gameWindow.objectPanel.fleetManagerSubpanel.fleetsTab;
+
+            //Создаём обзорную панель вкладки флотов
+            Game.GUI.Object.FleetManager.Fleets.UITaskForceSummaryPanel.InstantiatePanel(
+                ref tF, ref tFDisplayedGUIPanels,
+                fleetsTab.layoutGroup);
+        }
+
+        void FMSbpnFleetsTabDeleteTaskForceSummaryPanel(
+            EcsPackedEntity tFPE)
+        {
+            //Берём оперативную группу и компонент панелей GUI
+            tFPE.Unpack(world.Value, out int tFEntity);
+            ref CTaskForceDisplayedGUIPanels tFDisplayedUIPanels = ref tFDisplayedGUIPanelsPool.Value.Get(tFEntity);
+
+            //Кэшируем обзорную панель вкладки флотов
+            Game.GUI.Object.FleetManager.Fleets.UITaskForceSummaryPanel.CachePanel(ref tFDisplayedUIPanels);
+
+            //Удаляем компонент панелей GUI, если необходимо
+            GUIDeleteTaskForceGUIPanels(tFPE);
+        }
+        #endregion
         #endregion
         #endregion
         #endregion

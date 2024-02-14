@@ -8,14 +8,20 @@ using Leopotam.EcsLite.Unity.Ugui;
 
 using SO.UI.Events;
 using SO.UI.MainMenu.Events;
-using SO.UI.Game;
 using SO.UI.Game.Events;
 using SO.UI.Game.Map.Events;
-using SO.UI.Game.Object.Events;
+using SO.UI.Game.GUI;
+using SO.UI.Game.GUI.Object;
+using SO.UI.Game.GUI.Object.Events;
 using SO.Map;
+using SO.Map.Hexasphere;
 using SO.Map.Events;
 using SO.Faction;
-using SO.Map.Hexasphere;
+using SO.Warfare.Fleet;
+using SO.Warfare.Fleet.Events;
+using SO.Warfare.Fleet.Missions.Events;
+using SO.Warfare.Fleet.Movement;
+using SO.Warfare.Fleet.Movement.Events;
 
 namespace SO.UI
 {
@@ -35,6 +41,10 @@ namespace SO.UI
         //Фракции
         readonly EcsPoolInject<CFaction> factionPool = default;
 
+        //Военное дело
+        readonly EcsPoolInject<CTaskForce> taskForcePool = default;
+        readonly EcsPoolInject<CTaskForceDisplayedGUIPanels> taskForceDisplayedGUIPanelsPool = default;
+
 
         EcsFilter clickEventMapFilter;
         EcsPool<EcsUguiClickEvent> clickEventMapPool;
@@ -43,6 +53,7 @@ namespace SO.UI
         EcsPool<EcsUguiClickEvent> clickEventUIPool;
 
         //Данные
+        readonly EcsCustomInject<UIData> uIData = default;
         readonly EcsCustomInject<MapGenerationData> mapGenerationData = default;
         readonly EcsCustomInject<RegionsData> regionsData = default;
         readonly EcsCustomInject<InputData> inputData = default;
@@ -372,12 +383,20 @@ namespace SO.UI
             inputData.Value.playerFactionPE.Unpack(world.Value, out int factionEntity);
             ref CFaction faction = ref factionPool.Value.Get(factionEntity);
 
-            //Если щелчок по флагу фракции игрока
+            //Если клик по флагу фракции игрока
             if (clickEvent.WidgetName == "PlayerFactionFlag")
             {
-                //Запрашиваем открытие панели фракции
-                ObjPnActionRequest(
-                    ObjectPanelActionRequestType.Faction,
+                //Запрашиваем отображение панели фракции
+                ObjectPnActionRequest(
+                    uIData.Value.factionSubpanelDefaultTab,
+                    faction.selfPE);
+            }
+            //Иначе, если клик по кнопке менеджера флотов на панели главных кнопок
+            else if(clickEvent.WidgetName == "FleetManagerMBtnPn")
+            {
+                //Запрашиваем отображение менеджера флотов
+                ObjectPnActionRequest(
+                    uIData.Value.fleetManagerSubpanelDefaultTab,
                     faction.selfPE);
             }
 
@@ -385,7 +404,7 @@ namespace SO.UI
             else if (gameWindow.activeMainPanelType == MainPanelType.Object)
             {
                 //Проверяем клики в панели объекта
-                ObjPnClickAction(ref clickEvent);
+                ObjectPnClickAction(ref clickEvent);
             }
         }
 
@@ -414,43 +433,81 @@ namespace SO.UI
                 requestType);
         }
 
+        readonly EcsPoolInject<RTaskForceChangeMission> taskForceChangeMissionRequestPool = default;
+        void TaskForceChangeMissionRequest(
+            ref CTaskForce tF,
+            TaskForceChangeMissionType requestType,
+            EcsPackedEntity targetPE = new())
+        {
+            //Создаём новую сущность и назначаем ей запрос смены миссии оперативной группы
+            int requestEntity = world.Value.NewEntity();
+            ref RTaskForceChangeMission requestComp = ref taskForceChangeMissionRequestPool.Value.Add(requestEntity);
+
+            //Заполняем данные запроса
+            requestComp = new(
+                tF.selfPE,
+                requestType,
+                targetPE);
+        }
+
+        readonly EcsPoolInject<RTaskForceMovement> tFMovementRequestPool = default;
+        void TaskForceMovementRequest(
+            ref CTaskForce tF,
+            EcsPackedEntity targetPE,
+            TaskForceMovementTargetType targetType)
+        {
+            //Создаём новую сущность и назначаем ей запрос движения оперативной группы
+            int requestEntity = world.Value.NewEntity();
+            ref RTaskForceMovement requestComp = ref tFMovementRequestPool.Value.Add(requestEntity);
+
+            //Заполняем данные запроса
+            requestComp = new(
+                tF.selfPE,
+                targetPE, targetType);
+        }
+
         #region ObjectPanel
-        void ObjPnClickAction(
+        void ObjectPnClickAction(
             ref EcsUguiClickEvent clickEvent)
         {
-            //Берём панель объекта
-            UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
-
             //Берём фракцию игрока
             inputData.Value.playerFactionPE.Unpack(world.Value, out int factionEntity);
             ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+
+            //Берём панель объекта
+            UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
             //Если нажата кнопка закрытия панели объекта
             if(clickEvent.WidgetName == "ClosePanelObjPn")
             {
                 //Запрашиваем открытие панели объекта
-                ObjPnActionRequest(ObjectPanelActionRequestType.Close);
+                ObjectPnActionRequest(ObjectPanelActionRequestType.Close);
             }
 
             //Иначе, если активна подпанель фракции
-            else if(objectPanel.activeObjectSubpanelType == ObjectSubpanelType.Faction)
+            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Faction)
             {
                 //Проверяем клики в подпанели фракции
                 FactionSbpnClickAction(ref clickEvent);
             }
             //Иначе, если активна подпанель региона
-            else if(objectPanel.activeObjectSubpanelType == ObjectSubpanelType.Region)
+            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Region)
             {
                 //Проверяем клики в подпанели региона
                 RegionSbpnClickAction(ref clickEvent);
             }
+            //Иначе, если активна подпанель менеджера флотов
+            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.FleetManager)
+            {
+                //Проверяем клики в подпанели менеджера флотов
+                FleetManagerSbpnClickAction(ref clickEvent);
+            }
         }
 
         readonly EcsPoolInject<RGameObjectPanelAction> gameObjectPanelRequestPool = default;
-        void ObjPnActionRequest(
+        void ObjectPnActionRequest(
             ObjectPanelActionRequestType requestType,
-            EcsPackedEntity objectPE = new(),
-            bool isRefresh = false)
+            EcsPackedEntity objectPE = new())
         {
             //Создаём новую сущность и назначаем ей запрос действия панели объекта
             int requestEntity = world.Value.NewEntity();
@@ -459,8 +516,7 @@ namespace SO.UI
             //Заполняем данные запроса
             requestComp = new(
                 requestType,
-                objectPE,
-                isRefresh);
+                objectPE);
         }
 
         #region FactionSubpanel
@@ -471,14 +527,15 @@ namespace SO.UI
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
             //Берём подпанель фракции
+            UIFactionSubpanel factionSubpanel = objectPanel.factionSubpanel;
 
             //Если нажата кнопка обзорной вкладки
             if(clickEvent.WidgetName == "OverviewTabFactionSbpn")
             {
                 //Запрашиваем отображение обзорной вкладки
-                ObjPnActionRequest(
+                ObjectPnActionRequest(
                     ObjectPanelActionRequestType.FactionOverview,
-                    objectPanel.activeObjectPE);
+                    factionSubpanel.activeTab.objectPE);
             }
         }
         #endregion
@@ -491,15 +548,131 @@ namespace SO.UI
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
             //Берём подпанель региона
+            UIRegionSubpanel regionSubpanel = objectPanel.regionSubpanel;
 
             //Если нажата кнопка обзорной вкладки
             if (clickEvent.WidgetName == "OverviewTabRegionSbpn")
             {
                 //Запрашиваем отображение обзорной вкладки
-                ObjPnActionRequest(
+                ObjectPnActionRequest(
                     ObjectPanelActionRequestType.RegionOverview,
-                    objectPanel.activeObjectPE);
+                    regionSubpanel.activeTab.objectPE);
             }
+        }
+        #endregion
+
+        #region FleetManagerSubpanel
+        void FleetManagerSbpnClickAction(
+            ref EcsUguiClickEvent clickEvent)
+        {
+            //Берём панель объекта
+            UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
+
+            //Берём подпанель менеджера флотов
+            UIFleetManagerSubpanel fleetManagerSubpanel = objectPanel.fleetManagerSubpanel;
+
+            //Если нажата кнопка вкладки флотов
+            if (clickEvent.WidgetName == "FleetsTabFleetManagerSbpn")
+            {
+                //Запрашиваем отображение вкладки флотов
+                ObjectPnActionRequest(
+                    ObjectPanelActionRequestType.FleetManagerFleets,
+                    fleetManagerSubpanel.activeTab.objectPE);
+            }
+
+            //Иначе, если активна вкладка флотов
+            else if (fleetManagerSubpanel.activeTab == fleetManagerSubpanel.fleetsTab)
+            {
+                //Проверяем клики во вкладке флотов
+                FMSbpnFleetsTabClickAction(ref clickEvent);
+            }
+        }
+
+        void FMSbpnFleetsTabClickAction(
+            ref EcsUguiClickEvent clickEvent)
+        {
+            //Берём фракцию игрока
+            inputData.Value.playerFactionPE.Unpack(world.Value, out int factionEntity);
+            ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+
+            //Берём панель объекта
+            UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
+
+            //Берём подпанель менеджера флотов
+            UIFleetManagerSubpanel fleetManagerSubpanel = objectPanel.fleetManagerSubpanel;
+
+            //Если источник события имеет компонент TaskForceSummaryPanel
+            if(clickEvent.Sender.TryGetComponent(out Game.GUI.Object.FleetManager.Fleets.UITaskForceSummaryPanel taskForceSummaryPanel))
+            {
+                //Если нажат LShift
+                if(inputData.Value.leftShiftKeyPressed == true)
+                {
+                    //То эта оперативная группа будет добавлена к выбранным или удалена 
+
+                    //Если панель неактивна
+                    if(taskForceSummaryPanel.toggle.isOn == false)
+                    {
+                        //Делаем её активной и заносим в список
+                        taskForceSummaryPanel.toggle.isOn = true;
+                        inputData.Value.activeTaskForcePEs.Add(taskForceSummaryPanel.selfPE);
+                    }
+                    //Иначе
+                    else
+                    {
+                        //Делаем её неактивной и удаляем из списка
+                        taskForceSummaryPanel.toggle.isOn = false;
+                        inputData.Value.activeTaskForcePEs.Remove(taskForceSummaryPanel.selfPE);
+                    }
+                }
+                //Иначе только ЛКМ
+                else
+                {
+                    //Если панель была активна и в списке было больше одной панели, то очищаем список и активируем панель
+                    //Иначе отключаем панель
+                    bool isActivation
+                        = taskForceSummaryPanel.toggle.isOn && (inputData.Value.activeTaskForcePEs.Count > 1)
+                        || (taskForceSummaryPanel.toggle.isOn == false);
+
+                    //Для каждой выбранной группы
+                    for (int a = 0; a < inputData.Value.activeTaskForcePEs.Count; a++)
+                    {
+                        //Берём компонент панелей GUI
+                        inputData.Value.activeTaskForcePEs[a].Unpack(world.Value, out int tFEntity);
+                        ref CTaskForceDisplayedGUIPanels tFDisplayedGUIPanels = ref taskForceDisplayedGUIPanelsPool.Value.Get(tFEntity);
+
+                        //Делаем панель списка флотов неактивной
+                        tFDisplayedGUIPanels.fMSbpnFleetsTabSummaryPanel.toggle.isOn = false;
+                    }
+                    //Очищаем список выбранных групп
+                    inputData.Value.activeTaskForcePEs.Clear();
+
+                    //Если требуется активировать панель
+                    if (isActivation == true)
+                    {
+                        //Делаем её активной и заносим в список активных
+                        taskForceSummaryPanel.toggle.isOn = true;
+                        inputData.Value.activeTaskForcePEs.Add(taskForceSummaryPanel.selfPE);
+                    }
+                }
+            }
+            //Иначе, если нажата кнопка создания новой оперативной группы
+            else if(clickEvent.WidgetName == "CreateNewTaskForceFMSbpnFleetsTab")
+            {
+                //Запрашиваем создание новой группы
+                TaskForceCreatingRequest(ref faction);
+            }
+        }
+
+        readonly EcsPoolInject<RTaskForceCreating> taskForceCreatingRequestPool = default;
+        void TaskForceCreatingRequest(
+            ref CFaction ownerFaction)
+        {
+            //Создаём новую сущность и назначаем ей запрос создания оперативной группы
+            int requestEntity = world.Value.NewEntity();
+            ref RTaskForceCreating requestComp = ref taskForceCreatingRequestPool.Value.Add(requestEntity);
+
+            //Заполняем данные запроса
+            requestComp = new(ownerFaction.selfPE);
         }
         #endregion
         #endregion
@@ -518,9 +691,29 @@ namespace SO.UI
                 if(inputData.Value.leftMouseButtonClick)
                 {
                     //Запрашиваем отображение подпанели региона
-                    ObjPnActionRequest(
-                        ObjectPanelActionRequestType.Region,
+                    ObjectPnActionRequest(
+                        uIData.Value.regionSubpanelDefaultTab,
                         currentRHS.selfPE);
+                }
+                //Иначе, если нажата ПКМ
+                else if(inputData.Value.rightMouseButtonClick)
+                {
+                    //Если открыт менеджер флотов
+                    if(sOUI.Value.gameWindow.objectPanel.activeSubpanelType == ObjectSubpanelType.FleetManager)
+                    {
+                        //Для каждой активной оперативной группы
+                        for(int a = 0; a < inputData.Value.activeTaskForcePEs.Count; a++)
+                        {
+                            //Берём группу
+                            inputData.Value.activeTaskForcePEs[a].Unpack(world.Value, out int tFEntity);
+                            ref CTaskForce tF = ref taskForcePool.Value.Get(tFEntity);
+
+                            //Запрашиваем перемещение группы
+                            TaskForceMovementRequest(
+                                ref tF,
+                                currentRHS.selfPE, TaskForceMovementTargetType.Region);
+                        }
+                    }
                 }
             }
         }

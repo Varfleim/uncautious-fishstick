@@ -11,12 +11,39 @@ namespace SO.Map
 {
     public struct CRegionDisplayedMapPanels
     {
+        public CRegionDisplayedMapPanels(int a)
+        {
+            mapPanelGroup = null;
+
+            mainMapPanel = null;
+            
+            tFMainMapPanels = new();
+        }
+
         public static VerticalLayoutGroup mapPanelGroupPrefab;
         static List<VerticalLayoutGroup> cachedMapPanelGroups = new();
 
         public VerticalLayoutGroup mapPanelGroup;
 
+        public bool IsEmpty
+        {
+            get
+            {
+                if(mainMapPanel == null
+                    && tFMainMapPanels.Count == 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
         public UIRCMainMapPanel mainMapPanel;
+
+        public List<UITFMainMapPanel> tFMainMapPanels;
+
 
         public static void CacheMapPanelGroup(
             ref CRegionDisplayedMapPanels regionDisplayedMapPanels)
@@ -63,6 +90,30 @@ namespace SO.Map
             Vector3 regionCenter = rHS.GetRegionCenter() * hexasphereScale;
             Vector3 direction = regionCenter.normalized * mapPanelAltitude;
             regionDisplayedMapPanels.mapPanelGroup.transform.position = regionCenter + direction;
+        }
+
+        public void SetParentTaskForceMainMapPanel(
+            UITFMainMapPanel tFMainMapPanel)
+        {
+            //Присоединяем переданную панель карты оперативной группы к группе панелей карты
+            tFMainMapPanel.transform.SetParent(mapPanelGroup.transform);
+            tFMainMapPanel.transform.localPosition = Vector3.zero;
+            tFMainMapPanel.transform.localRotation = Quaternion.Euler(Vector3.zero);
+
+            tFMainMapPanel.transform.localScale = Vector3.one;
+
+            //Заносим панель карты в список соответствующих панелей
+            tFMainMapPanels.Add(tFMainMapPanel);
+        }
+
+        public void CancelParentTaskForceMainMapPanel(
+            UITFMainMapPanel tFMainMapPanel)
+        {
+            //Обнуляем родительский объект панели карты оперативной группы
+            tFMainMapPanel.transform.SetParent(null);
+
+            //Удаляем панель из списка соответствующих панелей
+            tFMainMapPanels.Remove(tFMainMapPanel);
         }
     }
 }

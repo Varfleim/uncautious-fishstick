@@ -25,12 +25,15 @@ namespace SO.Map
 
             neighbourRegionPEs = new EcsPackedEntity[6];
 
-            crossCost = 1;
-
 
             ownerFactionPE = new();
 
             rFOPEs = new DRegionFactionObject[0];
+
+
+            crossCost = 1;
+
+            taskForcePEs = new();
         }
 
         public readonly EcsPackedEntity selfPE;
@@ -112,14 +115,17 @@ namespace SO.Map
 
         public static readonly List<EcsPackedEntity> tempNeighbours = new List<EcsPackedEntity>(6);
         public EcsPackedEntity[] neighbourRegionPEs;
-
-        public float crossCost;
         #endregion
 
         #region FactionData
         public EcsPackedEntity ownerFactionPE;
 
         public DRegionFactionObject[] rFOPEs;
+        #endregion
+
+        #region TaskForceData
+        public float crossCost;
+        public List<EcsPackedEntity> taskForcePEs;
         #endregion
     }
 }

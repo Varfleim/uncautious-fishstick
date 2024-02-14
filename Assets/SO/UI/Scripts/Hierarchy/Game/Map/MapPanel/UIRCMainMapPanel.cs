@@ -66,7 +66,7 @@ namespace SO.UI.Game.Map
             ref CRegionCore rC)
         {
             //Отображаем название региона
-            selfName.text = rC.rFOPEs.Length.ToString();
+            selfName.text = rC.Index.ToString();
         }
     }
 }

@@ -6,7 +6,8 @@ namespace SO
     public enum ObjectNewCreatedType : byte
     {
         None,
-        Faction
+        Faction,
+        TaskForce
     }
 
     public struct EObjectNewCreated

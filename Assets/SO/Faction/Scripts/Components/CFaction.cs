@@ -18,6 +18,8 @@ namespace SO.Faction
             ownedRCPEs = new();
 
             observerPEs = new();
+
+            ownedTaskForces = new();
         }
 
         public readonly EcsPackedEntity selfPE;
@@ -28,5 +30,7 @@ namespace SO.Faction
         public List<EcsPackedEntity> ownedRCPEs;
 
         public List<EcsPackedEntity> observerPEs;
+
+        public List<EcsPackedEntity> ownedTaskForces;
     }
 }

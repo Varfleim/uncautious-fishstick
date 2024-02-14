@@ -11,6 +11,9 @@ using SO.Time;
 using SO.Map;
 using SO.Map.Hexasphere;
 using SO.Faction;
+using SO.Warfare.Fleet;
+using SO.Warfare.Fleet.Missions;
+using SO.Warfare.Fleet.Movement;
 
 namespace SO
 {
@@ -73,6 +76,12 @@ namespace SO
                 //Обработка ввода
                 .Add(new SUIInput())
 
+                //Управление оперативными группами
+                .Add(new STaskForceControl())
+
+                //Управление миссиями оперативных групп
+                .Add(new STaskForceMissionsControl())
+
                 //Управление событиями, приходящими со всех систем
                 .Add(new SEventControl())
 
@@ -103,6 +112,26 @@ namespace SO
 
                 //Управление RC
                 .Add(new SRCControl())
+
+                //Управление оперативными группами
+                .Add(new STaskForceControl())
+
+                //Управление миссиями оперативных групп
+                .Add(new STaskForceMissionsControl())
+
+                //Поиск пути
+                .Add(new STaskForcePathfindingRequestAssign())
+                .Add(new SMTTaskForcePathfinding())
+                .Add(new STaskForcePathfindingSelfRequestDelete())
+                //Поиск пути
+                //Перемещение
+                .Add(new SMTTaskForceMovement())
+                .Add(new STaskForceMovementStop())
+                //Перемещение
+
+                //Проверка достижения цели группой
+                .Add(new STaskForceTargetCheck())
+
 
                 //Подсчёт исследования от наблюдателей
                 .Add(new SMTObserverExplorationCalc())

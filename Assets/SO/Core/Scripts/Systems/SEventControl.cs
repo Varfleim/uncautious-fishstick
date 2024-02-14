@@ -4,7 +4,9 @@ using Leopotam.EcsLite.Di;
 using Leopotam.EcsLite.ExtendedSystems;
 
 using SO.UI.Game.Events;
+using SO.UI.Game.Map.Events;
 using SO.Map;
+using SO.Warfare.Fleet.Movement;
 
 namespace SO
 {
@@ -34,7 +36,10 @@ namespace SO
             ObjectNewCreatedEvent();
 
             //Проверяем события смены владельца RFO
-            RFOChangeOwnerEvent();
+            RegionCoreChangeOwnerEvent();
+
+            //Проверяем события смены региона оперативной группой
+            TaskForceChangeRegionEvent();
         }
 
         readonly EcsFilterInject<Inc<EObjectNewCreated>> objectNewCreatedEventFilter = default;
@@ -52,18 +57,33 @@ namespace SO
                 {
                     UnityEngine.Debug.LogWarning("Faction created!");
                 }
+                //Иначе, если событие сообщает о создании новой оперативной группы
+                else if(eventComp.objectType == ObjectNewCreatedType.TaskForce)
+                {
+                    UnityEngine.Debug.LogWarning("Task Force created!");
+
+                    //Запрашиваем создание обзорной панели группы во вкладке флотов
+                    GameCreatePanelRequest(
+                        eventComp.objectPE,
+                        GamePanelType.TaskForceSummaryPanelFMSbpnFleetsTab);
+
+                    //Запрашиваем создание главной панели карты оперативной группы
+                    GameCreatePanelRequest(
+                        eventComp.objectPE,
+                        GamePanelType.TaskForceMainMapPanel);
+                }
             }
         }
 
-        readonly EcsFilterInject<Inc<ERCChangeOwner>> rFOChangeOwnerEventFilter = default;
-        readonly EcsPoolInject<ERCChangeOwner> rFOChangeOwnerEventPool = default;
-        void RFOChangeOwnerEvent()
+        readonly EcsFilterInject<Inc<ERegionCoreChangeOwner>> rFOChangeOwnerEventFilter = default;
+        readonly EcsPoolInject<ERegionCoreChangeOwner> rFOChangeOwnerEventPool = default;
+        void RegionCoreChangeOwnerEvent()
         {
-            //Для каждого события смены владельца RFO
+            //Для каждого события смены владельца RC
             foreach (int eventEntity in rFOChangeOwnerEventFilter.Value)
             {
                 //Берём событие
-                ref ERCChangeOwner eventComp = ref rFOChangeOwnerEventPool.Value.Get(eventEntity);
+                ref ERegionCoreChangeOwner eventComp = ref rFOChangeOwnerEventPool.Value.Get(eventEntity);
 
                 //Если регион не принадлежал никому, то его сущность невозможно будет взять
                 if(eventComp.oldOwnerFactionPE.Unpack(world.Value, out int oldOwnerFactionEntity) == false)
@@ -79,6 +99,21 @@ namespace SO
                     //Запрашиваем обновление панелей региона
                     GameRefreshPanelsSelfRequest(eventComp.regionPE);
                 }
+            }
+        }
+
+        readonly EcsFilterInject<Inc<ETaskForceChangeRegion>> tFChangeRegionEventFilter = default;
+        readonly EcsPoolInject<ETaskForceChangeRegion> tFChangeRegionEventPool = default;
+        void TaskForceChangeRegionEvent()
+        {
+            //Для каждого события смены региона оперативной группой
+            foreach(int eventEntity in tFChangeRegionEventFilter.Value)
+            {
+                //Берём событие 
+                ref ETaskForceChangeRegion eventComp = ref tFChangeRegionEventPool.Value.Get(eventEntity);
+
+                //Запрашиваем обновление родителя панелей карты
+                GameRefreshMapPanelParentSelfRequest(eventComp.tFPE);
             }
         }
 
@@ -123,6 +158,21 @@ namespace SO
             {
                 //Назначаем сущности самозапрос
                 ref SRGameRefreshPanels selfRequestComp = ref gameRefreshPanelsSelfRequestPool.Value.Add(objectEntity);
+            }
+        }
+
+        readonly EcsPoolInject<SRRefreshMapPanelsParent> refreshMapPanelsParentSelfRequestPool = default;
+        void GameRefreshMapPanelParentSelfRequest(
+            EcsPackedEntity objectPE)
+        {
+            //Берём сущность объекта
+            objectPE.Unpack(world.Value, out int objectEntity);
+
+            //Если у объекта нет самозапроса обновления родителя панелей карты
+            if (refreshMapPanelsParentSelfRequestPool.Value.Has(objectEntity) == false)
+            {
+                //Назначаем сущности самозапрос
+                ref SRRefreshMapPanelsParent selfRequestComp = ref refreshMapPanelsParentSelfRequestPool.Value.Add(objectEntity);
             }
         }
     }

@@ -6,7 +6,9 @@ namespace SO.UI.Game.Events
     public enum GamePanelType : byte
     {
         None,
-        RegionMainMapPanel
+        RegionMainMapPanel,
+        TaskForceSummaryPanelFMSbpnFleetsTab,
+        TaskForceMainMapPanel
     }
 
     public readonly struct RGameCreatePanel

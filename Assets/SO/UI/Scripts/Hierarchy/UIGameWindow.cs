@@ -1,7 +1,6 @@
 
 using UnityEngine;
-
-using SO.UI.Game;
+using SO.UI.Game.GUI;
 
 namespace SO.UI
 {
@@ -18,5 +17,15 @@ namespace SO.UI
         public GameObject activeMainPanel;
 
         public UIObjectPanel objectPanel;
+
+        public void HideActivePanel()
+        {
+            //—крываем активную главную панель
+            activeMainPanel.SetActive(false);
+
+            //”казываем, что нет активной главной панели
+            activeMainPanelType = MainPanelType.None;
+            activeMainPanel = null;
+        }
     }
 }

@@ -2,9 +2,9 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.UI.Game;
-using SO.UI.Game.Object;
-using SO.UI.Game.Object.Events;
+using SO.UI.Game.GUI;
+using SO.UI.Game.GUI.Object;
+using SO.UI.Game.GUI.Object.Events;
 
 namespace SO.UI
 {
@@ -48,24 +48,29 @@ namespace SO.UI
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
             //Если активна подпанель фракции
-            if(objectPanel.activeObjectSubpanelType == ObjectSubpanelType.Faction) 
+            if(objectPanel.activeSubpanelType == ObjectSubpanelType.Faction) 
             {
                 //Проверяем, требуется ли обновление в подпанели фракции
                 FactionSbpnCheckRefresh();
             }
             //Иначе, если активна подпанель региона
-            else if(objectPanel.activeObjectSubpanelType == ObjectSubpanelType.Region)
+            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Region)
             {
                 //Проверяем, требуется ли обновление в подпанели региона
                 RegionSbpnCheckRefresh();
+            }
+            //Иначе, если активна подпанель менеджера флотов
+            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.FleetManager)
+            {
+                //Проверяем, требуется ли обновление в менеджере флотов
+                FleetManagerSbpnCheckRefresh();
             }
         }
 
         readonly EcsPoolInject<RGameObjectPanelAction> gameObjectPanelRequestPool = default;
         void ObjPnActionRequest(
             ObjectPanelActionRequestType requestType,
-            EcsPackedEntity objectPE = new(),
-            bool isRefresh = true)
+            EcsPackedEntity objectPE = new())
         {
             //Создаём новую сущность и назначаем ей запрос действия панели объекта
             int requestEntity = world.Value.NewEntity();
@@ -74,8 +79,7 @@ namespace SO.UI
             //Заполняем данные запроса
             requestComp = new(
                 requestType,
-                objectPE,
-                isRefresh);
+                objectPE);
         }
 
         void FactionSbpnCheckRefresh()
@@ -87,12 +91,12 @@ namespace SO.UI
             UIFactionSubpanel factionSubpanel = objectPanel.factionSubpanel;
 
             //Если активна обзорная вкладка
-            if(factionSubpanel.tabGroup.selectedTab == factionSubpanel.overviewTab.selfTabButton)
+            if(factionSubpanel.activeTab == factionSubpanel.overviewTab)
             {
                 //Запрашиваем обновление обзорной вкладки
                 ObjPnActionRequest(
                     ObjectPanelActionRequestType.FactionOverview,
-                    objectPanel.activeObjectPE);
+                    factionSubpanel.activeTab.objectPE);
             }
         }
 
@@ -105,12 +109,30 @@ namespace SO.UI
             UIRegionSubpanel regionSubpanel = objectPanel.regionSubpanel;
 
             //Если активна обзорная вкладка
-            if (regionSubpanel.tabGroup.selectedTab == regionSubpanel.overviewTab.selfTabButton)
+            if (regionSubpanel.activeTab == regionSubpanel.overviewTab)
             {
                 //Запрашиваем обновление обзорной вкладки
                 ObjPnActionRequest(
                     ObjectPanelActionRequestType.RegionOverview,
-                    objectPanel.activeObjectPE);
+                    regionSubpanel.activeTab.objectPE);
+            }
+        }
+
+        void FleetManagerSbpnCheckRefresh()
+        {
+            //Берём панель объекта
+            UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
+
+            //Берём подпанель менеджера флотов
+            UIFleetManagerSubpanel fleetManagerSubpanel = objectPanel.fleetManagerSubpanel;
+
+            //Если активна вкладка флотов
+            if (fleetManagerSubpanel.activeTab == fleetManagerSubpanel.fleetsTab)
+            {
+                //Запрашиваем обновление вкладки флотов
+                ObjPnActionRequest(
+                    ObjectPanelActionRequestType.FleetManagerFleets,
+                    fleetManagerSubpanel.activeTab.objectPE);
             }
         }
         #endregion
