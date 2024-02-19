@@ -189,13 +189,22 @@ namespace SO.Map
         [Range(0f, 0.4f)]
         public float sinkProbability = 0.2f;
 
-        [Range(-4, 0)]
+        [Range(-4, 1)]
         public int elevationMinimum = -2;
-        [Range(6, 10)]
+        [Range(2, 10)]
         public int elevationMaximum = 8;
 
         [Range(0, 100)]
         public int erosionPercentage = 50;
+
+
+        [Range(10, 100)]
+        public int strategicAreaAverageSize = 30;
+
+        [Range(5, 30)]
+        public int strategicAreaFirstElevationSetCount = 10;
+        [Range(30, 100)]
+        public int strategicAreaSecondElevationSetCount = 40;
 
         [Range(0f, 1f)]
         public float startingMoisture = 0.1f;

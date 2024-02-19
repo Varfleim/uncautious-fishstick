@@ -4247,7 +4247,7 @@ MonoBehaviour:
   isColorUpdated: 0
   isTextureArrayUpdated: 0
   isUVUpdatedFast: 0
-  defaultShadedColor: {r: 0.56, g: 0.71, b: 0.54, a: 1}
+  defaultShadedColor: {r: 0, g: 0, b: 0, a: 1}
   whiteTex: {fileID: 0}
   regionMaterial: {fileID: 2100000, guid: 94c20dd7e4318a84699730a0249959c6, type: 2}
   regionColoredMaterial: {fileID: 2100000, guid: cfb2b97224c83d7469fe4cb0ee5230cb, type: 2}
@@ -4257,13 +4257,16 @@ MonoBehaviour:
   jitterProbability: 0.25
   chunkSizeMin: 30
   chunkSizeMax: 100
-  landPercentage: 5
+  landPercentage: 75
   waterLevel: 1
-  highRiseProbability: 0
-  sinkProbability: 0.1
+  highRiseProbability: 0.25
+  sinkProbability: 0.2
   elevationMinimum: 0
-  elevationMaximum: 10
+  elevationMaximum: 5
   erosionPercentage: 100
+  strategicAreaAverageSize: 30
+  strategicAreaFirstElevationSetCount: 5
+  strategicAreaSecondElevationSetCount: 30
   startingMoisture: 0.1
   evaporationFactor: 0.5
   precipitationFactor: 0.25
@@ -4293,7 +4296,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6030e50c391847349a0b02e5363e590a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mapMode: 1
+  mapMode: 2
   leftMouseButtonClick: 0
   leftMouseButtonPressed: 0
   leftMouseButtonRelease: 0

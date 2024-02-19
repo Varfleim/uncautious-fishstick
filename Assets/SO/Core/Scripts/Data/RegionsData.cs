@@ -30,6 +30,22 @@ namespace SO.Map
             return GetRegion(UnityEngine.Random.Range(0, regionPEs.Length));
         }
 
+        //Данные областей
+        public EcsPackedEntity[] strategicAreaPEs;
+
+        public EcsPackedEntity GetStrategicArea(
+            int sAIndex)
+        {
+            //Возвращаем PE запрошенной области
+            return strategicAreaPEs[sAIndex];
+        }
+
+        public EcsPackedEntity GetStrategicAreaRandom()
+        {
+            //Возвращаем PE случайной области
+            return GetStrategicArea(UnityEngine.Random.Range(0, strategicAreaPEs.Length));
+        }
+
         #region Pathfinding
         //Данные поиска пути
         public bool[] needRefreshPathMatrix = new bool[Environment.ProcessorCount];

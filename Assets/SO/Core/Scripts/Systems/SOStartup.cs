@@ -10,6 +10,7 @@ using SO.UI;
 using SO.Time;
 using SO.Map;
 using SO.Map.Hexasphere;
+using SO.Map.StrategicArea;
 using SO.Faction;
 using SO.Warfare.Fleet;
 using SO.Warfare.Fleet.Missions;
@@ -58,10 +59,10 @@ namespace SO
                 new SNewGameInitializationMain(),
                 //Генерация гексасферы
                 new SMapHexasphere(),
-                //Генерация ландшафта
-                new SMapTerrain(),
-                //Генерация климата
-                new SMapClimate(),
+                //Генерация стратегических областей
+                new SMapStrategicArea(),
+                //Генерация ландшафта стратегических областей
+                new SMapStrategicAreaTerrain(),
 
                 //Управление фракциями
                 new SFactionControl(),

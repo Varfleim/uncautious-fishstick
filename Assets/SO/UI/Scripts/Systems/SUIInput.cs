@@ -436,8 +436,7 @@ namespace SO.UI
         readonly EcsPoolInject<RTaskForceChangeMission> taskForceChangeMissionRequestPool = default;
         void TaskForceChangeMissionRequest(
             ref CTaskForce tF,
-            TaskForceChangeMissionType requestType,
-            EcsPackedEntity targetPE = new())
+            TaskForceChangeMissionType requestType)
         {
             //Создаём новую сущность и назначаем ей запрос смены миссии оперативной группы
             int requestEntity = world.Value.NewEntity();
@@ -446,8 +445,7 @@ namespace SO.UI
             //Заполняем данные запроса
             requestComp = new(
                 tF.selfPE,
-                requestType,
-                targetPE);
+                requestType);
         }
 
         readonly EcsPoolInject<RTaskForceMovement> tFMovementRequestPool = default;

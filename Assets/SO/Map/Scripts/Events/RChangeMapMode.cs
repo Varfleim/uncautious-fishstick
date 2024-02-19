@@ -4,7 +4,8 @@ namespace SO.Map.Events
     public enum ChangeMapModeRequestType: byte
     {
         None,
-
+        Terrain,
+        StrategicArea,
         Exploration
     }
 

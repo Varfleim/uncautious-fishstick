@@ -13,20 +13,15 @@ namespace SO.Warfare.Fleet.Missions.Events
     {
         public RTaskForceChangeMission(
             EcsPackedEntity tFPE, 
-            TaskForceChangeMissionType requestType,
-            EcsPackedEntity targetPE)
+            TaskForceChangeMissionType requestType)
         {
             this.tFPE = tFPE;
             
             this.requestType = requestType;
-
-            this.targetPE = targetPE;
         }
 
         public readonly EcsPackedEntity tFPE;
 
         public readonly TaskForceChangeMissionType requestType;
-
-        public readonly EcsPackedEntity targetPE;
     }
 }

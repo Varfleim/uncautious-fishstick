@@ -11,12 +11,14 @@ namespace SO.UI
     {
         None,
         Default,
+        Terrain,
+        StrategicArea,
         Exploration
     }
 
     public class InputData : MonoBehaviour
     {
-        public MapMode mapMode = MapMode.Default;
+        public MapMode mapMode = MapMode.Terrain;
 
         public bool leftMouseButtonClick;
         public bool leftMouseButtonPressed;

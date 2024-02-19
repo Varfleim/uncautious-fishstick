@@ -11,6 +11,7 @@ using SO.UI.Game.Map.Events;
 using SO.Map.Events;
 using SO.Faction;
 using SO.Map.Hexasphere;
+using SO.Map.StrategicArea;
 
 namespace SO.Map
 {
@@ -26,6 +27,9 @@ namespace SO.Map
         readonly EcsPoolInject<CRegionCore> rCPool = default;
 
         readonly EcsPoolInject<CExplorationRegionFractionObject> exFRFOPool = default;
+
+        readonly EcsFilterInject<Inc<CStrategicArea>> sAFilter = default;
+        readonly EcsPoolInject<CStrategicArea> sAPool = default;
 
         //Фракции
         readonly EcsPoolInject<CFaction> factionPool = default;
@@ -105,8 +109,26 @@ namespace SO.Map
                 //Берём запрос
                 ref RChangeMapMode requestComp = ref changeMapModeRequestPool.Value.Get(requestEntity);
 
-                //Если запрашивается отображение режима исследования
-                if(requestComp.requestType == ChangeMapModeRequestType.Exploration)
+                //Если запрашивается отображение режима типов местности
+                if(requestComp.requestType == ChangeMapModeRequestType.Terrain)
+                {
+                    //Указываем режим типов местности как активный
+                    inputData.Value.mapMode = MapMode.Terrain;
+
+                    //Отображаем режим типов местности
+                    MapDisplayModeTerrain();
+                }
+                //Если запрашивается отображение режима стратегических областей
+                else if(requestComp.requestType == ChangeMapModeRequestType.StrategicArea)
+                {
+                    //Указываем режим карты стратегических областей как активный
+                    inputData.Value.mapMode = MapMode.StrategicArea;
+
+                    //Отображаем режим карты стратегических областей
+                    MapDisplayModeStrategicArea();
+                }
+                //Иначе, если запрашивается отображение режима исследования
+                else if(requestComp.requestType == ChangeMapModeRequestType.Exploration)
                 {
                     //Указываем режим исследования как активный
                     inputData.Value.mapMode = MapMode.Exploration;
@@ -121,11 +143,73 @@ namespace SO.Map
 
         void MapRefreshMapMode()
         {
-            //Если текущий режим карты - режим исследования
-            if(inputData.Value.mapMode == MapMode.Exploration)
+            //Если текущий режим карты - режим типов местности
+            if (inputData.Value.mapMode == MapMode.Terrain)
+            {
+                //Отображаем режим типов местности
+                MapDisplayModeTerrain();
+            }
+            //Иначе, если текущий режим карты - режим стратегических областей
+            else if(inputData.Value.mapMode == MapMode.StrategicArea)
+            {
+                //Отображаем режим стратегических областей
+                MapDisplayModeStrategicArea();
+            }
+            //Иначе, если текущий режим карты - режим исследования
+            else if(inputData.Value.mapMode == MapMode.Exploration)
             {
                 //Отображаем режим исследования
                 MapDisplayModeExploration();
+            }
+        }
+
+        void MapDisplayModeTerrain()
+        {
+            //Для каждой стратегической области
+            foreach (int sAEntity in sAFilter.Value)
+            {
+                //Берём стратегическую область
+                ref CStrategicArea sA = ref sAPool.Value.Get(sAEntity);
+
+                //Определяем цвет области
+                Color sAColor = Color.Lerp(Color.yellow, Color.red, (float)sA.Elevation / mapGenerationData.Value.elevationMaximum);
+
+                //Для каждого региона области
+                for(int a = 0; a < sA.regionPEs.Length; a++)
+                {
+                    //Берём регион
+                    sA.regionPEs[a].Unpack(world.Value, out int regionEntity);
+                    ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+
+                    //Устанавливаем цвет региона соответственно высоте области
+                    RegionSetColor(
+                        ref rC,
+                        sAColor);
+
+                }
+            }
+        }
+
+        void MapDisplayModeStrategicArea()
+        {
+            //Для каждой стратегической области
+            foreach(int sAEntity in sAFilter.Value)
+            {
+                //Берём стратегическую область
+                ref CStrategicArea sA = ref sAPool.Value.Get(sAEntity);
+
+                //Для каждого региона области
+                for(int a = 0; a < sA.regionPEs.Length; a++)
+                {
+                    //Берём регион
+                    sA.regionPEs[a].Unpack(world.Value, out int regionEntity);
+                    ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+
+                    //Устанавливаем цвет региона 
+                    RegionSetColor(
+                        ref rC,
+                        sA.selfColor);
+                }
             }
         }
 
@@ -400,6 +484,10 @@ namespace SO.Map
                 ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
                 ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
+                //Берём родительскую стратегическую область региона
+                rC.ParentStrategicAreaPE.Unpack(world.Value, out int sAEntity);
+                ref CStrategicArea sA = ref sAPool.Value.Get(sAEntity);
+
                 //Если количество вершин больше максимального количества вершин на чанк
                 if (verticesCount > MapGenerationData.maxVertexCountPerChunk)
                 {
@@ -495,9 +583,9 @@ namespace SO.Map
                 }
 
                 //Обновляем визуальную выдавленность региона
-                if (rC.Elevation > 0)
+                if (sA.Elevation > 0)
                 {
-                    rHS.ExtrudeAmount = (float)rC.Elevation / (mapGenerationData.Value.elevationMaximum + 1);
+                    rHS.ExtrudeAmount = (float)sA.Elevation / mapGenerationData.Value.elevationMaximum;
                 }
                 else
                 {
