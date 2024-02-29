@@ -1,5 +1,5 @@
 
-namespace SO.UI.Game.GUI.Object.Faction
+namespace SO.UI.Game.GUI.Object.Character
 {
     public class UIOverviewTab : UIASubpanelTab
     {

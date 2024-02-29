@@ -6,11 +6,11 @@ namespace SO.Map.Events
     public readonly struct RRegionInitializerOwner
     {
         public RRegionInitializerOwner(
-            EcsPackedEntity ownerFactionPE)
+            EcsPackedEntity ownerCharacterPE)
         {
-            this.ownerFactionPE = ownerFactionPE;
+            this.ownerCharacterPE = ownerCharacterPE;
         }
 
-        public readonly EcsPackedEntity ownerFactionPE;
+        public readonly EcsPackedEntity ownerCharacterPE;
     }
 }

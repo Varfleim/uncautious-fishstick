@@ -99,7 +99,7 @@ namespace SO.Map
 
                 //Запрашиваем смену владельца региона
                 RegionActionRequest(
-                    requestOwnerComp.ownerFactionPE,
+                    requestOwnerComp.ownerCharacterPE,
                     requestCoreComp.regionPE,
                     RCChangeOwnerType.Initialization);
 
@@ -109,7 +109,7 @@ namespace SO.Map
 
         readonly EcsPoolInject<RRCChangeOwner> rCChangeOwnerRequestPool = default;
         void RegionActionRequest(
-            EcsPackedEntity factionPE,
+            EcsPackedEntity characterPE,
             EcsPackedEntity regionPE,
             RCChangeOwnerType requestType)
         {
@@ -119,7 +119,7 @@ namespace SO.Map
 
             //Заполняем данные запроса
             requestComp = new(
-                factionPE,
+                characterPE,
                 regionPE,
                 requestType);
         }

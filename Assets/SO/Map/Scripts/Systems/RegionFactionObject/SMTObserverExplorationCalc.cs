@@ -3,13 +3,13 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using Leopotam.EcsLite.Threads;
 
-using SO.Faction;
+using SO.Character;
 using SO.Map.Hexasphere;
 
 namespace SO.Map
 {
     public class SMTObserverExplorationCalc : EcsThreadSystem<TObserverExplorationCalc,
-        CFaction,
+        CCharacter,
         CExplorationObserver,
         CExplorationRegionFractionObject,
         CRegionHexasphere,
@@ -31,7 +31,7 @@ namespace SO.Map
 
         protected override EcsFilter GetFilter(EcsWorld world)
         {
-            return world.Filter<CFaction>().End();
+            return world.Filter<CCharacter>().End();
         }
 
         protected override void SetData(IEcsSystems systems, ref TObserverExplorationCalc thread)

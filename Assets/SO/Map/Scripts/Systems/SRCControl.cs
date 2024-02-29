@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Faction;
+using SO.Character;
 using SO.Map.Events;
 
 namespace SO.Map
@@ -21,8 +21,8 @@ namespace SO.Map
 
         readonly EcsPoolInject<CExplorationRegionFractionObject> exRFOPool = default;
 
-        //Фракции
-        readonly EcsPoolInject<CFaction> factionPool = default;
+        //Персонажи
+        readonly EcsPoolInject<CCharacter> characterPool = default;
 
         readonly EcsPoolInject<CExplorationObserver> explorationObserverPool = default;
 
@@ -39,7 +39,7 @@ namespace SO.Map
             RCChangeOwners();
         }
 
-        readonly EcsFilterInject<Inc<CFaction, SRExRFOsCreating>> exRFOsCreatingSelfRequestFilter = default;
+        readonly EcsFilterInject<Inc<CCharacter, SRExRFOsCreating>> exRFOsCreatingSelfRequestFilter = default;
         readonly EcsPoolInject<SRExRFOsCreating> exRFOsCreatingSelfRequestPool = default;
         void ExRFOCreating()
         {
@@ -47,10 +47,10 @@ namespace SO.Map
             if (exRFOsCreatingSelfRequestFilter.Value.GetEntitiesCount() > 0)
             {
                 //Создаём временный список DRFO
-                List<DRegionFactionObject> tempRFO = new();
+                List<DRegionCharacterObject> tempRFO = new();
 
-                //Определяем общее количество фракций
-                int factionsCount = runtimeData.Value.factionsCount;
+                //Определяем общее количество персонажей
+                int charactersCount = runtimeData.Value.charactersCount;
 
                 //Для каждого региона
                 foreach (int regionEntity in regionFilter.Value)
@@ -61,12 +61,12 @@ namespace SO.Map
                     //Очищаем временный список
                     tempRFO.Clear();
 
-                    //Для каждой фракции с самозапросом создания ExRFO
-                    foreach (int factionEntity in exRFOsCreatingSelfRequestFilter.Value)
+                    //Для каждого персонажа с самозапросом создания ExRFO
+                    foreach (int characterEntity in exRFOsCreatingSelfRequestFilter.Value)
                     {
-                        //Берём фракцию и самозапрос
-                        ref CFaction faction = ref factionPool.Value.Get(factionEntity);
-                        ref SRExRFOsCreating selfRequestComp = ref exRFOsCreatingSelfRequestPool.Value.Get(factionEntity);
+                        //Берём персонажа и самозапрос
+                        ref CCharacter character = ref characterPool.Value.Get(characterEntity);
+                        ref SRExRFOsCreating selfRequestComp = ref exRFOsCreatingSelfRequestPool.Value.Get(characterEntity);
 
                         //Создаём новую сущность и назначаем ей компонент ExRFO
                         int rFOEntity = world.Value.NewEntity();
@@ -75,11 +75,11 @@ namespace SO.Map
                         //Заполняем основные данные ExRFO
                         exRFO = new(
                             world.Value.PackEntity(rFOEntity),
-                            faction.selfPE,
+                            character.selfPE,
                             rC.selfPE);
 
-                        //Создаём DRFO для хранения данных фракции непосредственно в RC
-                        DRegionFactionObject rFO = new(
+                        //Создаём DRFO для хранения данных персонажа непосредственно в RC
+                        DRegionCharacterObject rFO = new(
                             exRFO.selfPE);
 
                         //Заносим его во временный список
@@ -92,7 +92,7 @@ namespace SO.Map
                     //Расширяем массив
                     Array.Resize(
                         ref rC.rFOPEs,
-                        factionsCount);
+                        charactersCount);
 
                     //Для каждого DRFO во временном массиве
                     for (int a = 0; a < tempRFO.Count; a++)
@@ -103,9 +103,9 @@ namespace SO.Map
                 }
 
                 //Для каждого самозапроса создания ExRFO
-                foreach (int factionEntity in exRFOsCreatingSelfRequestFilter.Value)
+                foreach (int characterEntity in exRFOsCreatingSelfRequestFilter.Value)
                 {
-                    exRFOsCreatingSelfRequestPool.Value.Del(factionEntity);
+                    exRFOsCreatingSelfRequestPool.Value.Del(characterEntity);
                 }
             }
         }
@@ -120,9 +120,9 @@ namespace SO.Map
                 //Берём запрос
                 ref RRCChangeOwner requestComp = ref rCChangeOwnerRequestPool.Value.Get(requestEntity);
 
-                //Берём фракцию, которая становится владельцем RC
-                requestComp.factionPE.Unpack(world.Value, out int factionEntity);
-                ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+                //Берём персонажа, которая становится владельцем RC
+                requestComp.characterPE.Unpack(world.Value, out int characterEntity);
+                ref CCharacter character = ref characterPool.Value.Get(characterEntity);
 
                 //Берём RC
                 requestComp.regionPE.Unpack(world.Value, out int regionEntity);
@@ -138,23 +138,23 @@ namespace SO.Map
                 //Создаём событие, сообщающее о смене владельца RC
                 RegionCoreChangeOwnerEvent(
                     rC.selfPE,
-                    faction.selfPE, rC.ownerFactionPE);
+                    character.selfPE, rC.ownerCharacterPE);
 
 
-                //Указываем фракцию-владельца RC
-                rC.ownerFactionPE = faction.selfPE;
+                //Указываем персонажа-владельца RC
+                rC.ownerCharacterPE = character.selfPE;
 
                 //ТЕСТ
-                //Заносим PE региона в список фракции
-                faction.ownedRCPEs.Add(rC.selfPE);
+                //Заносим PE региона в список персонажа
+                character.ownedRCPEs.Add(rC.selfPE);
 
-                //Берём ExRFO фракции игрока
-                rC.rFOPEs[faction.selfIndex].rFOPE.Unpack(world.Value, out int rFOEntity);
+                //Берём ExRFO персонажа игрока
+                rC.rFOPEs[character.selfIndex].rFOPE.Unpack(world.Value, out int rFOEntity);
                 ref CExplorationRegionFractionObject exRFO = ref exRFOPool.Value.Get(rFOEntity);
 
-                //Назначаем RFO компонент наблюдателя и сохраняем ссылку на него в список фракции
+                //Назначаем RFO компонент наблюдателя и сохраняем ссылку на него в список персонажа
                 ref CExplorationObserver exObserver = ref explorationObserverPool.Value.Add(rFOEntity);
-                faction.observerPEs.Add(exRFO.selfPE);
+                character.observerPEs.Add(exRFO.selfPE);
                 //ТЕСТ
 
                 rCChangeOwnerRequestPool.Value.Del(requestEntity);
@@ -169,7 +169,7 @@ namespace SO.Map
         readonly EcsPoolInject<ERegionCoreChangeOwner> rCChangeOwnerEventPool = default;
         void RegionCoreChangeOwnerEvent(
             EcsPackedEntity regionPE,
-            EcsPackedEntity newOwnerFactionPE, EcsPackedEntity oldOwnerFactionPE = new())
+            EcsPackedEntity newOwnerCharacterPE, EcsPackedEntity oldOwnerCharacterPE = new())
         {
             //Создаём новую сущность и назначаем ей событие смены владельца RC
             int eventEntity = world.Value.NewEntity();
@@ -178,7 +178,7 @@ namespace SO.Map
             //Заполняем данные события
             eventComp = new(
                 regionPE,
-                newOwnerFactionPE, oldOwnerFactionPE);
+                newOwnerCharacterPE, oldOwnerCharacterPE);
         }
     }
 }

@@ -2,11 +2,11 @@ using System.Collections.Generic;
 
 using Leopotam.EcsLite;
 
-namespace SO.Faction
+namespace SO.Character
 {
-    public struct CFaction
+    public struct CCharacter
     {
-        public CFaction(
+        public CCharacter(
             EcsPackedEntity selfPE, int selfIndex, 
             string selfName)
         {

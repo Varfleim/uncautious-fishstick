@@ -4,6 +4,6 @@ namespace SO
     {
         public bool isGameActive = false;
 
-        public int factionsCount = 0;
+        public int charactersCount = 0;
     }
 }

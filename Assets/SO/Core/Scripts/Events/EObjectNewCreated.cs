@@ -6,7 +6,7 @@ namespace SO
     public enum ObjectNewCreatedType : byte
     {
         None,
-        Faction,
+        Character,
         TaskForce
     }
 

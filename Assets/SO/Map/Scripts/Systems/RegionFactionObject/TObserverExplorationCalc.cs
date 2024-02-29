@@ -3,13 +3,13 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Threads;
 using System.Collections.Generic;
 
-using SO.Faction;
+using SO.Character;
 using SO.Map.Hexasphere;
 
 namespace SO.Map
 {
     public struct TObserverExplorationCalc : IEcsThread<
-        CFaction,
+        CCharacter,
         CExplorationObserver,
         CExplorationRegionFractionObject,
         CRegionHexasphere,
@@ -19,10 +19,10 @@ namespace SO.Map
 
         public RegionsData regionsData;
 
-        int[] factionEntities;
+        int[] characterEntities;
 
-        CFaction[] factionPool;
-        int[] factionIndices;
+        CCharacter[] characterPool;
+        int[] characterIndices;
 
         CExplorationObserver[] exObserverPool;
         int[] exObserverIndices;
@@ -38,16 +38,16 @@ namespace SO.Map
 
         public void Init(
             int[] entities,
-            CFaction[] pool1, int[] indices1,
+            CCharacter[] pool1, int[] indices1,
             CExplorationObserver[] pool2, int[] indices2,
             CExplorationRegionFractionObject[] pool3, int[] indices3,
             CRegionHexasphere[] pool4, int[] indices4,
             CRegionCore[] pool5, int[] indices5)
         {
-            factionEntities = entities;
+            characterEntities = entities;
 
-            factionPool = pool1;
-            factionIndices = indices1;
+            characterPool = pool1;
+            characterIndices = indices1;
 
             exObserverPool = pool2;
             exObserverIndices = indices2;
@@ -64,18 +64,18 @@ namespace SO.Map
 
         public void Execute(int threadId, int fromIndex, int beforeIndex)
         {
-            //Для каждой фракции в потоке
+            //Для каждого персонажа в потоке
             for (int a = fromIndex; a < beforeIndex; a++)
             {
-                //Берём фракцию
-                int factionEntity = factionEntities[a];
-                ref CFaction faction = ref factionPool[factionIndices[factionEntity]];
+                //Берём персонажа
+                int characterEntity = characterEntities[a];
+                ref CCharacter character = ref characterPool[characterIndices[characterEntity]];
 
-                //Для каждого наблюдателя фракции
-                for (int b = 0; b < faction.observerPEs.Count; b++)
+                //Для каждого наблюдателя персонажа
+                for (int b = 0; b < character.observerPEs.Count; b++)
                 {
                     //Берём наблюдателя
-                    faction.observerPEs[b].Unpack(world, out int observerEntity);
+                    character.observerPEs[b].Unpack(world, out int observerEntity);
                     ref CExplorationObserver observer = ref exObserverPool[exObserverIndices[observerEntity]];
 
                     //Берём регион, в котором находится наблюдатель
@@ -104,8 +104,8 @@ namespace SO.Map
                         regionsData.regionPEs[regions[c]].Unpack(world, out int neighbourRegionEntity);
                         ref CRegionCore neighbourRC = ref rCPool[rCIndices[neighbourRegionEntity]];
 
-                        //Берём ExRFO фракции
-                        neighbourRC.rFOPEs[faction.selfIndex].rFOPE.Unpack(world, out int rFOEntity);
+                        //Берём ExRFO персонажа
+                        neighbourRC.rFOPEs[character.selfIndex].rFOPE.Unpack(world, out int rFOEntity);
                         ref CExplorationRegionFractionObject exRFO = ref exRFOPool[exRFOIndices[rFOEntity]];
 
                         //Обновляем значение исследования

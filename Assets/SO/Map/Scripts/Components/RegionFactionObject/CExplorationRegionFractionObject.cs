@@ -7,12 +7,12 @@ namespace SO.Map
     {
         public CExplorationRegionFractionObject(
             EcsPackedEntity selfPE,
-            EcsPackedEntity factionPE,
+            EcsPackedEntity characterPE,
             EcsPackedEntity parentRFOPE)
         {
             this.selfPE = selfPE;
 
-            this.factionPE = factionPE;
+            this.characterPE = characterPE;
 
             this.parentRFOPE = parentRFOPE;
 
@@ -21,7 +21,7 @@ namespace SO.Map
 
         public readonly EcsPackedEntity selfPE;
 
-        public readonly EcsPackedEntity factionPE;
+        public readonly EcsPackedEntity characterPE;
 
         public readonly EcsPackedEntity parentRFOPE;
 

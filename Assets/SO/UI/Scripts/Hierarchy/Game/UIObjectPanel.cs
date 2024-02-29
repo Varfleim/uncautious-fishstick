@@ -13,7 +13,7 @@ namespace SO.UI.Game.GUI
     {
         None,
 
-        Faction,
+        Character,
         Region,
         FleetManager
     }
@@ -26,7 +26,7 @@ namespace SO.UI.Game.GUI
         public ObjectSubpanelType activeSubpanelType;
         public UIAObjectSubpanel activeSubpanel;
 
-        public UIFactionSubpanel factionSubpanel;
+        public UICharacterSubpanel characterSubpanel;
         public UIRegionSubpanel regionSubpanel;
         public UIFleetManagerSubpanel fleetManagerSubpanel;
 

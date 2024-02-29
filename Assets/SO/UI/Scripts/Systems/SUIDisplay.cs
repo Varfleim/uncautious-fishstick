@@ -19,13 +19,13 @@ using SO.UI.Game.Map.Events;
 using SO.UI.Game.GUI;
 using SO.UI.Game.Events;
 using SO.UI.Game.GUI.Object;
-using SO.UI.Game.GUI.Object.Faction;
+using SO.UI.Game.GUI.Object.Character;
 using SO.UI.Game.GUI.Object.Region;
 using SO.UI.Game.GUI.Object.FleetManager;
 using SO.UI.Game.GUI.Object.Events;
 using SO.Map;
 using SO.Map.Hexasphere;
-using SO.Faction;
+using SO.Character;
 using SO.Warfare.Fleet;
 
 namespace SO.UI
@@ -44,8 +44,8 @@ namespace SO.UI
 
         readonly EcsPoolInject<CExplorationRegionFractionObject> exRFOPool = default;
 
-        //Фракции
-        readonly EcsPoolInject<CFaction> factionPool = default;
+        //Персонажи
+        readonly EcsPoolInject<CCharacter> characterPool = default;
 
         //Военное дело
         readonly EcsPoolInject<CTaskForce> tFPool = default;
@@ -757,19 +757,19 @@ namespace SO.UI
                     ObjectPnClose();
                 }
 
-                //Иначе, если запрашивается отображение вкладок фракции
-                else if(requestComp.requestType >= ObjectPanelActionRequestType.FactionOverview
-                    && requestComp.requestType <= ObjectPanelActionRequestType.FactionOverview)
+                //Иначе, если запрашивается отображение вкладок персонажа
+                else if (requestComp.requestType >= ObjectPanelActionRequestType.CharacterOverview
+                    && requestComp.requestType <= ObjectPanelActionRequestType.CharacterOverview)
                 {
-                    //Берём фракцию
-                    requestComp.objectPE.Unpack(world.Value, out int factionEntity);
-                    ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+                    //Берём персонажа
+                    requestComp.objectPE.Unpack(world.Value, out int characterEntity);
+                    ref CCharacter character = ref characterPool.Value.Get(characterEntity);
 
                     //Если запрашивается отображение обзорной вкладки
-                    if (requestComp.requestType == ObjectPanelActionRequestType.FactionOverview)
+                    if (requestComp.requestType == ObjectPanelActionRequestType.CharacterOverview)
                     {
-                        //Отображаем обзорную вкладку фракции
-                        FactionSbpnShowOverviewTab(ref faction);
+                        //Отображаем обзорную вкладку персонажа
+                        CharacterSbpnShowOverviewTab(ref character);
                     }
                 }
                 //Иначе, если запрашивается отображение вкладок региона
@@ -792,15 +792,15 @@ namespace SO.UI
                 else if(requestComp.requestType >= ObjectPanelActionRequestType.FleetManagerFleets
                     && requestComp.requestType <= ObjectPanelActionRequestType.FleetManagerFleets)
                 {
-                    //Берём фракцию
-                    requestComp.objectPE.Unpack(world.Value, out int factionEntity);
-                    ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+                    //Берём персонажа
+                    requestComp.objectPE.Unpack(world.Value, out int characterEntity);
+                    ref CCharacter character = ref characterPool.Value.Get(characterEntity);
 
                     //Если запрашивается отображение вкладки флотов
                     if (requestComp.requestType == ObjectPanelActionRequestType.FleetManagerFleets)
                     {
                         //Отображаем вкладку флотов
-                        FleetManagerSbpnShowFleetsTab(ref faction);
+                        FleetManagerSbpnShowFleetsTab(ref character);
                     }
                 }
 
@@ -813,11 +813,11 @@ namespace SO.UI
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Если активна подпанель фракции
-            if (objectPanel.activeSubpanelType == ObjectSubpanelType.Faction)
+            //Если активна подпанель персонажа
+            if (objectPanel.activeSubpanelType == ObjectSubpanelType.Character)
             {
                 //Скрываем активную вкладку
-                objectPanel.factionSubpanel.HideActiveTab();
+                objectPanel.characterSubpanel.HideActiveTab();
             }
             //Иначе, если активна подпанель региона
             else if (objectPanel.activeSubpanelType == ObjectSubpanelType.Region)
@@ -906,10 +906,10 @@ namespace SO.UI
             }
         }
 
-        #region FactionSubpanel
-        void FactionSbpnShowTab(
-            UIASubpanelTab currentFactionTab,
-            ref CFaction currentFaction,
+        #region CharacterSubpanel
+        void CharacterSbpnShowTab(
+            UIASubpanelTab currentCharacterTab,
+            ref CCharacter currentCharacter,
             out bool isSamePanel,
             out bool isSameSubpanel,
             out bool isSameTab,
@@ -922,17 +922,17 @@ namespace SO.UI
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель фракции
-            UIFactionSubpanel factionSubpanel = objectPanel.factionSubpanel;
+            //Берём подпанель персонажа
+            UICharacterSubpanel characterSubpanel = objectPanel.characterSubpanel;
 
-            //Отображаем подпанель фракции, если необходимо
+            //Отображаем подпанель персонажа, если необходимо
             ObjectPnOpenSubpanel(
-                factionSubpanel, ObjectSubpanelType.Faction,
+                characterSubpanel, ObjectSubpanelType.Character,
                 out isSamePanel,
                 out isSameSubpanel);
 
             //Если открыта необходимая вкладка
-            if (factionSubpanel.activeTab == currentFactionTab)
+            if (characterSubpanel.activeTab == currentCharacterTab)
             {
                 //Если была открыта та же подпанель
                 if(isSameSubpanel == true)
@@ -940,8 +940,8 @@ namespace SO.UI
                     //Сообщаем, что была открыта та же вкладка
                     isSameTab = true;
 
-                    //Если вкладка была открыта для той же фракции
-                    if (factionSubpanel.activeTab.objectPE.EqualsTo(currentFaction.selfPE) == true)
+                    //Если вкладка была открыта для того же персонажа
+                    if (characterSubpanel.activeTab.objectPE.EqualsTo(currentCharacter.selfPE) == true)
                     {
                         //То сообщаем, что был отображён тот же объект
                         isSameObject = true;
@@ -980,10 +980,10 @@ namespace SO.UI
             else
             {
                 //Отображаем запрошенную вкладку
-                factionSubpanel.tabGroup.OnTabSelected(currentFactionTab.selfTabButton);
+                characterSubpanel.tabGroup.OnTabSelected(currentCharacterTab.selfTabButton);
 
                 //Указываем её как активную вкладку
-                factionSubpanel.activeTab = currentFactionTab;
+                characterSubpanel.activeTab = currentCharacterTab;
             }
 
             //Если был отображён тот же объект
@@ -994,27 +994,27 @@ namespace SO.UI
             //Иначе
             else
             {
-                //Указываем PE текущей фракции
-                factionSubpanel.activeTab.objectPE = currentFaction.selfPE;
+                //Указываем PE текущего персонажа
+                characterSubpanel.activeTab.objectPE = currentCharacter.selfPE;
 
-                //Отображаем название панели - название фракции
-                objectPanel.objectName.text = currentFaction.selfIndex.ToString();
+                //Отображаем название панели - название персонажа
+                objectPanel.objectName.text = currentCharacter.selfIndex.ToString();
             }
         }
 
-        void FactionSbpnShowOverviewTab(
-            ref CFaction faction)
+        void CharacterSbpnShowOverviewTab(
+            ref CCharacter character)
         {
-            //Берём подпанель фракции
-            UIFactionSubpanel factionSubpanel = sOUI.Value.gameWindow.objectPanel.factionSubpanel;
+            //Берём подпанель персонажа
+            UICharacterSubpanel characterSubpanel = sOUI.Value.gameWindow.objectPanel.characterSubpanel;
 
             //Берём обзорную вкладку
-            Game.GUI.Object.Faction.UIOverviewTab overviewTab = factionSubpanel.overviewTab;
+            Game.GUI.Object.Character.UIOverviewTab overviewTab = characterSubpanel.overviewTab;
 
             //Отображаем обзорную вкладку
-            FactionSbpnShowTab(
+            CharacterSbpnShowTab(
                 overviewTab,
-                ref faction,
+                ref character,
                 out bool isSamePanel,
                 out bool isSameSubpanel,
                 out bool isSameTab,
@@ -1136,12 +1136,12 @@ namespace SO.UI
                 out bool isSameTab,
                 out bool isSameObject);
 
-            //Берём фракцию игрока
-            inputData.Value.playerFactionPE.Unpack(world.Value, out int factionEntity);
-            ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+            //Берём персонажа игрока
+            inputData.Value.playerCharacterPE.Unpack(world.Value, out int characterEntity);
+            ref CCharacter character = ref characterPool.Value.Get(characterEntity);
 
-            //Берём ExRFO фракции игрока
-            rC.rFOPEs[faction.selfIndex].rFOPE.Unpack(world.Value, out int rFOEntity);
+            //Берём ExRFO персонажа игрока
+            rC.rFOPEs[character.selfIndex].rFOPE.Unpack(world.Value, out int rFOEntity);
             ref CExplorationRegionFractionObject exRFO = ref exRFOPool.Value.Get(rFOEntity);
 
             //Отображаем уровень исследования региона
@@ -1152,7 +1152,7 @@ namespace SO.UI
         #region FleetManager
         void FleetManagerSbpnShowTab(
             UIASubpanelTab currentFleetManagerTab,
-            ref CFaction currentFaction,
+            ref CCharacter currentCharacter,
             out bool isSamePanel,
             out bool isSameSubpanel,
             out bool isSameTab,
@@ -1183,8 +1183,8 @@ namespace SO.UI
                     //Сообщаем, что была открыта та же вкладка
                     isSameTab = true;
 
-                    //Если вкладка была открыта для той же фракции
-                    if (fleetManagerSubpanel.activeTab.objectPE.EqualsTo(currentFaction.selfPE) == true)
+                    //Если вкладка была открыта для того же персонажа
+                    if (fleetManagerSubpanel.activeTab.objectPE.EqualsTo(currentCharacter.selfPE) == true)
                     {
                         //То сообщаем, что был отображён тот же объект
                         isSameObject = true;
@@ -1238,13 +1238,13 @@ namespace SO.UI
             //Иначе
             else
             {
-                //Указываем PE текущей фракции
-                fleetManagerSubpanel.activeTab.objectPE = currentFaction.selfPE;
+                //Указываем PE текущего персонажа
+                fleetManagerSubpanel.activeTab.objectPE = currentCharacter.selfPE;
             }
         }
 
         void FleetManagerSbpnShowFleetsTab(
-            ref CFaction faction)
+            ref CCharacter character)
         {
             //Берём подпанель менеджера флотов
             UIFleetManagerSubpanel fleetManagerSubpanel = sOUI.Value.gameWindow.objectPanel.fleetManagerSubpanel;
@@ -1255,7 +1255,7 @@ namespace SO.UI
             //Отображаем вкладку флотов
             FleetManagerSbpnShowTab(
                 fleetsTab,
-                ref faction,
+                ref character,
                 out bool isSamePanel,
                 out bool isSameSubpanel,
                 out bool isSameTab,
@@ -1303,11 +1303,11 @@ namespace SO.UI
             else
             {
                 //Проверяем, какие оперативные группы должны быть отображены в этом списке
-                //Для каждой оперативной группы фракции
-                for(int a = 0; a < faction.ownedTaskForces.Count; a++)
+                //Для каждой оперативной группы персонажа
+                for (int a = 0; a < character.ownedTaskForces.Count; a++)
                 {
                     //Берём сущность оперативной группы и назначаем компонент "неудаляемый UI"
-                    faction.ownedTaskForces[a].Unpack(world.Value, out int tFEntity);
+                    character.ownedTaskForces[a].Unpack(world.Value, out int tFEntity);
                     ref CNonDeletedUI tFNonDeletedUI = ref nonDeletedUIPool.Value.Add(tFEntity);
                 }
 

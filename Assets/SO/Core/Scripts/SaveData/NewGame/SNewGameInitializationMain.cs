@@ -3,7 +3,7 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
 using SO.Map.Events;
-using SO.Faction.Events;
+using SO.Character.Events;
 
 namespace SO
 {
@@ -15,8 +15,8 @@ namespace SO
         //События карты
         readonly EcsPoolInject<RMapGenerating> mapGeneratingRequestPool = default;
 
-        //События фракций
-        readonly EcsPoolInject<RFactionCreating> factionCreatingRequestPool = default;
+        //События персонажей
+        readonly EcsPoolInject<RCharacterCreating> characterCreatingRequestPool = default;
 
         //Общие события
         readonly EcsFilterInject<Inc<RStartNewGame>> startNewGameRequestFilter = default;
@@ -33,8 +33,8 @@ namespace SO
                 //Запрашиваем генерацию карты
                 MapGeneratingRequest(50);
 
-                //Запрашиваем создание тестовой фракции
-                FactionCreatingRequest("TestFaction");
+                //Запрашиваем создание тестового персонажа
+                CharacterCreatingRequest("TestCharacter");
 
                 UnityEngine.Debug.LogWarning("Новая игра");
             }
@@ -51,15 +51,15 @@ namespace SO
             requestComp = new(subdivisions);
         }
         
-        void FactionCreatingRequest(
-            string factionName)
+        void CharacterCreatingRequest(
+            string characterName)
         {
-            //Создаём новую сущность и назначаем ей запрос создания фракции
+            //Создаём новую сущность и назначаем ей запрос создания персонажа
             int requestEntity = world.Value.NewEntity();
-            ref RFactionCreating requestComp = ref factionCreatingRequestPool.Value.Add(requestEntity);
+            ref RCharacterCreating requestComp = ref characterCreatingRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
-            requestComp = new(factionName);
+            requestComp = new(characterName);
         }
     }
 }

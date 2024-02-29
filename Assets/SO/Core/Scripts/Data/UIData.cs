@@ -20,7 +20,7 @@ namespace SO.UI
         public Game.GUI.Object.FleetManager.Fleets.UITaskForceSummaryPanel fMSbpnFleetsTabTaskForceSummaryPanelPrefab;
         public UITFMainMapPanel tFMainMapPanelPrefab;
 
-        public ObjectPanelActionRequestType factionSubpanelDefaultTab;
+        public ObjectPanelActionRequestType characterSubpanelDefaultTab;
         public ObjectPanelActionRequestType regionSubpanelDefaultTab;
         public ObjectPanelActionRequestType fleetManagerSubpanelDefaultTab;
     }

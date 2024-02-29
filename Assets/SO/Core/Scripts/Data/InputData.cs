@@ -73,7 +73,7 @@ namespace SO.UI
         public EcsPackedEntity searchToRegion;
 
 
-        public EcsPackedEntity playerFactionPE;
+        public EcsPackedEntity playerCharacterPE;
 
 
         public List<EcsPackedEntity> activeTaskForcePEs = new();

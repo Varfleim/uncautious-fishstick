@@ -312,7 +312,7 @@ GameObject:
   - component: {fileID: 99983555}
   - component: {fileID: 99983554}
   m_Layer: 5
-  m_Name: PlayerFactionFlag
+  m_Name: PlayerCharacterFlag
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -350,7 +350,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44b6b406923f44eb196499bd257618bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _widgetName: PlayerFactionFlag
+  _widgetName: PlayerCharacterFlag
   _emitter: {fileID: 0}
   _nameRegistrationType: 0
   _selectable: {fileID: 0}
@@ -3567,7 +3567,7 @@ MonoBehaviour:
   objectName: {fileID: 1262965103}
   activeSubpanelType: 0
   activeSubpanel: {fileID: 0}
-  factionSubpanel: {fileID: 1575359002}
+  characterSubpanel: {fileID: 1575359002}
   regionSubpanel: {fileID: 1014726371}
   fleetManagerSubpanel: {fileID: 2034930329}
 --- !u!1 &1512882252
@@ -3613,7 +3613,7 @@ GameObject:
   - component: {fileID: 1575359001}
   - component: {fileID: 1575359002}
   m_Layer: 5
-  m_Name: FactionSubpanel
+  m_Name: CharacterSubpanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4166,7 +4166,7 @@ MonoBehaviour:
   uIData: {fileID: 2105182970}
   mapGenerationData: {fileID: 2105182967}
   regionsData: {fileID: 2105182966}
-  factionsData: {fileID: 2105182969}
+  charactersData: {fileID: 2105182969}
   inputData: {fileID: 2105182968}
   sOUI: {fileID: 199122799}
 --- !u!114 &2105182964
@@ -4521,7 +4521,7 @@ PrefabInstance:
       objectReference: {fileID: 1701880588}
     - target: {fileID: 5131526181156040073, guid: deee506f46f6b5f40a33971cd88abf71, type: 3}
       propertyPath: _widgetName
-      value: OverviewTabFactionSbpn
+      value: OverviewTabCharacterSbpn
       objectReference: {fileID: 0}
     - target: {fileID: 6685661392456570740, guid: deee506f46f6b5f40a33971cd88abf71, type: 3}
       propertyPath: m_text

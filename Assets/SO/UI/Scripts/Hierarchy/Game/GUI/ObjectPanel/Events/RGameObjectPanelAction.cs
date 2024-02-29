@@ -5,7 +5,7 @@ namespace SO.UI.Game.GUI.Object.Events
 {
     public enum ObjectPanelActionRequestType : byte
     {
-        FactionOverview,
+        CharacterOverview,
 
         RegionOverview,
 

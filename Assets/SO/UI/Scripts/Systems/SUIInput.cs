@@ -16,7 +16,7 @@ using SO.UI.Game.GUI.Object.Events;
 using SO.Map;
 using SO.Map.Hexasphere;
 using SO.Map.Events;
-using SO.Faction;
+using SO.Character;
 using SO.Warfare.Fleet;
 using SO.Warfare.Fleet.Events;
 using SO.Warfare.Fleet.Missions.Events;
@@ -38,8 +38,8 @@ namespace SO.UI
         readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
         readonly EcsPoolInject<CRegionCore> rCPool = default;
 
-        //Фракции
-        readonly EcsPoolInject<CFaction> factionPool = default;
+        //Персонажи
+        readonly EcsPoolInject<CCharacter> characterPool = default;
 
         //Военное дело
         readonly EcsPoolInject<CTaskForce> taskForcePool = default;
@@ -128,70 +128,6 @@ namespace SO.UI
 
             //Ввод мыши
             InputMouse();
-
-            foreach (int regionEntity in regionFilter.Value)
-            {
-                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
-                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
-
-                //if (region.Elevation < mapGenerationData.Value.waterLevel)
-                //{
-                //    RegionSetColor(ref region, Color.blue);
-                //}
-                //else if (region.TerrainTypeIndex == 0)
-                //{
-                //    RegionSetColor(ref region, Color.yellow);
-                //}
-                //else if (region.TerrainTypeIndex == 1)
-                //{
-                //    RegionSetColor(ref region, Color.green);
-                //}
-                //else if (region.TerrainTypeIndex == 2)
-                //{
-                //    RegionSetColor(ref region, Color.gray);
-                //}
-                //else if (region.TerrainTypeIndex == 3)
-                //{
-                //    RegionSetColor(ref region, Color.red);
-                //}
-                //else if (region.TerrainTypeIndex == 4)
-                //{
-                //    RegionSetColor(ref region, Color.white);
-                //}
-
-                //for (int a = 0; a < rFO.factionRFOs.Length; a++)
-                //{
-                //    rFO.factionRFOs[a].fRFOPE.Unpack(world.Value, out int fRFOEntity);
-                //    ref CExplorationFRFO exFRFO = ref exFRFOPool.Value.Get(fRFOEntity);
-
-                //    if (exFRFO.factionPE.EqualsTo(inputData.Value.playerFactionPE))
-                //    {
-                //        RegionSetColor(
-                //            ref region,
-                //            new Color32(
-                //                exFRFO.explorationLevel, exFRFO.explorationLevel, exFRFO.explorationLevel,
-                //                255));
-                //    }
-                //}
-
-                //if (rFO.ownerFactionPE.Unpack(world.Value, out int factionEntity))
-                //{
-                //    RegionSetColor(ref region, Color.magenta);
-
-                //    List<int> regions = regionsData.Value.GetRegionIndicesWithinSteps(
-                //        world.Value,
-                //        regionFilter.Value, regionPool.Value,
-                //        ref region, 10);
-
-                //    for(int a = 0; a < regions.Count; a++)
-                //    {
-                //        regionsData.Value.regionPEs[regions[a]].Unpack(world.Value, out int neighbourRegionEntity);
-                //        ref CRegion neighbourRegion = ref regionPool.Value.Get(neighbourRegionEntity);
-
-                //        RegionSetColor(ref neighbourRegion, Color.magenta);
-                //    }
-                //}
-            }
         }
 
         void CheckButtons()
@@ -379,17 +315,17 @@ namespace SO.UI
             //Берём окно игры
             UIGameWindow gameWindow = sOUI.Value.gameWindow;
 
-            //Берём фракцию игрока
-            inputData.Value.playerFactionPE.Unpack(world.Value, out int factionEntity);
-            ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+            //Берём персонажа игрока
+            inputData.Value.playerCharacterPE.Unpack(world.Value, out int characterEntity);
+            ref CCharacter character = ref characterPool.Value.Get(characterEntity);
 
-            //Если клик по флагу фракции игрока
-            if (clickEvent.WidgetName == "PlayerFactionFlag")
+            //Если клик по флагу персонажа игрока
+            if (clickEvent.WidgetName == "PlayerCharacterFlag")
             {
-                //Запрашиваем отображение панели фракции
+                //Запрашиваем отображение панели персонажа
                 ObjectPnActionRequest(
-                    uIData.Value.factionSubpanelDefaultTab,
-                    faction.selfPE);
+                    uIData.Value.characterSubpanelDefaultTab,
+                    character.selfPE);
             }
             //Иначе, если клик по кнопке менеджера флотов на панели главных кнопок
             else if(clickEvent.WidgetName == "FleetManagerMBtnPn")
@@ -397,7 +333,7 @@ namespace SO.UI
                 //Запрашиваем отображение менеджера флотов
                 ObjectPnActionRequest(
                     uIData.Value.fleetManagerSubpanelDefaultTab,
-                    faction.selfPE);
+                    character.selfPE);
             }
 
             //Иначе, если активна панель объекта
@@ -468,9 +404,9 @@ namespace SO.UI
         void ObjectPnClickAction(
             ref EcsUguiClickEvent clickEvent)
         {
-            //Берём фракцию игрока
-            inputData.Value.playerFactionPE.Unpack(world.Value, out int factionEntity);
-            ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+            //Берём персонажа игрока
+            inputData.Value.playerCharacterPE.Unpack(world.Value, out int characterEntity);
+            ref CCharacter character = ref characterPool.Value.Get(characterEntity);
 
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
@@ -482,11 +418,11 @@ namespace SO.UI
                 ObjectPnActionRequest(ObjectPanelActionRequestType.Close);
             }
 
-            //Иначе, если активна подпанель фракции
-            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Faction)
+            //Иначе, если активна подпанель персонажа
+            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.Character)
             {
-                //Проверяем клики в подпанели фракции
-                FactionSbpnClickAction(ref clickEvent);
+                //Проверяем клики в подпанели персонажа
+                CharacterSbpnClickAction(ref clickEvent);
             }
             //Иначе, если активна подпанель региона
             else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Region)
@@ -517,23 +453,23 @@ namespace SO.UI
                 objectPE);
         }
 
-        #region FactionSubpanel
-        void FactionSbpnClickAction(
+        #region CharacterSubpanel
+        void CharacterSbpnClickAction(
             ref EcsUguiClickEvent clickEvent)
         {
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель фракции
-            UIFactionSubpanel factionSubpanel = objectPanel.factionSubpanel;
+            //Берём подпанель персонажа
+            UICharacterSubpanel characterSubpanel = objectPanel.characterSubpanel;
 
             //Если нажата кнопка обзорной вкладки
-            if(clickEvent.WidgetName == "OverviewTabFactionSbpn")
+            if(clickEvent.WidgetName == "OverviewTabCharacterSbpn")
             {
                 //Запрашиваем отображение обзорной вкладки
                 ObjectPnActionRequest(
-                    ObjectPanelActionRequestType.FactionOverview,
-                    factionSubpanel.activeTab.objectPE);
+                    ObjectPanelActionRequestType.CharacterOverview,
+                    characterSubpanel.activeTab.objectPE);
             }
         }
         #endregion
@@ -589,9 +525,9 @@ namespace SO.UI
         void FMSbpnFleetsTabClickAction(
             ref EcsUguiClickEvent clickEvent)
         {
-            //Берём фракцию игрока
-            inputData.Value.playerFactionPE.Unpack(world.Value, out int factionEntity);
-            ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+            //Берём персонажа игрока
+            inputData.Value.playerCharacterPE.Unpack(world.Value, out int characterEntity);
+            ref CCharacter character = ref characterPool.Value.Get(characterEntity);
 
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
@@ -657,20 +593,20 @@ namespace SO.UI
             else if(clickEvent.WidgetName == "CreateNewTaskForceFMSbpnFleetsTab")
             {
                 //Запрашиваем создание новой группы
-                TaskForceCreatingRequest(ref faction);
+                TaskForceCreatingRequest(ref character);
             }
         }
 
         readonly EcsPoolInject<RTaskForceCreating> taskForceCreatingRequestPool = default;
         void TaskForceCreatingRequest(
-            ref CFaction ownerFaction)
+            ref CCharacter ownerCharacter)
         {
             //Создаём новую сущность и назначаем ей запрос создания оперативной группы
             int requestEntity = world.Value.NewEntity();
             ref RTaskForceCreating requestComp = ref taskForceCreatingRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
-            requestComp = new(ownerFaction.selfPE);
+            requestComp = new(ownerCharacter.selfPE);
         }
         #endregion
         #endregion

@@ -7,17 +7,17 @@ namespace SO.Map
     {
         public ERegionCoreChangeOwner(
             EcsPackedEntity regionPE,
-            EcsPackedEntity newOwnerFactionPE, EcsPackedEntity oldOwnerFactionPE)
+            EcsPackedEntity newOwnerCharacterPE, EcsPackedEntity oldOwnerCharacterPE)
         {
             this.regionPE = regionPE;
 
-            this.newOwnerFactionPE = newOwnerFactionPE;
-            this.oldOwnerFactionPE = oldOwnerFactionPE;
+            this.newOwnerCharacterPE = newOwnerCharacterPE;
+            this.oldOwnerCharacterPE = oldOwnerCharacterPE;
         }
 
         public readonly EcsPackedEntity regionPE;
 
-        public readonly EcsPackedEntity newOwnerFactionPE;
-        public readonly EcsPackedEntity oldOwnerFactionPE;
+        public readonly EcsPackedEntity newOwnerCharacterPE;
+        public readonly EcsPackedEntity oldOwnerCharacterPE;
     }
 }

@@ -52,10 +52,10 @@ namespace SO
                 //Берём событие
                 ref EObjectNewCreated eventComp = ref objectNewCreatedEventPool.Value.Get(eventEntity);
 
-                //Если событие сообщает о создании новой фракции
-                if(eventComp.objectType == ObjectNewCreatedType.Faction)
+                //Если событие сообщает о создании нового персонажа
+                if (eventComp.objectType == ObjectNewCreatedType.Character)
                 {
-                    UnityEngine.Debug.LogWarning("Faction created!");
+                    UnityEngine.Debug.LogWarning("Character created!");
                 }
                 //Иначе, если событие сообщает о создании новой оперативной группы
                 else if(eventComp.objectType == ObjectNewCreatedType.TaskForce)
@@ -86,7 +86,7 @@ namespace SO
                 ref ERegionCoreChangeOwner eventComp = ref rFOChangeOwnerEventPool.Value.Get(eventEntity);
 
                 //Если регион не принадлежал никому, то его сущность невозможно будет взять
-                if(eventComp.oldOwnerFactionPE.Unpack(world.Value, out int oldOwnerFactionEntity) == false)
+                if(eventComp.oldOwnerCharacterPE.Unpack(world.Value, out int oldOwnerCharacterEntity) == false)
                 {
                     //Запрашиваем создание главной панели карты региона
                     GameCreatePanelRequest(

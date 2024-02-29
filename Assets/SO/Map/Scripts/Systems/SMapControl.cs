@@ -9,7 +9,7 @@ using Leopotam.EcsLite.Di;
 using SO.UI;
 using SO.UI.Game.Map.Events;
 using SO.Map.Events;
-using SO.Faction;
+using SO.Character;
 using SO.Map.Hexasphere;
 using SO.Map.StrategicArea;
 
@@ -31,8 +31,8 @@ namespace SO.Map
         readonly EcsFilterInject<Inc<CStrategicArea>> sAFilter = default;
         readonly EcsPoolInject<CStrategicArea> sAPool = default;
 
-        //Фракции
-        readonly EcsPoolInject<CFaction> factionPool = default;
+        //Персонажи
+        readonly EcsPoolInject<CCharacter> characterPool = default;
 
 
         //Данные
@@ -215,9 +215,9 @@ namespace SO.Map
 
         void MapDisplayModeExploration()
         {
-            //Берём фракцию игрока
-            inputData.Value.playerFactionPE.Unpack(world.Value, out int factionEntity);
-            ref CFaction faction = ref factionPool.Value.Get(factionEntity);
+            //Берём персонажа игрока
+            inputData.Value.playerCharacterPE.Unpack(world.Value, out int characterEntity);
+            ref CCharacter character = ref characterPool.Value.Get(characterEntity);
 
             //Для каждого региона
             foreach (int regionEntity in regionFilter.Value)
@@ -226,8 +226,8 @@ namespace SO.Map
                 ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
                 ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
-                //Берём ExFRFO фракции
-                rC.rFOPEs[faction.selfIndex].rFOPE.Unpack(world.Value, out int fRFOEntity);
+                //Берём ExFRFO персонажа
+                rC.rFOPEs[character.selfIndex].rFOPE.Unpack(world.Value, out int fRFOEntity);
                 ref CExplorationRegionFractionObject exFRFO = ref exFRFOPool.Value.Get(fRFOEntity);
 
                 //ТЕСТ

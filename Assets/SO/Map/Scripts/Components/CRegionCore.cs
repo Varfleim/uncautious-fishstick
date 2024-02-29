@@ -25,9 +25,9 @@ namespace SO.Map
             parentStrategicAreaPE = new();
 
 
-            ownerFactionPE = new();
+            ownerCharacterPE = new();
 
-            rFOPEs = new DRegionFactionObject[0];
+            rFOPEs = new DRegionCharacterObject[0];
 
 
             crossCost = 1;
@@ -69,10 +69,10 @@ namespace SO.Map
         }
         #endregion
 
-        #region FactionData
-        public EcsPackedEntity ownerFactionPE;
+        #region CharacterData
+        public EcsPackedEntity ownerCharacterPE;
 
-        public DRegionFactionObject[] rFOPEs;
+        public DRegionCharacterObject[] rFOPEs;
         #endregion
 
         #region TaskForceData

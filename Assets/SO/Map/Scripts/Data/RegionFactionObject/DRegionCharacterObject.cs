@@ -3,9 +3,9 @@ using Leopotam.EcsLite;
 
 namespace SO.Map
 {
-    public struct DRegionFactionObject
+    public struct DRegionCharacterObject
     {
-        public DRegionFactionObject(
+        public DRegionCharacterObject(
             EcsPackedEntity rFOPE)
         {
             this.rFOPE = rFOPE;

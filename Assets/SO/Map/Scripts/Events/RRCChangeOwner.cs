@@ -11,18 +11,18 @@ namespace SO.Map.Events
     public readonly struct RRCChangeOwner
     {
         public RRCChangeOwner(
-            EcsPackedEntity factionPE,
+            EcsPackedEntity characterPE,
             EcsPackedEntity regionPE,
             RCChangeOwnerType requestType)
         {
-            this.factionPE = factionPE;
+            this.characterPE = characterPE;
 
             this.regionPE = regionPE;
 
             this.requestType = requestType;
         }
 
-        public readonly EcsPackedEntity factionPE;
+        public readonly EcsPackedEntity characterPE;
 
         public readonly EcsPackedEntity regionPE;
 

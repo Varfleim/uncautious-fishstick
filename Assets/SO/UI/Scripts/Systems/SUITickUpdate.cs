@@ -47,11 +47,11 @@ namespace SO.UI
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Если активна подпанель фракции
-            if(objectPanel.activeSubpanelType == ObjectSubpanelType.Faction) 
+            //Если активна подпанель персонажа
+            if (objectPanel.activeSubpanelType == ObjectSubpanelType.Character) 
             {
-                //Проверяем, требуется ли обновление в подпанели фракции
-                FactionSbpnCheckRefresh();
+                //Проверяем, требуется ли обновление в подпанели персонажа
+                CharacterSbpnCheckRefresh();
             }
             //Иначе, если активна подпанель региона
             else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Region)
@@ -81,22 +81,22 @@ namespace SO.UI
                 requestType,
                 objectPE);
         }
-
-        void FactionSbpnCheckRefresh()
+        
+        void CharacterSbpnCheckRefresh()
         {
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель фракции
-            UIFactionSubpanel factionSubpanel = objectPanel.factionSubpanel;
+            //Берём подпанель персонажа
+            UICharacterSubpanel characterSubpanel = objectPanel.characterSubpanel;
 
             //Если активна обзорная вкладка
-            if(factionSubpanel.activeTab == factionSubpanel.overviewTab)
+            if(characterSubpanel.activeTab == characterSubpanel.overviewTab)
             {
                 //Запрашиваем обновление обзорной вкладки
                 ObjPnActionRequest(
-                    ObjectPanelActionRequestType.FactionOverview,
-                    factionSubpanel.activeTab.objectPE);
+                    ObjectPanelActionRequestType.CharacterOverview,
+                    characterSubpanel.activeTab.objectPE);
             }
         }
 
