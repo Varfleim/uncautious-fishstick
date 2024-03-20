@@ -2,8 +2,8 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Map.Events;
 using SO.Character.Events;
+using SO.Map.Generation;
 
 namespace SO
 {

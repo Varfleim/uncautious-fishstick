@@ -17,7 +17,7 @@ namespace SO.Character
 
             ownedRCPEs = new();
 
-            observerPEs = new();
+            ownedSAPEs = new();
 
             ownedTaskForces = new();
         }
@@ -29,7 +29,7 @@ namespace SO.Character
 
         public List<EcsPackedEntity> ownedRCPEs;
 
-        public List<EcsPackedEntity> observerPEs;
+        public List<EcsPackedEntity> ownedSAPEs;
 
         public List<EcsPackedEntity> ownedTaskForces;
     }

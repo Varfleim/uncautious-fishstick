@@ -59,6 +59,12 @@ namespace SO.UI
                 //Проверяем, требуется ли обновление в подпанели региона
                 RegionSbpnCheckRefresh();
             }
+            //Иначе, если активна подпанель стратегической области
+            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.StrategicArea)
+            {
+                //Проверяем, требуется ли обновление в подпанели области
+                StrategicAreaSbpnCheckRefresh();
+            }
             //Иначе, если активна подпанель менеджера флотов
             else if(objectPanel.activeSubpanelType == ObjectSubpanelType.FleetManager)
             {
@@ -115,6 +121,32 @@ namespace SO.UI
                 ObjPnActionRequest(
                     ObjectPanelActionRequestType.RegionOverview,
                     regionSubpanel.activeTab.objectPE);
+            }
+        }
+
+        void StrategicAreaSbpnCheckRefresh()
+        {
+            //Берём панель объекта
+            UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
+
+            //Берём подпанель стратегической области
+            UIStrategicAreaSubpanel sASubpanel = objectPanel.strategicAreaSubpanel;
+
+            //Если активна обзорная вкладка
+            if (sASubpanel.activeTab == sASubpanel.overviewTab)
+            {
+                //Запрашиваем обновление обзорной вкладки
+                ObjPnActionRequest(
+                    ObjectPanelActionRequestType.StrategicAreaOverview,
+                    sASubpanel.activeTab.objectPE);
+            }
+            //Иначе, если активна вкладка регионов
+            else if(sASubpanel.activeTab == sASubpanel.regionsTab)
+            {
+                //Запрашиваем обновление вкладки регионов
+                ObjPnActionRequest(
+                    ObjectPanelActionRequestType.StrategicAreaRegions,
+                    sASubpanel.activeTab.objectPE);
             }
         }
 

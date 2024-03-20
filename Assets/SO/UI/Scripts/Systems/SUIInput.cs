@@ -13,15 +13,18 @@ using SO.UI.Game.Map.Events;
 using SO.UI.Game.GUI;
 using SO.UI.Game.GUI.Object;
 using SO.UI.Game.GUI.Object.Events;
-using SO.Map;
-using SO.Map.Hexasphere;
-using SO.Map.Events;
 using SO.Character;
 using SO.Warfare.Fleet;
 using SO.Warfare.Fleet.Events;
 using SO.Warfare.Fleet.Missions.Events;
 using SO.Warfare.Fleet.Movement;
 using SO.Warfare.Fleet.Movement.Events;
+using SO.Map.StrategicArea;
+using SO.Map.Hexasphere;
+using SO.Map.UI;
+using SO.Map.Generation;
+using SO.Map.Events;
+using SO.Map.Region;
 
 namespace SO.UI
 {
@@ -34,16 +37,20 @@ namespace SO.UI
 
 
         //Карта
-        readonly EcsFilterInject<Inc<CRegionHexasphere>> regionFilter = default;
         readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
         readonly EcsPoolInject<CRegionCore> rCPool = default;
+
+        readonly EcsFilterInject<Inc<CRegionCore, CRegionDisplayedGUIPanels>> regionDisplayedGUIPanelsFilter = default;
+        readonly EcsPoolInject<CRegionDisplayedGUIPanels> regionDisplayedGUIPanelsPool = default;
+
+        readonly EcsPoolInject<CStrategicArea> sAPool = default;
 
         //Персонажи
         readonly EcsPoolInject<CCharacter> characterPool = default;
 
         //Военное дело
         readonly EcsPoolInject<CTaskForce> taskForcePool = default;
-        readonly EcsPoolInject<CTaskForceDisplayedGUIPanels> taskForceDisplayedGUIPanelsPool = default;
+        readonly EcsPoolInject<CTaskForceDisplayedGUIPanels> tFDisplayedGUIPanelsPool = default;
 
 
         EcsFilter clickEventMapFilter;
@@ -257,7 +264,7 @@ namespace SO.UI
                 Debug.LogWarning("Y!");
 
                 MapChangeMapModeRequest(
-                    ChangeMapModeRequestType.Exploration);
+                    ChangeMapModeRequestType.Character);
             }
         }
 
@@ -430,6 +437,12 @@ namespace SO.UI
                 //Проверяем клики в подпанели региона
                 RegionSbpnClickAction(ref clickEvent);
             }
+            //Иначе, если активна подпанель стратегической области
+            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.StrategicArea)
+            {
+                //Проверяем клики в подпанели области
+                StrategicAreaSbpnClickAction(ref clickEvent);
+            }
             //Иначе, если активна подпанель менеджера флотов
             else if (objectPanel.activeSubpanelType == ObjectSubpanelType.FleetManager)
             {
@@ -492,6 +505,119 @@ namespace SO.UI
                     ObjectPanelActionRequestType.RegionOverview,
                     regionSubpanel.activeTab.objectPE);
             }
+        }
+        #endregion
+
+        #region StrategicAreaSubpanel
+        void StrategicAreaSbpnClickAction(
+            ref EcsUguiClickEvent clickEvent)
+        {
+            //Берём панель объекта
+            UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
+
+            //Берём подпанель стратегической области
+            UIStrategicAreaSubpanel sASubpanel = objectPanel.strategicAreaSubpanel;
+
+            //Если нажата кнопка обзорной вкладки
+            if (clickEvent.WidgetName == "OverviewTabStrategicAreaSbpn")
+            {
+                //Запрашиваем отображение обзорной вкладки
+                ObjectPnActionRequest(
+                    ObjectPanelActionRequestType.StrategicAreaOverview,
+                    sASubpanel.activeTab.objectPE);
+            }
+            //Иначе, если нажата кнопка вкладки регионов
+            else if(clickEvent.WidgetName == "RegionsTabStrategicAreaSbpn")
+            {
+                //Запрашиваем отображение вкладки регионов
+                ObjectPnActionRequest(
+                    ObjectPanelActionRequestType.StrategicAreaRegions,
+                    sASubpanel.activeTab.objectPE);
+            }
+
+            //ТЕСТ
+            //Если нажата кнопка захвата области
+            else if(clickEvent.WidgetName == "ConquerStrategicAreaSbpn")
+            {
+                //Запрашиваем смену владельца области на персонажа игрока
+                StrategicAreaChangeOwnerRequest(
+                    inputData.Value.playerCharacterPE,
+                    sASubpanel.activeTab.objectPE);
+            }
+            //ТЕСТ
+
+            //Иначе, если открыта вкладка регионов
+            else if(sASubpanel.activeTab == sASubpanel.regionsTab)
+            {
+                Debug.LogWarning("!");
+
+                //ТЕСТ
+                //Для каждого региона с отображаемыми панелями GUI
+                foreach(int regionEntity in regionDisplayedGUIPanelsFilter.Value)
+                {
+                    //Берём панели региона
+                    ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Get(regionEntity);
+
+                    //Если у региона есть обзорная панель вкладки регионов
+                    if(regionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel != null)
+                    {
+                        Debug.LogWarning("!");
+
+                        Debug.LogWarning(clickEvent.Sender.transform.parent);
+
+                        //Если она является родительским объектом источника события
+                        if (regionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel.transform == clickEvent.Sender.transform.parent)
+                        {
+                            Debug.LogWarning("!");
+
+                            //Берём регион
+                            ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+
+                            //То запрашиваем смену владельца региона
+                            RegionChangeOwnerRequest(
+                                inputData.Value.playerCharacterPE,
+                                rC.selfPE,
+                                RegionChangeOwnerType.Test);
+
+                            break;
+                        }
+                    }
+                }
+                //ТЕСТ
+            }
+        }
+
+        readonly EcsPoolInject<RStrategicAreaChangeOwner> sAChangeOwnerRequestPool = default;
+        void StrategicAreaChangeOwnerRequest(
+            EcsPackedEntity characterPE,
+            EcsPackedEntity sAPE)
+        {
+            //Создаём новую сущность и назначаем ей запрос смены владельца стратегической области
+            int requestEntity = world.Value.NewEntity();
+            ref RStrategicAreaChangeOwner requestComp = ref sAChangeOwnerRequestPool.Value.Add(requestEntity);
+
+            //Заполняем данные запроса
+            requestComp = new(
+                characterPE,
+                sAPE,
+                StrategicAreaChangeOwnerType.Test);
+        }
+
+        readonly EcsPoolInject<RRegionChangeOwner> regionChangeOwnerRequestPool = default;
+        void RegionChangeOwnerRequest(
+            EcsPackedEntity characterPE,
+            EcsPackedEntity regionPE,
+            RegionChangeOwnerType requestType)
+        {
+            //Создаём новую сущность и назначаем ей запрос смены владельца региона
+            int requestEntity = world.Value.NewEntity();
+            ref RRegionChangeOwner requestComp = ref regionChangeOwnerRequestPool.Value.Add(requestEntity);
+
+            //Заполняем данные запроса
+            requestComp = new(
+                characterPE,
+                regionPE,
+                requestType);
         }
         #endregion
 
@@ -572,7 +698,7 @@ namespace SO.UI
                     {
                         //Берём компонент панелей GUI
                         inputData.Value.activeTaskForcePEs[a].Unpack(world.Value, out int tFEntity);
-                        ref CTaskForceDisplayedGUIPanels tFDisplayedGUIPanels = ref taskForceDisplayedGUIPanelsPool.Value.Get(tFEntity);
+                        ref CTaskForceDisplayedGUIPanels tFDisplayedGUIPanels = ref tFDisplayedGUIPanelsPool.Value.Get(tFEntity);
 
                         //Делаем панель списка флотов неактивной
                         tFDisplayedGUIPanels.fMSbpnFleetsTabSummaryPanel.toggle.isOn = false;
@@ -621,13 +747,26 @@ namespace SO.UI
                 regionPE.Unpack(world.Value, out int regionEntity);
                 ref CRegionHexasphere currentRHS = ref rHSPool.Value.Get(regionEntity);
 
+                //ТЕСТ
+                ref CRegionCore currentRC = ref rCPool.Value.Get(regionEntity);
+
+                //Берём родительскую стратегическую область региона
+                currentRC.ParentStrategicAreaPE.Unpack(world.Value, out int sAEntity);
+                ref CStrategicArea sA = ref sAPool.Value.Get(sAEntity);
+                //ТЕСТ
+
                 //Если нажата ЛКМ
                 if(inputData.Value.leftMouseButtonClick)
                 {
                     //Запрашиваем отображение подпанели региона
+                    //ObjectPnActionRequest(
+                    //    uIData.Value.regionSubpanelDefaultTab,
+                    //    currentRHS.selfPE);
+
+                    //Запрашиваем отображение подпанели области
                     ObjectPnActionRequest(
-                        uIData.Value.regionSubpanelDefaultTab,
-                        currentRHS.selfPE);
+                        uIData.Value.strategicAreaSubpanelDefaultTab,
+                        sA.selfPE);
                 }
                 //Иначе, если нажата ПКМ
                 else if(inputData.Value.rightMouseButtonClick)

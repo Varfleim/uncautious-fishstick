@@ -1,4 +1,3 @@
-using SO.UI.Game.GUI.Object;
 
 using TMPro;
 

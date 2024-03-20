@@ -14,6 +14,7 @@ namespace SO.UI.Game.GUI
         None,
 
         Character,
+        StrategicArea,
         Region,
         FleetManager
     }
@@ -28,6 +29,7 @@ namespace SO.UI.Game.GUI
 
         public UICharacterSubpanel characterSubpanel;
         public UIRegionSubpanel regionSubpanel;
+        public UIStrategicAreaSubpanel strategicAreaSubpanel;
         public UIFleetManagerSubpanel fleetManagerSubpanel;
 
         public void HideActiveSubpanel()

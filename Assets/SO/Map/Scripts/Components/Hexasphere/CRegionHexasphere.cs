@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using Leopotam.EcsLite;
+using SO.Map.Generation;
 
 namespace SO.Map.Hexasphere
 {

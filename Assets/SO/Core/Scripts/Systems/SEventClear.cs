@@ -2,7 +2,7 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Map;
+using SO.Map.Events;
 using SO.Warfare.Fleet.Movement;
 
 namespace SO
@@ -10,8 +10,11 @@ namespace SO
     public class SEventClear : IEcsRunSystem
     {
         //События карты
-        readonly EcsFilterInject<Inc<ERegionCoreChangeOwner>> rFOChangeOwnerEventFilter = default;
-        readonly EcsPoolInject<ERegionCoreChangeOwner> rFOChangeOwnerEventPool = default;
+        readonly EcsFilterInject<Inc<ERegionChangeOwner>> regionChangeOwnerEventFilter = default;
+        readonly EcsPoolInject<ERegionChangeOwner> regionChangeOwnerEventPool = default;
+
+        readonly EcsFilterInject<Inc<EStrategicAreaChangeOwner>> sAChangeOwnerEventFilter = default;
+        readonly EcsPoolInject<EStrategicAreaChangeOwner> sAChangeOwnerEventPool = default;
 
         //События военного дела
         readonly EcsFilterInject<Inc<ETaskForceChangeRegion>> tFChangeRegionEventFilter = default;
@@ -30,15 +33,22 @@ namespace SO
                 objectNewCreatedEventPool.Value.Del(eventEntity);
             }
 
-            //Для каждого события смены владельца RFO
-            foreach (int eventEntity in rFOChangeOwnerEventFilter.Value)
+            //Для каждого события смены владельца региона
+            foreach (int eventEntity in regionChangeOwnerEventFilter.Value)
             {
                 //Удаляем компонент события
-                rFOChangeOwnerEventPool.Value.Del(eventEntity);
+                regionChangeOwnerEventPool.Value.Del(eventEntity);
+            }
+
+            //Для каждого события смены владельца стратегической области
+            foreach (int eventEntity in sAChangeOwnerEventFilter.Value)
+            {
+                //Удаляем компонент события
+                sAChangeOwnerEventPool.Value.Del(eventEntity);
             }
 
             //Для каждого события смены региона оперативной группой
-            foreach(int eventEntity in tFChangeRegionEventFilter.Value)
+            foreach (int eventEntity in tFChangeRegionEventFilter.Value)
             {
                 //Удаляем компонент события
                 tFChangeRegionEventPool.Value.Del(eventEntity);

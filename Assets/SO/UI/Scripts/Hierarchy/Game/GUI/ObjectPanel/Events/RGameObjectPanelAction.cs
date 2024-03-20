@@ -9,6 +9,9 @@ namespace SO.UI.Game.GUI.Object.Events
 
         RegionOverview,
 
+        StrategicAreaOverview,
+        StrategicAreaRegions,
+
         FleetManagerFleets,
 
         Close

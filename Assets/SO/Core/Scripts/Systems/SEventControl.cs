@@ -5,8 +5,8 @@ using Leopotam.EcsLite.ExtendedSystems;
 
 using SO.UI.Game.Events;
 using SO.UI.Game.Map.Events;
-using SO.Map;
 using SO.Warfare.Fleet.Movement;
+using SO.Map.Events;
 
 namespace SO
 {
@@ -37,6 +37,9 @@ namespace SO
 
             //Проверяем события смены владельца RFO
             RegionCoreChangeOwnerEvent();
+
+            //Проверяем события смены владельца стратегических областей
+            StrategicAreaChangeOwnerEvent();
 
             //Проверяем события смены региона оперативной группой
             TaskForceChangeRegionEvent();
@@ -75,18 +78,18 @@ namespace SO
             }
         }
 
-        readonly EcsFilterInject<Inc<ERegionCoreChangeOwner>> rFOChangeOwnerEventFilter = default;
-        readonly EcsPoolInject<ERegionCoreChangeOwner> rFOChangeOwnerEventPool = default;
+        readonly EcsFilterInject<Inc<ERegionChangeOwner>> regionChangeOwnerEventFilter = default;
+        readonly EcsPoolInject<ERegionChangeOwner> regionChangeOwnerEventPool = default;
         void RegionCoreChangeOwnerEvent()
         {
-            //Для каждого события смены владельца RC
-            foreach (int eventEntity in rFOChangeOwnerEventFilter.Value)
+            //Для каждого события смены владельца региона
+            foreach (int eventEntity in regionChangeOwnerEventFilter.Value)
             {
                 //Берём событие
-                ref ERegionCoreChangeOwner eventComp = ref rFOChangeOwnerEventPool.Value.Get(eventEntity);
+                ref ERegionChangeOwner eventComp = ref regionChangeOwnerEventPool.Value.Get(eventEntity);
 
                 //Если регион не принадлежал никому, то его сущность невозможно будет взять
-                if(eventComp.oldOwnerCharacterPE.Unpack(world.Value, out int oldOwnerCharacterEntity) == false)
+                if (eventComp.oldOwnerCharacterPE.Unpack(world.Value, out int oldOwnerCharacterEntity) == false)
                 {
                     //Запрашиваем создание главной панели карты региона
                     GameCreatePanelRequest(
@@ -98,6 +101,29 @@ namespace SO
                 {
                     //Запрашиваем обновление панелей региона
                     GameRefreshPanelsSelfRequest(eventComp.regionPE);
+                }
+            }
+        }
+
+        readonly EcsFilterInject<Inc<EStrategicAreaChangeOwner>> sAChangeOwnerEventFilter = default;
+        readonly EcsPoolInject<EStrategicAreaChangeOwner> sAChangeOwnerEventPool = default;
+        void StrategicAreaChangeOwnerEvent()
+        {
+            //Для каждого события смены владельца стратегической области
+            foreach(int eventEntity in sAChangeOwnerEventFilter.Value)
+            {
+                //Берём событие 
+                ref EStrategicAreaChangeOwner eventComp = ref sAChangeOwnerEventPool.Value.Get(eventEntity);
+
+                //Если область не принадлежала никому, то сущность персонажа невозможно будет взять
+                if(eventComp.oldOwnerCharacterPE.Unpack(world.Value, out int oldOwnerCharacterEntity) == false)
+                {
+                    //Запрашиваем создание главной панели интерфейса области
+                }
+                //Иначе
+                else
+                {
+                    //Запрашиваем обновление панелей области
                 }
             }
         }

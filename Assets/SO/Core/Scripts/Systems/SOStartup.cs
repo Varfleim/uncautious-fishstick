@@ -10,7 +10,9 @@ using SO.UI;
 using SO.Time;
 using SO.Map;
 using SO.Map.Hexasphere;
+using SO.Map.Generation;
 using SO.Map.StrategicArea;
+using SO.Map.Region;
 using SO.Character;
 using SO.Warfare.Fleet;
 using SO.Warfare.Fleet.Missions;
@@ -70,8 +72,10 @@ namespace SO
                 //Применение инициализаторов регионов
                 new SMapRegionInitializerControl(),
                 
+                //Управление стратегическими областями
+                new SStrategicAreaControl(),
                 //Управление RC
-                new SRCControl())
+                new SRegionControl())
                 //Группа выключается в SEventControl в том же кадре
 
                 //Обработка ввода
@@ -111,8 +115,10 @@ namespace SO
 
             perTickSystems
 
+                //Управление стратегическими областями
+                .Add(new SStrategicAreaControl())
                 //Управление RC
-                .Add(new SRCControl())
+                .Add(new SRegionControl())
 
                 //Управление оперативными группами
                 .Add(new STaskForceControl())
@@ -133,9 +139,6 @@ namespace SO
                 //Проверка достижения цели группой
                 .Add(new STaskForceTargetCheck())
 
-
-                //Подсчёт исследования от наблюдателей
-                .Add(new SMTObserverExplorationCalc())
 
                 //Обновление интерфейса после тика
                 .Add(new SUITickUpdate())

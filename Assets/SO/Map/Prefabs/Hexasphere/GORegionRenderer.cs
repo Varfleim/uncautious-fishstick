@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 
+using SO.Map.Generation;
+
 using UnityEngine;
 
 namespace SO.Map.Hexasphere
@@ -52,7 +54,7 @@ namespace SO.Map.Hexasphere
             GORegionRenderer regionRenderer;
 
             //Если список кэшированных рендереров не пуст, то берём кэшированную
-            if(cachedRenderers.Count > 0)
+            if (cachedRenderers.Count > 0)
             {
                 //Берём последнюю группу в списке и удаляем её из списка
                 regionRenderer = cachedRenderers[cachedRenderers.Count - 1];
@@ -123,7 +125,7 @@ namespace SO.Map.Hexasphere
         }
 
         public static void RefreshRegionRenderer(
-            ref CRegionHexasphere rHS, 
+            ref CRegionHexasphere rHS,
             GORegionRenderer regionRenderer)
         {
             //Берём меш рендерера
@@ -131,7 +133,7 @@ namespace SO.Map.Hexasphere
 
             //Рассчитываем новое положение вершин рендерера
             Vector3[] extrudedVertices = new Vector3[rHS.vertices.Length];
-            for(int a = 0; a < rHS.vertices.Length; a++)
+            for (int a = 0; a < rHS.vertices.Length; a++)
             {
                 extrudedVertices[a] = rHS.vertices[a] * (1f + rHS.ExtrudeAmount * MapGenerationData.ExtrudeMultiplier);
             }

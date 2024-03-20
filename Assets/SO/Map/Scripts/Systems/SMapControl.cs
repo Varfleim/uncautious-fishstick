@@ -8,10 +8,12 @@ using Leopotam.EcsLite.Di;
 
 using SO.UI;
 using SO.UI.Game.Map.Events;
-using SO.Map.Events;
 using SO.Character;
-using SO.Map.Hexasphere;
 using SO.Map.StrategicArea;
+using SO.Map.Hexasphere;
+using SO.Map.Generation;
+using SO.Map.Events;
+using SO.Map.Region;
 
 namespace SO.Map
 {
@@ -22,16 +24,14 @@ namespace SO.Map
 
 
         //Карта
-        readonly EcsFilterInject<Inc<CRegionCore>> regionFilter = default; 
         readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
         readonly EcsPoolInject<CRegionCore> rCPool = default;
-
-        readonly EcsPoolInject<CExplorationRegionFractionObject> exFRFOPool = default;
 
         readonly EcsFilterInject<Inc<CStrategicArea>> sAFilter = default;
         readonly EcsPoolInject<CStrategicArea> sAPool = default;
 
         //Персонажи
+        readonly EcsFilterInject<Inc<CCharacter>> characterFilter = default;
         readonly EcsPoolInject<CCharacter> characterPool = default;
 
 
@@ -40,6 +40,7 @@ namespace SO.Map
         readonly EcsCustomInject<MapGenerationData> mapGenerationData = default;
         readonly EcsCustomInject<RegionsData> regionsData = default;
         readonly EcsCustomInject<InputData> inputData = default;
+        readonly EcsCustomInject<RuntimeData> runtimeData = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -127,14 +128,14 @@ namespace SO.Map
                     //Отображаем режим карты стратегических областей
                     MapDisplayModeStrategicArea();
                 }
-                //Иначе, если запрашивается отображение режима исследования
-                else if(requestComp.requestType == ChangeMapModeRequestType.Exploration)
+                //Иначе, если запрашивается отображение персонажей
+                else if(requestComp.requestType == ChangeMapModeRequestType.Character)
                 {
-                    //Указываем режим исследования как активный
-                    inputData.Value.mapMode = MapMode.Exploration;
+                    //Указываем режим персонажей как активный
+                    inputData.Value.mapMode = MapMode.Character;
 
-                    //Отображаем режим исследования
-                    MapDisplayModeExploration();
+                    //Отображаем режим карты персонажей
+                    MapDisplayModeCharacter();
                 }
 
                 changeMapModeRequestPool.Value.Del(requestEntity);
@@ -154,12 +155,6 @@ namespace SO.Map
             {
                 //Отображаем режим стратегических областей
                 MapDisplayModeStrategicArea();
-            }
-            //Иначе, если текущий режим карты - режим исследования
-            else if(inputData.Value.mapMode == MapMode.Exploration)
-            {
-                //Отображаем режим исследования
-                MapDisplayModeExploration();
             }
         }
 
@@ -213,31 +208,36 @@ namespace SO.Map
             }
         }
 
-        void MapDisplayModeExploration()
+        void MapDisplayModeCharacter()
         {
-            //Берём персонажа игрока
-            inputData.Value.playerCharacterPE.Unpack(world.Value, out int characterEntity);
-            ref CCharacter character = ref characterPool.Value.Get(characterEntity);
-
-            //Для каждого региона
-            foreach (int regionEntity in regionFilter.Value)
+            //Для каждого персонажа
+            foreach (int characterEntity in characterFilter.Value)
             {
-                //Берём регион
-                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
-                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                //Берём персонажа
+                ref CCharacter character = ref characterPool.Value.Get(characterEntity);
 
-                //Берём ExFRFO персонажа
-                rC.rFOPEs[character.selfIndex].rFOPE.Unpack(world.Value, out int fRFOEntity);
-                ref CExplorationRegionFractionObject exFRFO = ref exFRFOPool.Value.Get(fRFOEntity);
+                //Для каждой стратегической области персонажа
+                for (int a = 0; a < character.ownedSAPEs.Count; a++)
+                {
+                    //Берём область
+                    character.ownedSAPEs[a].Unpack(world.Value, out int sAEntity);
+                    ref CStrategicArea sA = ref sAPool.Value.Get(sAEntity);
 
-                //ТЕСТ
-                //Устанавливаем цвет региона соответственно его уровню исследования
-                RegionSetColor(
-                    ref rC,
-                    new Color32(
-                        exFRFO.explorationLevel, exFRFO.explorationLevel, exFRFO.explorationLevel,
-                        255));
-                //ТЕСТ
+                    //Для каждого региона области
+                    for (int b = 0; b < sA.regionPEs.Length; b++)
+                    {
+                        //Берём регион
+                        sA.regionPEs[b].Unpack(world.Value, out int regionEntity);
+                        ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+
+                        //ТЕСТ
+                        //Устанавливаем цвет региона
+                        RegionSetColor(
+                            ref rC,
+                            runtimeData.Value.playerColor);
+                        //ТЕСТ
+                    }
+                }
             }
         }
 

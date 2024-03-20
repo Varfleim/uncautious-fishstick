@@ -1,10 +1,9 @@
 
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
-
-using SO.Map;
 using SO.Character;
 using SO.Warfare.Fleet.Events;
+using SO.Map.Region;
 
 namespace SO.Warfare.Fleet
 {

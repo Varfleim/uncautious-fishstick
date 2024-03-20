@@ -3,8 +3,8 @@ using UnityEngine;
 
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
-
-using SO.Map.Events;
+using SO.Map.Generation;
+using SO.Map.Region;
 
 namespace SO.Map.StrategicArea
 {

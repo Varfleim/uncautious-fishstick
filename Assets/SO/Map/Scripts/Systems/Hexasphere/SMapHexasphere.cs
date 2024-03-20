@@ -7,7 +7,9 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
 using SO.UI;
-using SO.Map.Events;
+using SO.Map.Generation;
+using SO.Map.Economy;
+using SO.Map.Region;
 
 namespace SO.Map.Hexasphere
 {
@@ -20,6 +22,7 @@ namespace SO.Map.Hexasphere
         //Карта
         readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
         readonly EcsPoolInject<CRegionCore> rCPool = default;
+        readonly EcsPoolInject<CRegionEconomic> rEPool = default;
 
 
         //События карты
@@ -353,10 +356,11 @@ namespace SO.Map.Hexasphere
             DHexaspherePoint centerPoint,
             int regionIndex)
         {
-            //Создаём новую сущность и назначаем ей компонент RHS и RC
+            //Создаём новую сущность и назначаем ей компоненты RHS, RC, RE
             int regionEntity = world.Value.NewEntity();
             ref CRegionHexasphere currentRHS = ref rHSPool.Value.Add(regionEntity);
             ref CRegionCore currentRC = ref rCPool.Value.Add(regionEntity);
+            ref CRegionEconomic currentRE = ref rEPool.Value.Add(regionEntity);
 
             //Заполняем основные данные RHS
             currentRHS = new(
@@ -367,6 +371,10 @@ namespace SO.Map.Hexasphere
             currentRC = new(
                 currentRHS.selfPE, regionIndex,
                 currentRHS.centerPoint.ProjectedVector3);
+
+            //Заполняем основные данные RE
+            currentRE = new(
+                currentRHS.selfPE);
 
             //Заносим регион в массив регионов
             regionsData.Value.regionPEs[regionIndex] = currentRHS.selfPE;

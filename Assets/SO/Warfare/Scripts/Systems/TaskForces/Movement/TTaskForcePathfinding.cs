@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Threads;
 
-using SO.Map;
+using SO.Map.Region;
 using SO.Warfare.Fleet.Movement.Events;
 
 namespace SO.Warfare.Fleet.Movement

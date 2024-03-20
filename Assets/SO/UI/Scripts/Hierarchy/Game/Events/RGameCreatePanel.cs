@@ -6,7 +6,10 @@ namespace SO.UI.Game.Events
     public enum GamePanelType : byte
     {
         None,
+
+        RegionSummaryPanelSASbpnRegionsTab,
         RegionMainMapPanel,
+
         TaskForceSummaryPanelFMSbpnFleetsTab,
         TaskForceMainMapPanel
     }

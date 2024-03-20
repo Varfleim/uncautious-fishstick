@@ -2,8 +2,9 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Map.Events;
 using SO.Character.Events;
+using SO.Map;
+using SO.Map.Generation;
 
 namespace SO.Character
 {
@@ -57,9 +58,6 @@ namespace SO.Character
             inputData.Value.playerCharacterPE = character.selfPE;
             //ТЕСТ
 
-            //Запрашиваем создание ExFRFO данного персонажа
-            CharacterExFRFOsCreatingSelfRequest(characterEntity);
-
             //Запрашиваем инициализацию стартового региона персонажа
             CharacterStartRegionInitializerRequest(character.selfPE);
 
@@ -84,17 +82,6 @@ namespace SO.Character
 
             //Заполняем данные запроса
             requestOwnerComp = new(characterPE);
-        }
-
-        readonly EcsPoolInject<SRExRFOsCreating> exFRFOsCreatingSelfRequestPool = default;
-        void CharacterExFRFOsCreatingSelfRequest(
-            int characterEntity)
-        {
-            //Назначаем персонажу самозапрос создания ExFRFO
-            ref SRExRFOsCreating selfRequestComp = ref exFRFOsCreatingSelfRequestPool.Value.Add(characterEntity);
-
-            //Заполняем данные запроса
-            selfRequestComp = new();
         }
 
         readonly EcsPoolInject<EObjectNewCreated> objectNewCreatedEventPool = default;

@@ -15,6 +15,7 @@ namespace SO.UI
         public VerticalLayoutGroup mapPanelGroup;
         public float mapPanelAltitude;
 
+        public Game.GUI.Object.StrategicArea.Regions.UIRegionSummaryPanel sASbpnRegionsTabRegionSummaryPanelPrefab;
         public UIRCMainMapPanel rCMainMapPanelPrefab;
 
         public Game.GUI.Object.FleetManager.Fleets.UITaskForceSummaryPanel fMSbpnFleetsTabTaskForceSummaryPanelPrefab;
@@ -22,6 +23,7 @@ namespace SO.UI
 
         public ObjectPanelActionRequestType characterSubpanelDefaultTab;
         public ObjectPanelActionRequestType regionSubpanelDefaultTab;
+        public ObjectPanelActionRequestType strategicAreaSubpanelDefaultTab;
         public ObjectPanelActionRequestType fleetManagerSubpanelDefaultTab;
     }
 }

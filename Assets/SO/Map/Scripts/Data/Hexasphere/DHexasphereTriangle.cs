@@ -1,4 +1,3 @@
-
 namespace SO.Map.Hexasphere
 {
     public class DHexasphereTriangle

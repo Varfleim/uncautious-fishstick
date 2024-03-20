@@ -2,7 +2,7 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Map;
+using SO.Map.Region;
 using SO.Warfare.Fleet.Missions.Events;
 
 namespace SO.Warfare.Fleet.Missions
@@ -10,11 +10,8 @@ namespace SO.Warfare.Fleet.Missions
     public class STaskForceTargetCheck : IEcsRunSystem
     {
         //Миры
-        readonly EcsWorldInject world = default;
+        //readonly EcsWorldInject world = default;
 
-
-        //Карта
-        readonly EcsPoolInject<CRegionCore> rCPool = default;
 
         //Военное дело
         readonly EcsPoolInject<CTaskForce> tFPool = default;

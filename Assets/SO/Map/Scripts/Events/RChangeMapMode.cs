@@ -1,11 +1,11 @@
-
 namespace SO.Map.Events
 {
-    public enum ChangeMapModeRequestType: byte
+    public enum ChangeMapModeRequestType : byte
     {
         None,
         Terrain,
         StrategicArea,
+        Character,
         Exploration
     }
 

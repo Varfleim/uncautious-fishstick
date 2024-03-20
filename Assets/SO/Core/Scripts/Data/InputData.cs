@@ -13,7 +13,7 @@ namespace SO.UI
         Default,
         Terrain,
         StrategicArea,
-        Exploration
+        Character
     }
 
     public class InputData : MonoBehaviour

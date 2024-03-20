@@ -2,7 +2,7 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Map;
+using SO.Map.Region;
 using SO.Warfare.Fleet.Missions.Events;
 
 namespace SO.Warfare.Fleet.Movement

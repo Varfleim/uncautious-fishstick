@@ -17,16 +17,25 @@ namespace SO.Map.StrategicArea
 
             this.selfColor = selfColor;
 
-            elevation = 0;
 
             regionPEs = new EcsPackedEntity[0];
 
             neighbourSAPEs = new EcsPackedEntity[0];
+
+            elevation = 0;
+
+
+            ownerCharacterPE = new();
         }
 
         public readonly EcsPackedEntity selfPE;
 
         public readonly Color selfColor;
+
+        #region StrategicAreaData
+        public EcsPackedEntity[] regionPEs;
+
+        public EcsPackedEntity[] neighbourSAPEs;
 
         public int Elevation
         {
@@ -40,9 +49,10 @@ namespace SO.Map.StrategicArea
             }
         }
         int elevation;
+        #endregion
 
-        public EcsPackedEntity[] regionPEs;
-
-        public EcsPackedEntity[] neighbourSAPEs;
+        #region CharacterData
+        public EcsPackedEntity ownerCharacterPE;
+        #endregion
     }
 }

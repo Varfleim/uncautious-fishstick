@@ -2,7 +2,7 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Map;
+using SO.Map.Region;
 using SO.Warfare.Fleet.Missions.Events;
 using SO.Warfare.Fleet.Movement;
 
@@ -13,9 +13,6 @@ namespace SO.Warfare.Fleet.Missions
         //Миры
         readonly EcsWorldInject world = default;
 
-
-        //Карта
-        readonly EcsPoolInject<CRegionCore> rCPool = default;
 
         //Военное дело
         readonly EcsPoolInject<CTaskForce> tFPool = default;

@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using TMPro;
-using SO.Map;
+using SO.Map.UI;
+using SO.Map.Region;
 
 namespace SO.UI.Game.Map
 {

@@ -2,7 +2,7 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Threads;
 
-using SO.Map;
+using SO.Map.Region;
 
 namespace SO.Warfare.Fleet.Movement
 {
