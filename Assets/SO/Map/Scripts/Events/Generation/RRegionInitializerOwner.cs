@@ -6,11 +6,11 @@ namespace SO.Map.Generation
     public readonly struct RRegionInitializerOwner
     {
         public RRegionInitializerOwner(
-            EcsPackedEntity ownerCharacterPE)
+            EcsPackedEntity ownerCountryPE)
         {
-            this.ownerCharacterPE = ownerCharacterPE;
+            this.ownerCountryPE = ownerCountryPE;
         }
 
-        public readonly EcsPackedEntity ownerCharacterPE;
+        public readonly EcsPackedEntity ownerCountryPE;
     }
 }

@@ -21,7 +21,7 @@ namespace SO.UI
         public Game.GUI.Object.FleetManager.Fleets.UITaskForceSummaryPanel fMSbpnFleetsTabTaskForceSummaryPanelPrefab;
         public UITFMainMapPanel tFMainMapPanelPrefab;
 
-        public ObjectPanelActionRequestType characterSubpanelDefaultTab;
+        public ObjectPanelActionRequestType countrySubpanelDefaultTab;
         public ObjectPanelActionRequestType regionSubpanelDefaultTab;
         public ObjectPanelActionRequestType strategicAreaSubpanelDefaultTab;
         public ObjectPanelActionRequestType fleetManagerSubpanelDefaultTab;

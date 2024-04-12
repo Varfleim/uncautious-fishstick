@@ -13,7 +13,7 @@ namespace SO.UI.Game.GUI
     {
         None,
 
-        Character,
+        Country,
         StrategicArea,
         Region,
         FleetManager
@@ -27,7 +27,7 @@ namespace SO.UI.Game.GUI
         public ObjectSubpanelType activeSubpanelType;
         public UIAObjectSubpanel activeSubpanel;
 
-        public UICharacterSubpanel characterSubpanel;
+        public UICountrySubpanel countrySubpanel;
         public UIRegionSubpanel regionSubpanel;
         public UIStrategicAreaSubpanel strategicAreaSubpanel;
         public UIFleetManagerSubpanel fleetManagerSubpanel;

@@ -1,7 +1,7 @@
 
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
-using SO.Character;
+using SO.Country;
 using SO.Warfare.Fleet.Events;
 using SO.Map.Region;
 
@@ -16,8 +16,8 @@ namespace SO.Warfare.Fleet
         //Карта
         readonly EcsPoolInject<CRegionCore> rCPool = default;
 
-        //Персонажи
-        readonly EcsPoolInject<CCharacter> characterPool = default;
+        //Страны
+        readonly EcsPoolInject<CCountry> countryPool = default;
 
 
         //Военное дело
@@ -39,9 +39,9 @@ namespace SO.Warfare.Fleet
                 //Берём запрос
                 ref RTaskForceCreating requestComp = ref tFCreatingRequestPool.Value.Get(requestEntity);
 
-                //Берём персонажа-владельца оперативной группы
-                requestComp.ownerCharacterPE.Unpack(world.Value, out int characterEntity);
-                ref CCharacter character = ref characterPool.Value.Get(characterEntity);
+                //Берём страну-владельца оперативной группы
+                requestComp.ownerCountryPE.Unpack(world.Value, out int countryEntity);
+                ref CCountry country = ref countryPool.Value.Get(countryEntity);
 
                 //Создаём новую сущность и назначаем ей компонент оперативной группы
                 int taskForceEntity = world.Value.NewEntity();
@@ -50,17 +50,17 @@ namespace SO.Warfare.Fleet
                 //Заполняем основные данные группы
                 tF = new(
                     world.Value.PackEntity(taskForceEntity),
-                    character.selfPE);
+                    country.selfPE);
 
                 //ТЕСТ
-                //Заносим PE группы в список групп персонажа
-                character.ownedTaskForces.Add(tF.selfPE);
+                //Заносим PE группы в список групп страны
+                country.ownedTaskForces.Add(tF.selfPE);
 
-                //Берём стартовый регион персонажа
-                character.ownedRCPEs[0].Unpack(world.Value, out int regionEntity);
+                //Берём стартовый регион страны
+                country.ownedRCPEs[0].Unpack(world.Value, out int regionEntity);
                 ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
 
-                //Размещаем оперативную группу в стартовом регионе персонажа
+                //Размещаем оперативную группу в стартовом регионе страны
                 tF.currentRegionPE = rC.selfPE;
 
                 //Заносим группу в список групп в регионе

@@ -12,18 +12,18 @@ namespace SO.Map.Events
     public readonly struct RStrategicAreaChangeOwner
     {
         public RStrategicAreaChangeOwner(
-            EcsPackedEntity characterPE,
+            EcsPackedEntity countryPE,
             EcsPackedEntity sAPE,
             StrategicAreaChangeOwnerType requestType)
         {
-            this.characterPE = characterPE;
+            this.countryPE = countryPE;
 
             this.sAPE = sAPE;
 
             this.requestType = requestType;
         }
 
-        public readonly EcsPackedEntity characterPE;
+        public readonly EcsPackedEntity countryPE;
 
         public readonly EcsPackedEntity sAPE;
 

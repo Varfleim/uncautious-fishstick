@@ -47,11 +47,11 @@ namespace SO.UI
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Если активна подпанель персонажа
-            if (objectPanel.activeSubpanelType == ObjectSubpanelType.Character) 
+            //Если активна подпанель страны
+            if (objectPanel.activeSubpanelType == ObjectSubpanelType.Country) 
             {
-                //Проверяем, требуется ли обновление в подпанели персонажа
-                CharacterSbpnCheckRefresh();
+                //Проверяем, требуется ли обновление в подпанели страны
+                CountrySbpnCheckRefresh();
             }
             //Иначе, если активна подпанель региона
             else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Region)
@@ -88,21 +88,21 @@ namespace SO.UI
                 objectPE, secondObjectPE);
         }
         
-        void CharacterSbpnCheckRefresh()
+        void CountrySbpnCheckRefresh()
         {
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель персонажа
-            UICharacterSubpanel characterSubpanel = objectPanel.characterSubpanel;
+            //Берём подпанель страны
+            UICountrySubpanel countrySubpanel = objectPanel.countrySubpanel;
 
             //Если активна обзорная вкладка
-            if(characterSubpanel.activeTab == characterSubpanel.overviewTab)
+            if(countrySubpanel.activeTab == countrySubpanel.overviewTab)
             {
                 //Запрашиваем обновление обзорной вкладки
                 ObjPnActionRequest(
-                    ObjectPanelActionRequestType.CharacterOverview,
-                    characterSubpanel.activeTab.objectPE);
+                    ObjectPanelActionRequestType.CountryOverview,
+                    countrySubpanel.activeTab.objectPE);
             }
         }
 

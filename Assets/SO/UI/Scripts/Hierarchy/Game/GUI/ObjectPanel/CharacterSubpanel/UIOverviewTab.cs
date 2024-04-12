@@ -1,5 +1,5 @@
 
-namespace SO.UI.Game.GUI.Object.Character
+namespace SO.UI.Game.GUI.Object.Country
 {
     public class UIOverviewTab : UIASubpanelTab
     {

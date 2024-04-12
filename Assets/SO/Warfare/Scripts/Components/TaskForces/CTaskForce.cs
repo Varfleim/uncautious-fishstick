@@ -25,11 +25,11 @@ namespace SO.Warfare.Fleet
     {
         public CTaskForce(
             EcsPackedEntity selfPE, 
-            EcsPackedEntity ownerCharacterPE)
+            EcsPackedEntity ownerCountryPE)
         {
             this.selfPE = selfPE;
             
-            this.ownerCharacterPE = ownerCharacterPE;
+            this.ownerCountryPE = ownerCountryPE;
 
             currentRegionPE = new();
             previousRegionPE = new();
@@ -39,7 +39,7 @@ namespace SO.Warfare.Fleet
 
         public readonly EcsPackedEntity selfPE;
 
-        public EcsPackedEntity ownerCharacterPE;
+        public EcsPackedEntity ownerCountryPE;
 
         public EcsPackedEntity currentRegionPE;
         public EcsPackedEntity previousRegionPE;

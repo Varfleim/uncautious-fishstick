@@ -13,7 +13,7 @@ using SO.Map.Hexasphere;
 using SO.Map.Generation;
 using SO.Map.StrategicArea;
 using SO.Map.Region;
-using SO.Character;
+using SO.Country;
 using SO.Population;
 using SO.Warfare.Fleet;
 using SO.Warfare.Fleet.Missions;
@@ -36,7 +36,7 @@ namespace SO
         public UIData uIData;
         public MapGenerationData mapGenerationData;
         public RegionsData regionsData;
-        public CharactersData charactersData;
+        public CountriesData countriesData;
         public InputData inputData;
 
         public RuntimeData runtimeData;
@@ -67,8 +67,8 @@ namespace SO
                 //Генерация ландшафта стратегических областей
                 new SMapStrategicAreaTerrain(),
 
-                //Управление персонажами
-                new SCharacterControl(),
+                //Управление странами
+                new SCountryControl(),
                 
                 //Применение инициализаторов регионов
                 new SMapRegionInitializerControl(),
@@ -112,7 +112,7 @@ namespace SO
                 uIData,
                 mapGenerationData,
                 regionsData,
-                charactersData,
+                countriesData,
                 inputData,
                 runtimeData)
                 .Inject(sOUI);
@@ -156,7 +156,7 @@ namespace SO
                 uIData,
                 mapGenerationData,
                 regionsData,
-                charactersData,
+                countriesData,
                 inputData,
                 runtimeData)
                 .Inject(sOUI);

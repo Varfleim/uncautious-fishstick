@@ -12,18 +12,18 @@ namespace SO.Map.Events
     public readonly struct RRegionChangeOwner
     {
         public RRegionChangeOwner(
-            EcsPackedEntity characterPE,
+            EcsPackedEntity countryPE,
             EcsPackedEntity regionPE,
             RegionChangeOwnerType requestType)
         {
-            this.characterPE = characterPE;
+            this.countryPE = countryPE;
 
             this.regionPE = regionPE;
 
             this.requestType = requestType;
         }
 
-        public readonly EcsPackedEntity characterPE;
+        public readonly EcsPackedEntity countryPE;
 
         public readonly EcsPackedEntity regionPE;
 

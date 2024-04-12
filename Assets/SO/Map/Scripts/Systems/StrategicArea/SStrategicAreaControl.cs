@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Character;
+using SO.Country;
 using SO.Map.Events;
 
 namespace SO.Map.StrategicArea
@@ -20,8 +20,8 @@ namespace SO.Map.StrategicArea
         readonly EcsPoolInject<CStrategicArea> sAPool = default;
 
 
-        //Персонажи
-        readonly EcsPoolInject<CCharacter> characterPool = default;
+        //Страны
+        readonly EcsPoolInject<CCountry> countryPool = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -39,9 +39,9 @@ namespace SO.Map.StrategicArea
                 //Берём запрос
                 ref RStrategicAreaChangeOwner requestComp = ref sAChangeOwnerRequestPool.Value.Get(requestEntity);
 
-                //Берём персонажа, который становится владельцем области
-                requestComp.characterPE.Unpack(world.Value, out int characterEntity);
-                ref CCharacter newOwnerCharacter = ref characterPool.Value.Get(characterEntity);
+                //Берём страну, которая становится владельцем области
+                requestComp.countryPE.Unpack(world.Value, out int countryEntity);
+                ref CCountry newOwnerCountry = ref countryPool.Value.Get(countryEntity);
 
                 //Берём область
                 requestComp.sAPE.Unpack(world.Value, out int sAEntity);
@@ -58,15 +58,15 @@ namespace SO.Map.StrategicArea
                 //Создаём событие, сообщающее о смене владельца области
                 StrategicAreaChangeOwnerEvent(
                     sA.selfPE,
-                    newOwnerCharacter.selfPE, sA.ownerCharacterPE);
+                    newOwnerCountry.selfPE, sA.ownerCountryPE);
 
 
-                //Указываем персонажа-владельца области
-                sA.ownerCharacterPE = newOwnerCharacter.selfPE;
+                //Указываем страну-владельца области
+                sA.ownerCountryPE = newOwnerCountry.selfPE;
 
                 //ТЕСТ
-                //Заносим PE области в список персонажа
-                newOwnerCharacter.ownedSAPEs.Add(sA.selfPE);
+                //Заносим PE области в список страны
+                newOwnerCountry.ownedSAPEs.Add(sA.selfPE);
                 //ТЕСТ
 
                 sAChangeOwnerRequestPool.Value.Del(requestEntity);
@@ -81,7 +81,7 @@ namespace SO.Map.StrategicArea
         readonly EcsPoolInject<EStrategicAreaChangeOwner> sAChangeOwnerEventPool = default;
         void StrategicAreaChangeOwnerEvent(
             EcsPackedEntity sAPE,
-            EcsPackedEntity newOwnerCharacterPE, EcsPackedEntity oldOwnerCharacterPE)
+            EcsPackedEntity newOwnerCountryPE, EcsPackedEntity oldOwnerCountryPE)
         {
             //Создаём новую сущность и назначаем ей событие смены владельца стратегической области
             int eventEntity = world.Value.NewEntity();
@@ -90,7 +90,7 @@ namespace SO.Map.StrategicArea
             //Заполняем данные события
             eventComp = new(
                 sAPE,
-                newOwnerCharacterPE, oldOwnerCharacterPE);
+                newOwnerCountryPE, oldOwnerCountryPE);
         }
     }
 }

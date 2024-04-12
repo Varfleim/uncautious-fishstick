@@ -2,24 +2,24 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Character.Events;
+using SO.Country.Events;
 using SO.Map.Generation;
 
-namespace SO.Character
+namespace SO.Country
 {
-    public class SCharacterControl : IEcsRunSystem
+    public class SCountryControl : IEcsRunSystem
     {
         //Миры
         readonly EcsWorldInject world = default;
 
 
-        //Персонажи
-        readonly EcsPoolInject<CCharacter> characterPool = default;
+        //Страны
+        readonly EcsPoolInject<CCountry> countryPool = default;
 
 
-        //События персонажей
-        readonly EcsFilterInject<Inc<RCharacterCreating>> characterCreatingRequestFilter = default;
-        readonly EcsPoolInject<RCharacterCreating> characterCreatingRequestPool = default;
+        //События стран
+        readonly EcsFilterInject<Inc<RCountryCreating>> countryCreatingRequestFilter = default;
+        readonly EcsPoolInject<RCountryCreating> countryCreatingRequestPool = default;
 
 
         //Данные
@@ -28,47 +28,47 @@ namespace SO.Character
 
         public void Run(IEcsSystems systems)
         {
-            //Для каждого запроса создания персонажа
-            foreach (int requestEntity in characterCreatingRequestFilter.Value)
+            //Для каждого запроса создания страны
+            foreach (int requestEntity in countryCreatingRequestFilter.Value)
             {
                 //Берём запрос
-                ref RCharacterCreating requestComp = ref characterCreatingRequestPool.Value.Get(requestEntity);
+                ref RCountryCreating requestComp = ref countryCreatingRequestPool.Value.Get(requestEntity);
 
-                //Создаём нового персонажа
-                CharacterCreating(
+                //Создаём новую страну
+                CountryCreating(
                     ref requestComp);
 
-                characterCreatingRequestPool.Value.Del(requestEntity);
+                countryCreatingRequestPool.Value.Del(requestEntity);
             }
         }
 
-        void CharacterCreating(
-            ref RCharacterCreating requestComp)
+        void CountryCreating(
+            ref RCountryCreating requestComp)
         {
-            //Создаём новую сущность и назначаем ей компонент персонажа
-            int characterEntity = world.Value.NewEntity();
-            ref CCharacter character = ref characterPool.Value.Add(characterEntity);
+            //Создаём новую сущность и назначаем ей компонент страны
+            int countryEntity = world.Value.NewEntity();
+            ref CCountry country = ref countryPool.Value.Add(countryEntity);
 
-            //Заполняем основные данные персонажа
-            character = new(
-                world.Value.PackEntity(characterEntity), runtimeData.Value.charactersCount++,
-                requestComp.characterName);
+            //Заполняем основные данные страны
+            country = new(
+                world.Value.PackEntity(countryEntity), runtimeData.Value.countriesCount++,
+                requestComp.countryName);
 
             //ТЕСТ
-            inputData.Value.playerCharacterPE = character.selfPE;
+            inputData.Value.playerCountryPE = country.selfPE;
 
-            //Запрашиваем инициализацию стартового региона персонажа
-            CharacterStartRegionInitializerRequest(character.selfPE);
+            //Запрашиваем инициализацию стартового региона страны
+            CountryStartRegionInitializerRequest(country.selfPE);
             //ТЕСТ
 
-            //Создаём событие, сообщающее о создании нового персонажа
-            ObjectNewCreatedEvent(character.selfPE, ObjectNewCreatedType.Character);
+            //Создаём событие, сообщающее о создании новой страны
+            ObjectNewCreatedEvent(country.selfPE, ObjectNewCreatedType.Country);
         }
 
         readonly EcsPoolInject<RRegionInitializer> regionInitializerRequestPool = default;
         readonly EcsPoolInject<RRegionInitializerOwner> regionInitializerOwnerRequestPool = default;
-        void CharacterStartRegionInitializerRequest(
-            EcsPackedEntity characterPE)
+        void CountryStartRegionInitializerRequest(
+            EcsPackedEntity countryPE)
         {
             //Создаём новую сущность и назначаем ей запрос применения инициализатора
             int requestEntity = world.Value.NewEntity();
@@ -81,7 +81,7 @@ namespace SO.Character
             ref RRegionInitializerOwner requestOwnerComp = ref regionInitializerOwnerRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
-            requestOwnerComp = new(characterPE);
+            requestOwnerComp = new(countryPE);
         }
 
         readonly EcsPoolInject<EObjectNewCreated> objectNewCreatedEventPool = default;

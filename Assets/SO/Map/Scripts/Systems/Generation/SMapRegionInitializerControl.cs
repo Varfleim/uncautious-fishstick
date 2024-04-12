@@ -100,7 +100,7 @@ namespace SO.Map.Generation
 
                 //Запрашиваем смену владельца региона
                 //RegionChangeOwnerRequest(
-                //    requestOwnerComp.ownerCharacterPE,
+                //    requestOwnerComp.ownerCountryPE,
                 //    requestCoreComp.regionPE,
                 //    RCChangeOwnerType.Initialization);
 
@@ -110,7 +110,7 @@ namespace SO.Map.Generation
 
         readonly EcsPoolInject<RRegionChangeOwner> regionChangeOwnerRequestPool = default;
         void RegionChangeOwnerRequest(
-            EcsPackedEntity characterPE,
+            EcsPackedEntity countryPE,
             EcsPackedEntity regionPE,
             RegionChangeOwnerType requestType)
         {
@@ -120,7 +120,7 @@ namespace SO.Map.Generation
 
             //Заполняем данные запроса
             requestComp = new(
-                characterPE,
+                countryPE,
                 regionPE,
                 requestType);
         }

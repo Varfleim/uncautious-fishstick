@@ -13,7 +13,7 @@ using SO.UI.Game.Map.Events;
 using SO.UI.Game.GUI;
 using SO.UI.Game.GUI.Object;
 using SO.UI.Game.GUI.Object.Events;
-using SO.Character;
+using SO.Country;
 using SO.Warfare.Fleet;
 using SO.Warfare.Fleet.Events;
 using SO.Warfare.Fleet.Missions.Events;
@@ -45,8 +45,8 @@ namespace SO.UI
 
         readonly EcsPoolInject<CStrategicArea> sAPool = default;
 
-        //Персонажи
-        readonly EcsPoolInject<CCharacter> characterPool = default;
+        //Страны
+        readonly EcsPoolInject<CCountry> countryPool = default;
 
         //Военное дело
         readonly EcsPoolInject<CTaskForce> taskForcePool = default;
@@ -264,7 +264,7 @@ namespace SO.UI
                 Debug.LogWarning("Y!");
 
                 MapChangeMapModeRequest(
-                    ChangeMapModeRequestType.Character);
+                    ChangeMapModeRequestType.Country);
             }
         }
 
@@ -322,17 +322,17 @@ namespace SO.UI
             //Берём окно игры
             UIGameWindow gameWindow = sOUI.Value.gameWindow;
 
-            //Берём персонажа игрока
-            inputData.Value.playerCharacterPE.Unpack(world.Value, out int characterEntity);
-            ref CCharacter character = ref characterPool.Value.Get(characterEntity);
+            //Берём страну игрока
+            inputData.Value.playerCountryPE.Unpack(world.Value, out int countryEntity);
+            ref CCountry country = ref countryPool.Value.Get(countryEntity);
 
-            //Если клик по флагу персонажа игрока
-            if (clickEvent.WidgetName == "PlayerCharacterFlag")
+            //Если клик по флагу страну игрока
+            if (clickEvent.WidgetName == "PlayerCountryFlag")
             {
-                //Запрашиваем отображение панели персонажа
+                //Запрашиваем отображение панели страны
                 ObjectPnActionRequest(
-                    uIData.Value.characterSubpanelDefaultTab,
-                    character.selfPE);
+                    uIData.Value.countrySubpanelDefaultTab,
+                    country.selfPE);
             }
             //Иначе, если клик по кнопке менеджера флотов на панели главных кнопок
             else if(clickEvent.WidgetName == "FleetManagerMBtnPn")
@@ -340,7 +340,7 @@ namespace SO.UI
                 //Запрашиваем отображение менеджера флотов
                 ObjectPnActionRequest(
                     uIData.Value.fleetManagerSubpanelDefaultTab,
-                    character.selfPE);
+                    country.selfPE);
             }
 
             //Иначе, если активна панель объекта
@@ -411,9 +411,9 @@ namespace SO.UI
         void ObjectPnClickAction(
             ref EcsUguiClickEvent clickEvent)
         {
-            //Берём персонажа игрока
-            inputData.Value.playerCharacterPE.Unpack(world.Value, out int characterEntity);
-            ref CCharacter character = ref characterPool.Value.Get(characterEntity);
+            //Берём страну игрока
+            inputData.Value.playerCountryPE.Unpack(world.Value, out int countryEntity);
+            ref CCountry country = ref countryPool.Value.Get(countryEntity);
 
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
@@ -425,11 +425,11 @@ namespace SO.UI
                 ObjectPnActionRequest(ObjectPanelActionRequestType.Close);
             }
 
-            //Иначе, если активна подпанель персонажа
-            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.Character)
+            //Иначе, если активна подпанель страны
+            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.Country)
             {
-                //Проверяем клики в подпанели персонажа
-                CharacterSbpnClickAction(ref clickEvent);
+                //Проверяем клики в подпанели страны
+                CountrySbpnClickAction(ref clickEvent);
             }
             //Иначе, если активна подпанель региона
             else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Region)
@@ -466,23 +466,23 @@ namespace SO.UI
                 objectPE, secondObjectPE);
         }
 
-        #region CharacterSubpanel
-        void CharacterSbpnClickAction(
+        #region CountrySubpanel
+        void CountrySbpnClickAction(
             ref EcsUguiClickEvent clickEvent)
         {
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель персонажа
-            UICharacterSubpanel characterSubpanel = objectPanel.characterSubpanel;
+            //Берём подпанель страны
+            UICountrySubpanel countrySubpanel = objectPanel.countrySubpanel;
 
             //Если нажата кнопка обзорной вкладки
-            if(clickEvent.WidgetName == "OverviewTabCharacterSbpn")
+            if(clickEvent.WidgetName == "OverviewTabCountrySbpn")
             {
                 //Запрашиваем отображение обзорной вкладки
                 ObjectPnActionRequest(
-                    ObjectPanelActionRequestType.CharacterOverview,
-                    characterSubpanel.activeTab.objectPE);
+                    ObjectPanelActionRequestType.CountryOverview,
+                    countrySubpanel.activeTab.objectPE);
             }
         }
         #endregion
@@ -539,9 +539,9 @@ namespace SO.UI
             //Если нажата кнопка захвата области
             else if(clickEvent.WidgetName == "ConquerStrategicAreaSbpn")
             {
-                //Запрашиваем смену владельца области на персонажа игрока
+                //Запрашиваем смену владельца области на страну игрока
                 StrategicAreaChangeOwnerRequest(
-                    inputData.Value.playerCharacterPE,
+                    inputData.Value.playerCountryPE,
                     sASubpanel.activeTab.objectPE);
             }
             //ТЕСТ
@@ -575,7 +575,7 @@ namespace SO.UI
 
                             //То запрашиваем смену владельца региона
                             RegionChangeOwnerRequest(
-                                inputData.Value.playerCharacterPE,
+                                inputData.Value.playerCountryPE,
                                 rC.selfPE,
                                 RegionChangeOwnerType.Test);
 
@@ -589,7 +589,7 @@ namespace SO.UI
 
         readonly EcsPoolInject<RStrategicAreaChangeOwner> sAChangeOwnerRequestPool = default;
         void StrategicAreaChangeOwnerRequest(
-            EcsPackedEntity characterPE,
+            EcsPackedEntity countryPE,
             EcsPackedEntity sAPE)
         {
             //Создаём новую сущность и назначаем ей запрос смены владельца стратегической области
@@ -598,14 +598,14 @@ namespace SO.UI
 
             //Заполняем данные запроса
             requestComp = new(
-                characterPE,
+                countryPE,
                 sAPE,
                 StrategicAreaChangeOwnerType.Test);
         }
 
         readonly EcsPoolInject<RRegionChangeOwner> regionChangeOwnerRequestPool = default;
         void RegionChangeOwnerRequest(
-            EcsPackedEntity characterPE,
+            EcsPackedEntity countryPE,
             EcsPackedEntity regionPE,
             RegionChangeOwnerType requestType)
         {
@@ -615,7 +615,7 @@ namespace SO.UI
 
             //Заполняем данные запроса
             requestComp = new(
-                characterPE,
+                countryPE,
                 regionPE,
                 requestType);
         }
@@ -651,9 +651,9 @@ namespace SO.UI
         void FMSbpnFleetsTabClickAction(
             ref EcsUguiClickEvent clickEvent)
         {
-            //Берём персонажа игрока
-            inputData.Value.playerCharacterPE.Unpack(world.Value, out int characterEntity);
-            ref CCharacter character = ref characterPool.Value.Get(characterEntity);
+            //Берём страну игрока
+            inputData.Value.playerCountryPE.Unpack(world.Value, out int countryEntity);
+            ref CCountry country = ref countryPool.Value.Get(countryEntity);
 
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
@@ -719,20 +719,20 @@ namespace SO.UI
             else if(clickEvent.WidgetName == "CreateNewTaskForceFMSbpnFleetsTab")
             {
                 //Запрашиваем создание новой группы
-                TaskForceCreatingRequest(ref character);
+                TaskForceCreatingRequest(ref country);
             }
         }
 
         readonly EcsPoolInject<RTaskForceCreating> taskForceCreatingRequestPool = default;
         void TaskForceCreatingRequest(
-            ref CCharacter ownerCharacter)
+            ref CCountry ownerCountry)
         {
             //Создаём новую сущность и назначаем ей запрос создания оперативной группы
             int requestEntity = world.Value.NewEntity();
             ref RTaskForceCreating requestComp = ref taskForceCreatingRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
-            requestComp = new(ownerCharacter.selfPE);
+            requestComp = new(ownerCountry.selfPE);
         }
         #endregion
         #endregion

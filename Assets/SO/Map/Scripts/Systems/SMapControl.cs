@@ -8,7 +8,7 @@ using Leopotam.EcsLite.Di;
 
 using SO.UI;
 using SO.UI.Game.Map.Events;
-using SO.Character;
+using SO.Country;
 using SO.Map.StrategicArea;
 using SO.Map.Hexasphere;
 using SO.Map.Generation;
@@ -30,9 +30,9 @@ namespace SO.Map
         readonly EcsFilterInject<Inc<CStrategicArea>> sAFilter = default;
         readonly EcsPoolInject<CStrategicArea> sAPool = default;
 
-        //Персонажи
-        readonly EcsFilterInject<Inc<CCharacter>> characterFilter = default;
-        readonly EcsPoolInject<CCharacter> characterPool = default;
+        //Страны
+        readonly EcsFilterInject<Inc<CCountry>> countryFilter = default;
+        readonly EcsPoolInject<CCountry> countryPool = default;
 
 
         //Данные
@@ -128,14 +128,14 @@ namespace SO.Map
                     //Отображаем режим карты стратегических областей
                     MapDisplayModeStrategicArea();
                 }
-                //Иначе, если запрашивается отображение персонажей
-                else if(requestComp.requestType == ChangeMapModeRequestType.Character)
+                //Иначе, если запрашивается отображение стран
+                else if (requestComp.requestType == ChangeMapModeRequestType.Country)
                 {
-                    //Указываем режим персонажей как активный
-                    inputData.Value.mapMode = MapMode.Character;
+                    //Указываем режим стран как активный
+                    inputData.Value.mapMode = MapMode.Country;
 
-                    //Отображаем режим карты персонажей
-                    MapDisplayModeCharacter();
+                    //Отображаем режим карты стран
+                    MapDisplayModeCountry();
                 }
 
                 changeMapModeRequestPool.Value.Del(requestEntity);
@@ -208,19 +208,19 @@ namespace SO.Map
             }
         }
 
-        void MapDisplayModeCharacter()
+        void MapDisplayModeCountry()
         {
-            //Для каждого персонажа
-            foreach (int characterEntity in characterFilter.Value)
+            //Для каждой страны
+            foreach (int countryEntity in countryFilter.Value)
             {
-                //Берём персонажа
-                ref CCharacter character = ref characterPool.Value.Get(characterEntity);
+                //Берём страну
+                ref CCountry country = ref countryPool.Value.Get(countryEntity);
 
-                //Для каждой стратегической области персонажа
-                for (int a = 0; a < character.ownedSAPEs.Count; a++)
+                //Для каждой стратегической области страны
+                for (int a = 0; a < country.ownedSAPEs.Count; a++)
                 {
                     //Берём область
-                    character.ownedSAPEs[a].Unpack(world.Value, out int sAEntity);
+                    country.ownedSAPEs[a].Unpack(world.Value, out int sAEntity);
                     ref CStrategicArea sA = ref sAPool.Value.Get(sAEntity);
 
                     //Для каждого региона области

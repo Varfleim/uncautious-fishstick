@@ -28,7 +28,7 @@ namespace SO.Map.Region
             parentStrategicAreaPE = new();
 
 
-            ownerCharacterPE = new();
+            ownerCountryPE = new();
 
 
             crossCost = 1;
@@ -70,8 +70,8 @@ namespace SO.Map.Region
         }
         #endregion
 
-        #region CharacterData
-        public EcsPackedEntity ownerCharacterPE;
+        #region CountryData
+        public EcsPackedEntity ownerCountryPE;
         #endregion
 
         #region TaskForceData

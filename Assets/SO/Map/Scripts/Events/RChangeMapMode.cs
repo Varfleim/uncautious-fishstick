@@ -5,7 +5,7 @@ namespace SO.Map.Events
         None,
         Terrain,
         StrategicArea,
-        Character,
+        Country,
         Exploration
     }
 

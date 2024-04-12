@@ -2,7 +2,7 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Character.Events;
+using SO.Country.Events;
 using SO.Map.Generation;
 
 namespace SO
@@ -15,8 +15,8 @@ namespace SO
         //События карты
         readonly EcsPoolInject<RMapGenerating> mapGeneratingRequestPool = default;
 
-        //События персонажей
-        readonly EcsPoolInject<RCharacterCreating> characterCreatingRequestPool = default;
+        //События стран
+        readonly EcsPoolInject<RCountryCreating> countryCreatingRequestPool = default;
 
         //Общие события
         readonly EcsFilterInject<Inc<RStartNewGame>> startNewGameRequestFilter = default;
@@ -33,8 +33,8 @@ namespace SO
                 //Запрашиваем генерацию карты
                 MapGeneratingRequest(50);
 
-                //Запрашиваем создание тестового персонажа
-                CharacterCreatingRequest("TestCharacter");
+                //Запрашиваем создание тестовой страны
+                CountryCreatingRequest("TestCountry");
 
                 UnityEngine.Debug.LogWarning("Новая игра");
             }
@@ -51,15 +51,15 @@ namespace SO
             requestComp = new(subdivisions);
         }
         
-        void CharacterCreatingRequest(
-            string characterName)
+        void CountryCreatingRequest(
+            string countryName)
         {
-            //Создаём новую сущность и назначаем ей запрос создания персонажа
+            //Создаём новую сущность и назначаем ей запрос создания страны
             int requestEntity = world.Value.NewEntity();
-            ref RCharacterCreating requestComp = ref characterCreatingRequestPool.Value.Add(requestEntity);
+            ref RCountryCreating requestComp = ref countryCreatingRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
-            requestComp = new(characterName);
+            requestComp = new(countryName);
         }
     }
 }

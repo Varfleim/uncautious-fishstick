@@ -6,11 +6,11 @@ namespace SO.Warfare.Fleet.Events
     public readonly struct RTaskForceCreating
     {
         public RTaskForceCreating(
-            EcsPackedEntity ownerCharacterPE)
+            EcsPackedEntity ownerCountryPE)
         {
-            this.ownerCharacterPE = ownerCharacterPE;
+            this.ownerCountryPE = ownerCountryPE;
         }
 
-        public readonly EcsPackedEntity ownerCharacterPE;
+        public readonly EcsPackedEntity ownerCountryPE;
     }
 }

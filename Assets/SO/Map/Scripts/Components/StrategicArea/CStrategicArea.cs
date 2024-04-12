@@ -25,7 +25,7 @@ namespace SO.Map.StrategicArea
             elevation = 0;
 
 
-            ownerCharacterPE = new();
+            ownerCountryPE = new();
         }
 
         public readonly EcsPackedEntity selfPE;
@@ -51,8 +51,8 @@ namespace SO.Map.StrategicArea
         int elevation;
         #endregion
 
-        #region CharacterData
-        public EcsPackedEntity ownerCharacterPE;
+        #region CountryData
+        public EcsPackedEntity ownerCountryPE;
         #endregion
     }
 }

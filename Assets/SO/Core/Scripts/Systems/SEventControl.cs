@@ -55,10 +55,10 @@ namespace SO
                 //Берём событие
                 ref EObjectNewCreated eventComp = ref objectNewCreatedEventPool.Value.Get(eventEntity);
 
-                //Если событие сообщает о создании нового персонажа
-                if (eventComp.objectType == ObjectNewCreatedType.Character)
+                //Если событие сообщает о создании новой страны
+                if (eventComp.objectType == ObjectNewCreatedType.Country)
                 {
-                    UnityEngine.Debug.LogWarning("Character created!");
+                    UnityEngine.Debug.LogWarning("Country created!");
                 }
                 //Иначе, если событие сообщает о создании новой оперативной группы
                 else if(eventComp.objectType == ObjectNewCreatedType.TaskForce)
@@ -94,7 +94,7 @@ namespace SO
                 ref ERegionChangeOwner eventComp = ref regionChangeOwnerEventPool.Value.Get(eventEntity);
 
                 //Если регион не принадлежал никому, то его сущность невозможно будет взять
-                if (eventComp.oldOwnerCharacterPE.Unpack(world.Value, out int oldOwnerCharacterEntity) == false)
+                if (eventComp.oldOwnerCountryPE.Unpack(world.Value, out int oldOwnerCountryEntity) == false)
                 {
                     //Запрашиваем создание главной панели карты региона
                     GameCreatePanelRequest(
@@ -120,8 +120,8 @@ namespace SO
                 //Берём событие 
                 ref EStrategicAreaChangeOwner eventComp = ref sAChangeOwnerEventPool.Value.Get(eventEntity);
 
-                //Если область не принадлежала никому, то сущность персонажа невозможно будет взять
-                if(eventComp.oldOwnerCharacterPE.Unpack(world.Value, out int oldOwnerCharacterEntity) == false)
+                //Если область не принадлежала никому, то сущность страны невозможно будет взять
+                if(eventComp.oldOwnerCountryPE.Unpack(world.Value, out int oldOwnerCountryEntity) == false)
                 {
                     //Запрашиваем создание главной панели интерфейса области
                 }

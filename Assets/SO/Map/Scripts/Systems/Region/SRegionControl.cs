@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Character;
+using SO.Country;
 using SO.Map.Events;
 using SO.Map.Economy;
 
@@ -20,8 +20,8 @@ namespace SO.Map.Region
         readonly EcsPoolInject<CRegionCore> rCPool = default;
         readonly EcsPoolInject<CRegionEconomy> rEPool = default;
 
-        //Персонажи
-        readonly EcsPoolInject<CCharacter> characterPool = default;
+        //Страны
+        readonly EcsPoolInject<CCountry> countryPool = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -39,9 +39,9 @@ namespace SO.Map.Region
                 //Берём запрос
                 ref RRegionChangeOwner requestComp = ref regionChangeOwnerRequestPool.Value.Get(requestEntity);
 
-                //Берём персонажа, который становится владельцем региона
-                requestComp.characterPE.Unpack(world.Value, out int characterEntity);
-                ref CCharacter character = ref characterPool.Value.Get(characterEntity);
+                //Берём страну, который становится владельцем региона
+                requestComp.countryPE.Unpack(world.Value, out int countryEntity);
+                ref CCountry country = ref countryPool.Value.Get(countryEntity);
 
                 //Берём регион
                 requestComp.regionPE.Unpack(world.Value, out int regionEntity);
@@ -57,15 +57,15 @@ namespace SO.Map.Region
                 //Создаём событие, сообщающее о смене владельца региона
                 RegionChangeOwnerEvent(
                     rC.selfPE,
-                    character.selfPE, rC.ownerCharacterPE);
+                    country.selfPE, rC.ownerCountryPE);
 
 
-                //Указываем персонажа-владельца региона
-                rC.ownerCharacterPE = character.selfPE;
+                //Указываем страну-владельца региона
+                rC.ownerCountryPE = country.selfPE;
 
                 //ТЕСТ
-                //Заносим PE региона в список персонажа
-                character.ownedRCPEs.Add(rC.selfPE);
+                //Заносим PE региона в список страны
+                country.ownedRCPEs.Add(rC.selfPE);
 
                 //Берём экономический компонент региона
                 ref CRegionEconomy rE = ref rEPool.Value.Get(regionEntity);
@@ -96,7 +96,7 @@ namespace SO.Map.Region
         readonly EcsPoolInject<ERegionChangeOwner> regionChangeOwnerEventPool = default;
         void RegionChangeOwnerEvent(
             EcsPackedEntity regionPE,
-            EcsPackedEntity newOwnerCharacterPE, EcsPackedEntity oldOwnerCharacterPE = new())
+            EcsPackedEntity newOwnerCountryPE, EcsPackedEntity oldOwnerCountryPE = new())
         {
             //Создаём новую сущность и назначаем ей событие смены владельца RC
             int eventEntity = world.Value.NewEntity();
@@ -105,7 +105,7 @@ namespace SO.Map.Region
             //Заполняем данные события
             eventComp = new(
                 regionPE,
-                newOwnerCharacterPE, oldOwnerCharacterPE);
+                newOwnerCountryPE, oldOwnerCountryPE);
         }
     }
 }

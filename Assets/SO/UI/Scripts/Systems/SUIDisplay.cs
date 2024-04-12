@@ -19,13 +19,13 @@ using SO.UI.Game.Map.Events;
 using SO.UI.Game.GUI;
 using SO.UI.Game.Events;
 using SO.UI.Game.GUI.Object;
-using SO.UI.Game.GUI.Object.Character;
+using SO.UI.Game.GUI.Object.Country;
 using SO.UI.Game.GUI.Object.Region;
 using SO.UI.Game.GUI.Object.StrategicArea;
 using SO.UI.Game.GUI.Object.FleetManager;
 using SO.UI.Game.GUI.Object.Events;
 using SO.Map;
-using SO.Character;
+using SO.Country;
 using SO.Warfare.Fleet;
 using SO.Map.StrategicArea;
 using SO.Map.Hexasphere;
@@ -54,8 +54,8 @@ namespace SO.UI
 
         readonly EcsPoolInject<CStrategicArea> sAPool = default;
 
-        //Персонажи
-        readonly EcsPoolInject<CCharacter> characterPool = default;
+        //Страны
+        readonly EcsPoolInject<CCountry> countryPool = default;
 
         //Военное дело
         readonly EcsPoolInject<CTaskForce> tFPool = default;
@@ -831,19 +831,19 @@ namespace SO.UI
                     ObjectPnClose();
                 }
 
-                //Иначе, если запрашивается отображение вкладок персонажа
-                else if (requestComp.requestType >= ObjectPanelActionRequestType.CharacterOverview
-                    && requestComp.requestType <= ObjectPanelActionRequestType.CharacterOverview)
+                //Иначе, если запрашивается отображение вкладок страны
+                else if (requestComp.requestType >= ObjectPanelActionRequestType.CountryOverview
+                    && requestComp.requestType <= ObjectPanelActionRequestType.CountryOverview)
                 {
-                    //Берём персонажа
-                    requestComp.objectPE.Unpack(world.Value, out int characterEntity);
-                    ref CCharacter character = ref characterPool.Value.Get(characterEntity);
+                    //Берём страну
+                    requestComp.objectPE.Unpack(world.Value, out int countryEntity);
+                    ref CCountry country = ref countryPool.Value.Get(countryEntity);
 
                     //Если запрашивается отображение обзорной вкладки
-                    if (requestComp.requestType == ObjectPanelActionRequestType.CharacterOverview)
+                    if (requestComp.requestType == ObjectPanelActionRequestType.CountryOverview)
                     {
-                        //Отображаем обзорную вкладку персонажа
-                        CharacterSbpnShowOverviewTab(ref character);
+                        //Отображаем обзорную вкладку страны
+                        CountrySbpnShowOverviewTab(ref country);
                     }
                 }
                 //Иначе, если запрашивается отображение вкладок региона
@@ -887,15 +887,15 @@ namespace SO.UI
                 else if(requestComp.requestType >= ObjectPanelActionRequestType.FleetManagerFleets
                     && requestComp.requestType <= ObjectPanelActionRequestType.FleetManagerFleets)
                 {
-                    //Берём персонажа
-                    requestComp.objectPE.Unpack(world.Value, out int characterEntity);
-                    ref CCharacter character = ref characterPool.Value.Get(characterEntity);
+                    //Берём страну
+                    requestComp.objectPE.Unpack(world.Value, out int countryEntity);
+                    ref CCountry country = ref countryPool.Value.Get(countryEntity);
 
                     //Если запрашивается отображение вкладки флотов
                     if (requestComp.requestType == ObjectPanelActionRequestType.FleetManagerFleets)
                     {
                         //Отображаем вкладку флотов
-                        FleetManagerSbpnShowFleetsTab(ref character);
+                        FleetManagerSbpnShowFleetsTab(ref country);
                     }
                 }
 
@@ -908,11 +908,11 @@ namespace SO.UI
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Если активна подпанель персонажа
-            if (objectPanel.activeSubpanelType == ObjectSubpanelType.Character)
+            //Если активна подпанель страны
+            if (objectPanel.activeSubpanelType == ObjectSubpanelType.Country)
             {
                 //Скрываем активную вкладку
-                objectPanel.characterSubpanel.HideActiveTab();
+                objectPanel.countrySubpanel.HideActiveTab();
             }
             //Иначе, если активна подпанель региона
             else if (objectPanel.activeSubpanelType == ObjectSubpanelType.Region)
@@ -1001,10 +1001,10 @@ namespace SO.UI
             }
         }
 
-        #region CharacterSubpanel
-        void CharacterSbpnShowTab(
-            UIASubpanelTab currentCharacterTab,
-            ref CCharacter currentCharacter,
+        #region CountrySubpanel
+        void CountrySbpnShowTab(
+            UIASubpanelTab currentCountryTab,
+            ref CCountry currentCountry,
             out bool isSamePanel,
             out bool isSameSubpanel,
             out bool isSameTab,
@@ -1017,17 +1017,17 @@ namespace SO.UI
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель персонажа
-            UICharacterSubpanel characterSubpanel = objectPanel.characterSubpanel;
+            //Берём подпанель страны
+            UICountrySubpanel countrySubpanel = objectPanel.countrySubpanel;
 
-            //Отображаем подпанель персонажа, если необходимо
+            //Отображаем подпанель страны, если необходимо
             ObjectPnOpenSubpanel(
-                characterSubpanel, ObjectSubpanelType.Character,
+                countrySubpanel, ObjectSubpanelType.Country,
                 out isSamePanel,
                 out isSameSubpanel);
 
             //Если открыта необходимая вкладка
-            if (characterSubpanel.activeTab == currentCharacterTab)
+            if (countrySubpanel.activeTab == currentCountryTab)
             {
                 //Если была открыта та же подпанель
                 if(isSameSubpanel == true)
@@ -1035,8 +1035,8 @@ namespace SO.UI
                     //Сообщаем, что была открыта та же вкладка
                     isSameTab = true;
 
-                    //Если вкладка была открыта для того же персонажа
-                    if (characterSubpanel.activeTab.objectPE.EqualsTo(currentCharacter.selfPE) == true)
+                    //Если вкладка была открыта для той же страны
+                    if (countrySubpanel.activeTab.objectPE.EqualsTo(currentCountry.selfPE) == true)
                     {
                         //То сообщаем, что был отображён тот же объект
                         isSameObject = true;
@@ -1075,10 +1075,10 @@ namespace SO.UI
             else
             {
                 //Отображаем запрошенную вкладку
-                characterSubpanel.tabGroup.OnTabSelected(currentCharacterTab.selfTabButton);
+                countrySubpanel.tabGroup.OnTabSelected(currentCountryTab.selfTabButton);
 
                 //Указываем её как активную вкладку
-                characterSubpanel.activeTab = currentCharacterTab;
+                countrySubpanel.activeTab = currentCountryTab;
             }
 
             //Если был отображён тот же объект
@@ -1089,27 +1089,27 @@ namespace SO.UI
             //Иначе
             else
             {
-                //Указываем PE текущего персонажа
-                characterSubpanel.activeTab.objectPE = currentCharacter.selfPE;
+                //Указываем PE текущей страны
+                countrySubpanel.activeTab.objectPE = currentCountry.selfPE;
 
-                //Отображаем название панели - название персонажа
-                objectPanel.objectName.text = currentCharacter.selfIndex.ToString();
+                //Отображаем название панели - название страны
+                objectPanel.objectName.text = currentCountry.selfIndex.ToString();
             }
         }
 
-        void CharacterSbpnShowOverviewTab(
-            ref CCharacter character)
+        void CountrySbpnShowOverviewTab(
+            ref CCountry country)
         {
-            //Берём подпанель персонажа
-            UICharacterSubpanel characterSubpanel = sOUI.Value.gameWindow.objectPanel.characterSubpanel;
+            //Берём подпанель страны
+            UICountrySubpanel countrySubpanel = sOUI.Value.gameWindow.objectPanel.countrySubpanel;
 
             //Берём обзорную вкладку
-            Game.GUI.Object.Character.UIOverviewTab overviewTab = characterSubpanel.overviewTab;
+            Game.GUI.Object.Country.UIOverviewTab overviewTab = countrySubpanel.overviewTab;
 
             //Отображаем обзорную вкладку
-            CharacterSbpnShowTab(
+            CountrySbpnShowTab(
                 overviewTab,
-                ref character,
+                ref country,
                 out bool isSamePanel,
                 out bool isSameSubpanel,
                 out bool isSameTab,
@@ -1530,7 +1530,7 @@ namespace SO.UI
         #region FleetManager
         void FleetManagerSbpnShowTab(
             UIASubpanelTab currentFleetManagerTab,
-            ref CCharacter currentCharacter,
+            ref CCountry currentCountry,
             out bool isSamePanel,
             out bool isSameSubpanel,
             out bool isSameTab,
@@ -1561,8 +1561,8 @@ namespace SO.UI
                     //Сообщаем, что была открыта та же вкладка
                     isSameTab = true;
 
-                    //Если вкладка была открыта для того же персонажа
-                    if (fleetManagerSubpanel.activeTab.objectPE.EqualsTo(currentCharacter.selfPE) == true)
+                    //Если вкладка была открыта для той же страны
+                    if (fleetManagerSubpanel.activeTab.objectPE.EqualsTo(currentCountry.selfPE) == true)
                     {
                         //То сообщаем, что был отображён тот же объект
                         isSameObject = true;
@@ -1616,13 +1616,13 @@ namespace SO.UI
             //Иначе
             else
             {
-                //Указываем PE текущего персонажа
-                fleetManagerSubpanel.activeTab.objectPE = currentCharacter.selfPE;
+                //Указываем PE текущей страны
+                fleetManagerSubpanel.activeTab.objectPE = currentCountry.selfPE;
             }
         }
 
         void FleetManagerSbpnShowFleetsTab(
-            ref CCharacter character)
+            ref CCountry country)
         {
             //Берём подпанель менеджера флотов
             UIFleetManagerSubpanel fleetManagerSubpanel = sOUI.Value.gameWindow.objectPanel.fleetManagerSubpanel;
@@ -1633,7 +1633,7 @@ namespace SO.UI
             //Отображаем вкладку флотов
             FleetManagerSbpnShowTab(
                 fleetsTab,
-                ref character,
+                ref country,
                 out bool isSamePanel,
                 out bool isSameSubpanel,
                 out bool isSameTab,
@@ -1681,11 +1681,11 @@ namespace SO.UI
             else
             {
                 //Проверяем, какие оперативные группы должны быть отображены в этом списке
-                //Для каждой оперативной группы персонажа
-                for (int a = 0; a < character.ownedTaskForces.Count; a++)
+                //Для каждой оперативной группы страны
+                for (int a = 0; a < country.ownedTaskForces.Count; a++)
                 {
                     //Берём сущность оперативной группы и назначаем компонент "неудаляемый UI"
-                    character.ownedTaskForces[a].Unpack(world.Value, out int tFEntity);
+                    country.ownedTaskForces[a].Unpack(world.Value, out int tFEntity);
                     ref CNonDeletedUI tFNonDeletedUI = ref nonDeletedUIPool.Value.Add(tFEntity);
                 }
 

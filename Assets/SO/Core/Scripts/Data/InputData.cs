@@ -13,7 +13,7 @@ namespace SO.UI
         Default,
         Terrain,
         StrategicArea,
-        Character
+        Country
     }
 
     public class InputData : MonoBehaviour
@@ -73,7 +73,7 @@ namespace SO.UI
         public EcsPackedEntity searchToRegion;
 
 
-        public EcsPackedEntity playerCharacterPE;
+        public EcsPackedEntity playerCountryPE;
 
 
         public List<EcsPackedEntity> activeTaskForcePEs = new();
