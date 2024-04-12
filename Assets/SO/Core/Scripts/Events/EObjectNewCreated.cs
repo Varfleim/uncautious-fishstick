@@ -7,7 +7,8 @@ namespace SO
     {
         None,
         Character,
-        TaskForce
+        TaskForce,
+        Population
     }
 
     public struct EObjectNewCreated

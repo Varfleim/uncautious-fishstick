@@ -3,7 +3,6 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
 using SO.Character.Events;
-using SO.Map;
 using SO.Map.Generation;
 
 namespace SO.Character
@@ -12,6 +11,7 @@ namespace SO.Character
     {
         //Миры
         readonly EcsWorldInject world = default;
+
 
         //Персонажи
         readonly EcsPoolInject<CCharacter> characterPool = default;
@@ -56,10 +56,10 @@ namespace SO.Character
 
             //ТЕСТ
             inputData.Value.playerCharacterPE = character.selfPE;
-            //ТЕСТ
 
             //Запрашиваем инициализацию стартового региона персонажа
             CharacterStartRegionInitializerRequest(character.selfPE);
+            //ТЕСТ
 
             //Создаём событие, сообщающее о создании нового персонажа
             ObjectNewCreatedEvent(character.selfPE, ObjectNewCreatedType.Character);

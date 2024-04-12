@@ -22,7 +22,7 @@ namespace SO.Map.Hexasphere
         //Карта
         readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
         readonly EcsPoolInject<CRegionCore> rCPool = default;
-        readonly EcsPoolInject<CRegionEconomic> rEPool = default;
+        readonly EcsPoolInject<CRegionEconomy> rEPool = default;
 
 
         //События карты
@@ -360,7 +360,7 @@ namespace SO.Map.Hexasphere
             int regionEntity = world.Value.NewEntity();
             ref CRegionHexasphere currentRHS = ref rHSPool.Value.Add(regionEntity);
             ref CRegionCore currentRC = ref rCPool.Value.Add(regionEntity);
-            ref CRegionEconomic currentRE = ref rEPool.Value.Add(regionEntity);
+            ref CRegionEconomy currentRE = ref rEPool.Value.Add(regionEntity);
 
             //Заполняем основные данные RHS
             currentRHS = new(

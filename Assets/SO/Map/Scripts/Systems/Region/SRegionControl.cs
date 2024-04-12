@@ -6,6 +6,7 @@ using Leopotam.EcsLite.Di;
 
 using SO.Character;
 using SO.Map.Events;
+using SO.Map.Economy;
 
 namespace SO.Map.Region
 {
@@ -17,6 +18,7 @@ namespace SO.Map.Region
 
         //Карта
         readonly EcsPoolInject<CRegionCore> rCPool = default;
+        readonly EcsPoolInject<CRegionEconomy> rEPool = default;
 
         //Персонажи
         readonly EcsPoolInject<CCharacter> characterPool = default;
@@ -64,6 +66,22 @@ namespace SO.Map.Region
                 //ТЕСТ
                 //Заносим PE региона в список персонажа
                 character.ownedRCPEs.Add(rC.selfPE);
+
+                //Берём экономический компонент региона
+                ref CRegionEconomy rE = ref rEPool.Value.Get(regionEntity);
+
+                //Создаём тестовые группы населения
+                for(int a = 0; a < 5; a++)
+                {
+                    //Создаём новый запрос создания ПОПа
+                    Population.Events.DROrderedPopulation orderedPOP = new(
+                        rE.selfPE,
+                        0,
+                        100);
+
+                    //Заносим его в список заказанных ПОПов
+                    rE.orderedPOPs.Add(orderedPOP);
+                }
                 //ТЕСТ
 
                 regionChangeOwnerRequestPool.Value.Del(requestEntity);

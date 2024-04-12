@@ -76,7 +76,7 @@ namespace SO.UI
         readonly EcsPoolInject<RGameObjectPanelAction> gameObjectPanelRequestPool = default;
         void ObjPnActionRequest(
             ObjectPanelActionRequestType requestType,
-            EcsPackedEntity objectPE = new())
+            EcsPackedEntity objectPE = new(), EcsPackedEntity secondObjectPE = new())
         {
             //Создаём новую сущность и назначаем ей запрос действия панели объекта
             int requestEntity = world.Value.NewEntity();
@@ -85,7 +85,7 @@ namespace SO.UI
             //Заполняем данные запроса
             requestComp = new(
                 requestType,
-                objectPE);
+                objectPE, secondObjectPE);
         }
         
         void CharacterSbpnCheckRefresh()

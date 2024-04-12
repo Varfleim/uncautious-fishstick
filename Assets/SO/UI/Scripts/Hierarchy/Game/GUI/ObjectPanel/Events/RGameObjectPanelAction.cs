@@ -21,15 +21,17 @@ namespace SO.UI.Game.GUI.Object.Events
     {
         public RGameObjectPanelAction(
             ObjectPanelActionRequestType requestType,
-            EcsPackedEntity objectPE)
+            EcsPackedEntity objectPE, EcsPackedEntity secondObjectPE)
         {
             this.requestType = requestType;
 
             this.objectPE = objectPE;
+            this.secondObjectPE = secondObjectPE;
         }
 
         public readonly ObjectPanelActionRequestType requestType;
 
         public readonly EcsPackedEntity objectPE;
+        public readonly EcsPackedEntity secondObjectPE;
     }
 }

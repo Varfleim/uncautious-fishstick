@@ -32,7 +32,7 @@ namespace SO.UI.Game.GUI.Object.StrategicArea.Regions
         }
 
         public static void InstantiatePanel(
-            ref CRegionCore rC, ref CRegionEconomic rE, ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels,
+            ref CRegionCore rC, ref CRegionEconomy rE, ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels,
             VerticalLayoutGroup parentLayout)
         {
             //Создаём пустую переменную для панели
@@ -66,7 +66,7 @@ namespace SO.UI.Game.GUI.Object.StrategicArea.Regions
         }
 
         public void RefreshPanel(
-            ref CRegionCore rC, ref CRegionEconomic rE)
+            ref CRegionCore rC, ref CRegionEconomy rE)
         {
             //Отображаем название региона
             selfName.text = rC.selfPE.Id.ToString();

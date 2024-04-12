@@ -14,6 +14,7 @@ using SO.Map.Generation;
 using SO.Map.StrategicArea;
 using SO.Map.Region;
 using SO.Character;
+using SO.Population;
 using SO.Warfare.Fleet;
 using SO.Warfare.Fleet.Missions;
 using SO.Warfare.Fleet.Movement;
@@ -74,8 +75,11 @@ namespace SO
                 
                 //”правление стратегическими област€ми
                 new SStrategicAreaControl(),
-                //”правление RC
-                new SRegionControl())
+                //”правление регионами
+                new SRegionControl(),
+                
+                //”правление группами населени€
+                new SPopulationControl())
                 //√руппа выключаетс€ в SEventControl в том же кадре
 
                 //ќбработка ввода
@@ -117,8 +121,11 @@ namespace SO
 
                 //”правление стратегическими област€ми
                 .Add(new SStrategicAreaControl())
-                //”правление RC
+                //”правление регионами
                 .Add(new SRegionControl())
+
+                //”правление группами населени€
+                .Add(new SPopulationControl())
 
                 //”правление оперативными группами
                 .Add(new STaskForceControl())

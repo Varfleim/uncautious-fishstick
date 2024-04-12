@@ -75,6 +75,11 @@ namespace SO
                         eventComp.objectPE,
                         GamePanelType.TaskForceMainMapPanel);
                 }
+                //Иначе, если событие сообщает о создании новой группы населения
+                if(eventComp.objectType == ObjectNewCreatedType.Population)
+                {
+                    UnityEngine.Debug.LogWarning("Population created!");
+                }
             }
         }
 

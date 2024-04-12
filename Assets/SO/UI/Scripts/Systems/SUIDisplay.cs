@@ -46,7 +46,7 @@ namespace SO.UI
         readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
         readonly EcsPoolInject<CRegionCore> rCPool = default;
 
-        readonly EcsPoolInject<CRegionEconomic> rEPool = default;
+        readonly EcsPoolInject<CRegionEconomy> rEPool = default;
 
         readonly EcsPoolInject<CRegionDisplayedGUIPanels> regionDisplayedGUIPanelsPool = default;
         readonly EcsFilterInject<Inc<CRegionHexasphere, CRegionDisplayedMapPanels>> regionDisplayedMapPanelsFilter = default;
@@ -396,7 +396,7 @@ namespace SO.UI
             {
                 //Берём регион и компонент панелей
                 ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
-                ref CRegionEconomic rE = ref rEPool.Value.Get(regionEntity);
+                ref CRegionEconomy rE = ref rEPool.Value.Get(regionEntity);
                 ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Get(regionEntity);
 
                 //Если регион имеет отображаемую обзорную панель вкладки регионов подпанели стратегической области
@@ -880,7 +880,7 @@ namespace SO.UI
                     else if (requestComp.requestType == ObjectPanelActionRequestType.StrategicAreaRegions)
                     {
                         //Отображаем вкладку регионов области
-                        StrategicAreaSbpnShowRegionsTab(ref sA);
+                        StrategicAreaSbpnShowRegionsTab(ref sA, requestComp.secondObjectPE);
                     }
                 }
                 //Иначе, если запрашивается отображение вкладок менеджера флотов
@@ -1349,7 +1349,7 @@ namespace SO.UI
         }
 
         void StrategicAreaSbpnShowRegionsTab(
-            ref CStrategicArea sA)
+            ref CStrategicArea sA, EcsPackedEntity currentRCPE = new())
         {
             //Берём подпанель стратегической области
             UIStrategicAreaSubpanel sASubpanel = sOUI.Value.gameWindow.objectPanel.strategicAreaSubpanel;
@@ -1437,7 +1437,7 @@ namespace SO.UI
                 {
                     //Берём регион и компонент панелей GUI
                     ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
-                    ref CRegionEconomic rE = ref rEPool.Value.Get(regionEntity);
+                    ref CRegionEconomy rE = ref rEPool.Value.Get(regionEntity);
                     ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Get(regionEntity);
 
                     //Если у региона есть обзорная панель вкладки регионов
@@ -1458,7 +1458,7 @@ namespace SO.UI
                 {
                     //Берём регион
                     ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
-                    ref CRegionEconomic rE = ref rEPool.Value.Get(regionEntity);
+                    ref CRegionEconomy rE = ref rEPool.Value.Get(regionEntity);
 
                     //Создаём обзорную панель
                     StrategicAreaSbpnRegionsTabCreateRegionSummaryPanel(ref rC, ref rE);
@@ -1466,6 +1466,16 @@ namespace SO.UI
                     //И удаляем с региона "неудаляемый UI"
                     nonDeletedUIPool.Value.Del(regionEntity);
                 }
+            }
+
+            //Если PE текущего региона не пуста
+            if (currentRCPE.Unpack(world.Value, out int currentRegionEntity))
+            {
+                //Берём сущность текущего региона и компонент панелей GUI
+                ref CRegionDisplayedGUIPanels currentRegionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Get(currentRegionEntity);
+
+                //Центрируем список на текущем регионе
+                regionsTab.scrollView.FocusOnItem(currentRegionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel.selfRect);
             }
         }
 
@@ -1475,14 +1485,14 @@ namespace SO.UI
             //Берём регион
             requestComp.objectPE.Unpack(world.Value, out int regionEntity);
             ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
-            ref CRegionEconomic rE = ref rEPool.Value.Get(regionEntity);
+            ref CRegionEconomy rE = ref rEPool.Value.Get(regionEntity);
 
             //Создаём обзорную панель
             StrategicAreaSbpnRegionsTabCreateRegionSummaryPanel(ref rC, ref rE);
         }
 
         void StrategicAreaSbpnRegionsTabCreateRegionSummaryPanel(
-            ref CRegionCore rC, ref CRegionEconomic rE)
+            ref CRegionCore rC, ref CRegionEconomy rE)
         {
             //Берём сущность региона
             rC.selfPE.Unpack(world.Value, out int regionEntity);
