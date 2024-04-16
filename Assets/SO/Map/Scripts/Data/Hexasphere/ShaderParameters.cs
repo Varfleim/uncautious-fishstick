@@ -10,7 +10,7 @@ namespace SO.Map.Hexasphere
         public static int Color2 = Shader.PropertyToID("_Color2");
         public static int Color = Shader.PropertyToID("_Color");
         public static int BaseColor = Shader.PropertyToID("_BaseColor");
-        public static int RegionAlpha = Shader.PropertyToID("_TileAlpha");
+        public static int ProvinceAlpha = Shader.PropertyToID("_TileAlpha");
         public static int ColorShift = Shader.PropertyToID("_ColorShift");
         public static int Center = Shader.PropertyToID("_Center");
 

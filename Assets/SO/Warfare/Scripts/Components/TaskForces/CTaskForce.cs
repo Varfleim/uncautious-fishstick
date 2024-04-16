@@ -31,8 +31,8 @@ namespace SO.Warfare.Fleet
             
             this.ownerCountryPE = ownerCountryPE;
 
-            currentRegionPE = new();
-            previousRegionPE = new();
+            currentProvincePE = new();
+            previousProvincePE = new();
 
             currentMissionType = TaskForceMissionType.None;
         }
@@ -41,8 +41,8 @@ namespace SO.Warfare.Fleet
 
         public EcsPackedEntity ownerCountryPE;
 
-        public EcsPackedEntity currentRegionPE;
-        public EcsPackedEntity previousRegionPE;
+        public EcsPackedEntity currentProvincePE;
+        public EcsPackedEntity previousProvincePE;
 
         public TaskForceMissionType currentMissionType;
     }

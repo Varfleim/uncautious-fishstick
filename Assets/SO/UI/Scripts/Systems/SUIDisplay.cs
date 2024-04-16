@@ -20,19 +20,19 @@ using SO.UI.Game.GUI;
 using SO.UI.Game.Events;
 using SO.UI.Game.GUI.Object;
 using SO.UI.Game.GUI.Object.Country;
-using SO.UI.Game.GUI.Object.Region;
-using SO.UI.Game.GUI.Object.StrategicArea;
+using SO.UI.Game.GUI.Object.Province;
+using SO.UI.Game.GUI.Object.MapArea;
 using SO.UI.Game.GUI.Object.FleetManager;
 using SO.UI.Game.GUI.Object.Events;
 using SO.Map;
 using SO.Country;
 using SO.Warfare.Fleet;
-using SO.Map.StrategicArea;
+using SO.Map.MapArea;
 using SO.Map.Hexasphere;
 using SO.Map.UI;
 using SO.Map.Generation;
 using SO.Map.Economy;
-using SO.Map.Region;
+using SO.Map.Province;
 
 namespace SO.UI
 {
@@ -43,16 +43,16 @@ namespace SO.UI
 
 
         //Карта
-        readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
-        readonly EcsPoolInject<CRegionCore> rCPool = default;
+        readonly EcsPoolInject<CProvinceHexasphere> pHSPool = default;
+        readonly EcsPoolInject<CProvinceCore> pCPool = default;
 
-        readonly EcsPoolInject<CRegionEconomy> rEPool = default;
+        readonly EcsPoolInject<CProvinceEconomy> pEPool = default;
 
-        readonly EcsPoolInject<CRegionDisplayedGUIPanels> regionDisplayedGUIPanelsPool = default;
-        readonly EcsFilterInject<Inc<CRegionHexasphere, CRegionDisplayedMapPanels>> regionDisplayedMapPanelsFilter = default;
-        readonly EcsPoolInject<CRegionDisplayedMapPanels> regionDisplayedMapPanelsPool = default;
+        readonly EcsPoolInject<CProvinceDisplayedGUIPanels> provinceDisplayedGUIPanelsPool = default;
+        readonly EcsFilterInject<Inc<CProvinceHexasphere, CProvinceDisplayedMapPanels>> provinceDisplayedMapPanelsFilter = default;
+        readonly EcsPoolInject<CProvinceDisplayedMapPanels> provinceDisplayedMapPanelsPool = default;
 
-        readonly EcsPoolInject<CStrategicArea> sAPool = default;
+        readonly EcsPoolInject<CMapArea> mAPool = default;
 
         //Страны
         readonly EcsPoolInject<CCountry> countryPool = default;
@@ -82,11 +82,11 @@ namespace SO.UI
             ListPool<int>.Init();
 
             //Заносим префабы в их графы
-            GORegionRenderer.regionRendererPrefab = uIData.Value.regionRendererPrefab;
-            CRegionDisplayedMapPanels.mapPanelGroupPrefab = uIData.Value.mapPanelGroup;
+            GOProvinceRenderer.provinceRendererPrefab = uIData.Value.provinceRendererPrefab;
+            CProvinceDisplayedMapPanels.mapPanelGroupPrefab = uIData.Value.mapPanelGroup;
 
-            Game.GUI.Object.StrategicArea.Regions.UIRegionSummaryPanel.panelPrefab = uIData.Value.sASbpnRegionsTabRegionSummaryPanelPrefab;
-            UIRCMainMapPanel.panelPrefab = uIData.Value.rCMainMapPanelPrefab;
+            Game.GUI.Object.MapArea.Provinces.UIProvinceSummaryPanel.panelPrefab = uIData.Value.mASbpnProvincesTabProvinceSummaryPanelPrefab;
+            UIPCMainMapPanel.panelPrefab = uIData.Value.pCMainMapPanelPrefab;
 
             Game.GUI.Object.FleetManager.Fleets.UITaskForceSummaryPanel.panelPrefab = uIData.Value.fMSbpnFleetsTabTaskForceSummaryPanelPrefab;
             UITFMainMapPanel.panelPrefab = uIData.Value.tFMainMapPanelPrefab;
@@ -233,17 +233,17 @@ namespace SO.UI
                 //Берём запрос
                 ref RGameCreatePanel requestComp = ref gameCreatePanelRequestPool.Value.Get(requestEntity);
 
-                //Если запрашивается создание обзорной панели региона вкладки регионов подпанели стратегической области
-                if (requestComp.panelType == GamePanelType.RegionSummaryPanelSASbpnRegionsTab)
+                //Если запрашивается создание обзорной панели провинции вкладки провинций подпанели области карты
+                if (requestComp.panelType == GamePanelType.ProvinceSummaryPanelMASbpnProvincesTab)
                 {
-                    //Создаём обзорную панель региона
-                    StrategicAreaSbpnCreateRegionSummaryPanel(ref requestComp);
+                    //Создаём обзорную панель провинции
+                    MapAreaSbpnCreateProvinceSummaryPanel(ref requestComp);
                 }
-                //Иначе, если запрашивается создание главной панели карты региона
-                if (requestComp.panelType == GamePanelType.RegionMainMapPanel)
+                //Иначе, если запрашивается создание главной панели карты провинции
+                if (requestComp.panelType == GamePanelType.ProvinceMainMapPanel)
                 {
-                    //Создаём главную панель карты региона
-                    MapUICreateRegionMainMapPanel(ref requestComp);
+                    //Создаём главную панель карты провинции
+                    MapUICreateProvinceMainMapPanel(ref requestComp);
                 }
                 //Иначе, если запрашивается создание обзорной панели оперативной группы вкладки флотов менеджера флотов
                 else if (requestComp.panelType == GamePanelType.TaskForceSummaryPanelFMSbpnFleetsTab)
@@ -266,8 +266,8 @@ namespace SO.UI
         readonly EcsPoolInject<SRGameRefreshPanels> gameRefreshPanelsSelfRequestPool = default;
         void GameRefreshUISelfRequest()
         {
-            //Обновляем интерфейс регионов
-            GameRefreshUIRegion();
+            //Обновляем интерфейс провинций
+            GameRefreshUIProvince();
 
             //Обновляем интерфейс оперативных групп
             GameRefreshUITaskForce();
@@ -305,17 +305,17 @@ namespace SO.UI
                 //Берём запрос
                 ref RGameDeletePanel requestComp = ref gameDeletePanelRequestPool.Value.Get(requestEntity);
 
-                //Если запрашивается удаление обзорной панели региона вкладки регионов подпанели стратегической области
-                if(requestComp.panelType == GamePanelType.RegionSummaryPanelSASbpnRegionsTab)
+                //Если запрашивается удаление обзорной панели провинции вкладки провинций подпанели области карты
+                if (requestComp.panelType == GamePanelType.ProvinceSummaryPanelMASbpnProvincesTab)
                 {
                     //Удаляем обзорную панель
-                    StrategicAreaSbpnRegionsTabDeleteRegionSummaryPanel(requestComp.objectPE);
+                    MapAreaSbpnProvincesTabDeleteProvinceSummaryPanel(requestComp.objectPE);
                 }
-                //Иначе, если запрашивается удаление главной панели карты региона
-                else if (requestComp.panelType == GamePanelType.RegionMainMapPanel)
+                //Иначе, если запрашивается удаление главной панели карты провинции
+                else if (requestComp.panelType == GamePanelType.ProvinceMainMapPanel)
                 {
                     //Удаляем панель карты
-                    MapUIDeleteRegionMainMapPanel(requestComp.objectPE);
+                    MapUIDeleteProvinceMainMapPanel(requestComp.objectPE);
                 }
                 //Иначе, если запрашивается удаление обзорной панели оперативной группы вкладки флотов менеджера флотов
                 else if (requestComp.panelType == GamePanelType.TaskForceSummaryPanelFMSbpnFleetsTab)
@@ -387,38 +387,38 @@ namespace SO.UI
             }
         }
 
-        readonly EcsFilterInject<Inc<CRegionCore, CRegionDisplayedGUIPanels, SRGameRefreshPanels>> regionRefreshGUIPanelsSelfRequestFilter = default;
-        readonly EcsFilterInject<Inc<CRegionCore, CRegionDisplayedMapPanels, SRGameRefreshPanels>> regionRefreshMapPanelsSelfRequestFilter = default;
-        void GameRefreshUIRegion()
+        readonly EcsFilterInject<Inc<CProvinceCore, CProvinceDisplayedGUIPanels, SRGameRefreshPanels>> provinceRefreshGUIPanelsSelfRequestFilter = default;
+        readonly EcsFilterInject<Inc<CProvinceCore, CProvinceDisplayedMapPanels, SRGameRefreshPanels>> provinceRefreshMapPanelsSelfRequestFilter = default;
+        void GameRefreshUIProvince()
         {
-            //Для каждого региона с компонентом панелей GUI и самозапросом обновления панелей
-            foreach(int regionEntity in regionRefreshGUIPanelsSelfRequestFilter.Value)
+            //Для каждой провинции с компонентом панелей GUI и самозапросом обновления панелей
+            foreach (int provinceEntity in provinceRefreshGUIPanelsSelfRequestFilter.Value)
             {
-                //Берём регион и компонент панелей
-                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
-                ref CRegionEconomy rE = ref rEPool.Value.Get(regionEntity);
-                ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Get(regionEntity);
+                //Берём провинцию и компонент панелей
+                ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
+                ref CProvinceEconomy pE = ref pEPool.Value.Get(provinceEntity);
+                ref CProvinceDisplayedGUIPanels provinceDisplayedGUIPanels = ref provinceDisplayedGUIPanelsPool.Value.Get(provinceEntity);
 
-                //Если регион имеет отображаемую обзорную панель вкладки регионов подпанели стратегической области
-                if(regionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel != null)
+                //Если провинция имеет отображаемую обзорную панель вкладки провинций подпанели области карты
+                if (provinceDisplayedGUIPanels.mASbpnProvincesTabSummaryPanel != null)
                 {
                     //Обновляем её
-                    regionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel.RefreshPanel(ref rC, ref rE);
+                    provinceDisplayedGUIPanels.mASbpnProvincesTabSummaryPanel.RefreshPanel(ref pC, ref pE);
                 }
             }
 
-            //Для каждого региона с компонентом панелей карты и самозапросом обновления панелей
-            foreach (int regionEntity in regionRefreshMapPanelsSelfRequestFilter.Value)
+            //Для каждой провинции с компонентом панелей карты и самозапросом обновления панелей
+            foreach (int provinceEntity in provinceRefreshMapPanelsSelfRequestFilter.Value)
             {
-                //Берём регион и компонент панелей
-                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
-                ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
+                //Берём провинцию и компонент панелей
+                ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
+                ref CProvinceDisplayedMapPanels provinceDisplayedMapPanels = ref provinceDisplayedMapPanelsPool.Value.Get(provinceEntity);
 
-                //Если регион имеет отображаемую главную панель
-                if (regionDisplayedMapPanels.mainMapPanel != null)
+                //Если провинция имеет отображаемую главную панель
+                if (provinceDisplayedMapPanels.mainMapPanel != null)
                 {
                     //Обновляем её
-                    regionDisplayedMapPanels.mainMapPanel.RefreshPanel(ref rC);
+                    provinceDisplayedMapPanels.mainMapPanel.RefreshPanel(ref pC);
                 }
             }
         }
@@ -480,99 +480,99 @@ namespace SO.UI
         #region MapUI
         void MapUIMapPanelsUpdate()
         {
-            //Для каждого региона с панелями карты
-            foreach (int regionEntity in regionDisplayedMapPanelsFilter.Value)
+            //Для каждой провинции с панелями карты
+            foreach (int provinceEntity in provinceDisplayedMapPanelsFilter.Value)
             {
                 //Берём компонент панелей карты
-                ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
+                ref CProvinceDisplayedMapPanels provinceDisplayedMapPanels = ref provinceDisplayedMapPanelsPool.Value.Get(provinceEntity);
 
                 float d = Vector3.Dot(
                     Camera.main.transform.position.normalized,
-                    regionDisplayedMapPanels.mapPanelGroup.transform.position.normalized);
+                    provinceDisplayedMapPanels.mapPanelGroup.transform.position.normalized);
 
-                regionDisplayedMapPanels.mapPanelGroup.transform.LookAt(Vector3.zero, Vector3.up);
+                provinceDisplayedMapPanels.mapPanelGroup.transform.LookAt(Vector3.zero, Vector3.up);
                 d = Mathf.Clamp01(d);
-                regionDisplayedMapPanels.mapPanelGroup.transform.rotation = Quaternion.Lerp(
-                    regionDisplayedMapPanels.mapPanelGroup.transform.rotation,
+                provinceDisplayedMapPanels.mapPanelGroup.transform.rotation = Quaternion.Lerp(
+                    provinceDisplayedMapPanels.mapPanelGroup.transform.rotation,
                     Quaternion.LookRotation(
-                        regionDisplayedMapPanels.mapPanelGroup.transform.position - Camera.main.transform.position,
+                        provinceDisplayedMapPanels.mapPanelGroup.transform.position - Camera.main.transform.position,
                         Camera.main.transform.up),
                     d);
             }
         }
 
-        void MapUICreateRegionDisplayedMapPanels(
-            ref CRegionHexasphere rHS)
+        void MapUICreateProvinceDisplayedMapPanels(
+            ref CProvinceHexasphere pHS)
         {
-            //Берём сущность региона
-            rHS.selfPE.Unpack(world.Value, out int regionEntity);
+            //Берём сущность провинции
+            pHS.selfPE.Unpack(world.Value, out int provinceEntity);
 
-            //Если регион не имеет компонента панелей карты
-            if (regionDisplayedMapPanelsPool.Value.Has(regionEntity) == false)
+            //Если провинция не имеет компонента панелей карты
+            if (provinceDisplayedMapPanelsPool.Value.Has(provinceEntity) == false)
             {
-                //Назначаем региону компонент панелей карты
-                ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Add(regionEntity);
+                //Назначаем провинции компонент панелей карты
+                ref CProvinceDisplayedMapPanels provinceDisplayedMapPanels = ref provinceDisplayedMapPanelsPool.Value.Add(provinceEntity);
 
                 //Заполняем данные компонента
-                regionDisplayedMapPanels = new(0);
+                provinceDisplayedMapPanels = new(0);
 
                 //Создаём новый объект группы панелей карты
-                CRegionDisplayedMapPanels.InstantiateMapPanelGroup(
-                    ref rHS, ref regionDisplayedMapPanels,
+                CProvinceDisplayedMapPanels.InstantiateMapPanelGroup(
+                    ref pHS, ref provinceDisplayedMapPanels,
                     mapGenerationData.Value.hexasphereScale,
                     uIData.Value.mapPanelAltitude);
             }
         }
 
-        void MapUIDeleteRegionDisplayedMapPanels(
-            EcsPackedEntity regionPE)
+        void MapUIDeleteProvinceDisplayedMapPanels(
+            EcsPackedEntity provincePE)
         {
-            //Берём сущность региона и компонент панелей карты
-            regionPE.Unpack(world.Value, out int regionEntity);
-            ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
+            //Берём сущность провинции и компонент панелей карты
+            provincePE.Unpack(world.Value, out int provinceEntity);
+            ref CProvinceDisplayedMapPanels provinceDisplayedMapPanels = ref provinceDisplayedMapPanelsPool.Value.Get(provinceEntity);
 
             //Если никакая из панелей не существует
-            if (regionDisplayedMapPanels.IsEmpty == true)
+            if (provinceDisplayedMapPanels.IsEmpty == true)
             {
                 //Кэшируем группу панелей
-                CRegionDisplayedMapPanels.CacheMapPanelGroup(ref regionDisplayedMapPanels);
+                CProvinceDisplayedMapPanels.CacheMapPanelGroup(ref provinceDisplayedMapPanels);
 
-                //Удаляем с сущности региона компонент панелей карты
-                regionDisplayedMapPanelsPool.Value.Del(regionEntity);
+                //Удаляем с сущности провинции компонент панелей карты
+                provinceDisplayedMapPanelsPool.Value.Del(provinceEntity);
             }
         }
 
-        void MapUICreateRegionMainMapPanel(
+        void MapUICreateProvinceMainMapPanel(
             ref RGameCreatePanel requestComp)
         {
-            //Берём RC и компонент визуализации региона
-            requestComp.objectPE.Unpack(world.Value, out int regionEntity);
-            ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
-            ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+            //Берём PC и компонент визуализации провинции
+            requestComp.objectPE.Unpack(world.Value, out int provinceEntity);
+            ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
+            ref CProvinceHexasphere pHS = ref pHSPool.Value.Get(provinceEntity);
 
             //Создаём компонент панелей карты, если необходимо
-            MapUICreateRegionDisplayedMapPanels(ref rHS);
+            MapUICreateProvinceDisplayedMapPanels(ref pHS);
 
             //Берём компонент панелей карты
-            ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
+            ref CProvinceDisplayedMapPanels provinceDisplayedMapPanels = ref provinceDisplayedMapPanelsPool.Value.Get(provinceEntity);
 
             //Создаём главную панель карты
-            UIRCMainMapPanel.InstantiatePanel(
-                ref rC, ref regionDisplayedMapPanels);
+            UIPCMainMapPanel.InstantiatePanel(
+                ref pC, ref provinceDisplayedMapPanels);
         }
 
-        void MapUIDeleteRegionMainMapPanel(
-            EcsPackedEntity regionPE)
+        void MapUIDeleteProvinceMainMapPanel(
+            EcsPackedEntity provincePE)
         {
             //Берём компонент панелей карты
-            regionPE.Unpack(world.Value, out int regionEntity);
-            ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(regionEntity);
+            provincePE.Unpack(world.Value, out int provinceEntity);
+            ref CProvinceDisplayedMapPanels provinceDisplayedMapPanels = ref provinceDisplayedMapPanelsPool.Value.Get(provinceEntity);
 
             //Кэшируем главную панель карты
-            UIRCMainMapPanel.CachePanel(ref regionDisplayedMapPanels);
+            UIPCMainMapPanel.CachePanel(ref provinceDisplayedMapPanels);
 
             //Удаляем компонент панелей карты, если необходимо
-            MapUIDeleteRegionDisplayedMapPanels(regionPE);
+            MapUIDeleteProvinceDisplayedMapPanels(provincePE);
         }
 
         void MapUICreateTaskForceDisplayedMapPanels(
@@ -621,38 +621,38 @@ namespace SO.UI
             UITFMainMapPanel.InstantiatePanel(
                 ref tF, ref tFDisplayedMapPanels);
 
-            //Прикрепляем панель к текущему региону группы
+            //Прикрепляем панель к текущей провинции группы
             MapUISetParentTaskForceMainMapPanel(ref tF, ref tFDisplayedMapPanels);
         }
 
         void MapUISetParentTaskForceMainMapPanel(
             ref CTaskForce tF, ref CTaskForceDisplayedMapPanels tFDisplayedMapPanels)
         {
-            //Если предыдущий регион оперативной группы существует
-            if(tF.previousRegionPE.Unpack(world.Value, out int previousRegionEntity))
+            //Если предыдущая провинция оперативной группы существует
+            if(tF.previousProvincePE.Unpack(world.Value, out int previousProvinceEntity))
             {
-                //Берём компонент панелей карты предыдущего региона 
-                ref CRegionDisplayedMapPanels previousRegionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(previousRegionEntity);
+                //Берём компонент панелей карты предыдущей провинции 
+                ref CProvinceDisplayedMapPanels previousProvinceDisplayedMapPanels = ref provinceDisplayedMapPanelsPool.Value.Get(previousProvinceEntity);
 
                 //Открепляем панель группы от него
-                previousRegionDisplayedMapPanels.CancelParentTaskForceMainMapPanel(tFDisplayedMapPanels.mainMapPanel);
+                previousProvinceDisplayedMapPanels.CancelParentTaskForceMainMapPanel(tFDisplayedMapPanels.mainMapPanel);
             }
 
-            //Обновляем текущий регион в компоненте панелей карты группы
-            tFDisplayedMapPanels.currentRegionPE = tF.currentRegionPE;
+            //Обновляем текущую провинцию в компоненте панелей карты группы
+            tFDisplayedMapPanels.currentProvincePE = tF.currentProvincePE;
 
-            //Берём текущий регион группы
-            tF.currentRegionPE.Unpack(world.Value, out int currentRegionEntity);
-            ref CRegionHexasphere rHS = ref rHSPool.Value.Get(currentRegionEntity);
+            //Берём текущую провинцию группы
+            tF.currentProvincePE.Unpack(world.Value, out int currentProvinceEntity);
+            ref CProvinceHexasphere pHS = ref pHSPool.Value.Get(currentProvinceEntity);
 
             //Создаём компонент панелей карты, если необходимо
-            MapUICreateRegionDisplayedMapPanels(ref rHS);
+            MapUICreateProvinceDisplayedMapPanels(ref pHS);
 
             //Берём компонент панелей карты
-            ref CRegionDisplayedMapPanels currentRegionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(currentRegionEntity);
+            ref CProvinceDisplayedMapPanels currentProvinceDisplayedMapPanels = ref provinceDisplayedMapPanelsPool.Value.Get(currentProvinceEntity);
 
             //Прикрепляем к нему главную панель карты группы
-            currentRegionDisplayedMapPanels.SetParentTaskForceMainMapPanel(tFDisplayedMapPanels.mainMapPanel);
+            currentProvinceDisplayedMapPanels.SetParentTaskForceMainMapPanel(tFDisplayedMapPanels.mainMapPanel);
         }
 
         void MapUIDeleteTaskForceMainMapPanel(
@@ -662,12 +662,12 @@ namespace SO.UI
             tFPE.Unpack(world.Value, out int tFEntity);
             ref CTaskForceDisplayedMapPanels tFDisplayedMapPanels = ref tFDisplayedMapPanelsPool.Value.Get(tFEntity);
 
-            //Берём компонент панелей карты текущего региона группы
-            tFDisplayedMapPanels.currentRegionPE.Unpack(world.Value, out int currentRegionEntity);
-            ref CRegionDisplayedMapPanels regionDisplayedMapPanels = ref regionDisplayedMapPanelsPool.Value.Get(currentRegionEntity);
+            //Берём компонент панелей карты текущей провинции группы
+            tFDisplayedMapPanels.currentProvincePE.Unpack(world.Value, out int currentProvinceEntity);
+            ref CProvinceDisplayedMapPanels provinceDisplayedMapPanels = ref provinceDisplayedMapPanelsPool.Value.Get(currentProvinceEntity);
 
             //Открепляем панель группы от него
-            regionDisplayedMapPanels.CancelParentTaskForceMainMapPanel(tFDisplayedMapPanels.mainMapPanel);
+            provinceDisplayedMapPanels.CancelParentTaskForceMainMapPanel(tFDisplayedMapPanels.mainMapPanel);
 
             //Кэшируем главную панель карты
             UITFMainMapPanel.CachePanel(ref tFDisplayedMapPanels);
@@ -675,33 +675,33 @@ namespace SO.UI
             //Удаляем компонент панелей карты с группы, если необходимо
             MapUIDeleteTaskForceDisplayedMapPanels(tFPE);
 
-            //Удаляем компонент панелей карты с региона, если необходимо
-            MapUIDeleteRegionDisplayedMapPanels(tFDisplayedMapPanels.currentRegionPE);
+            //Удаляем компонент панелей карты с провинции, если необходимо
+            MapUIDeleteProvinceDisplayedMapPanels(tFDisplayedMapPanels.currentProvincePE);
         }
 
-        void ParentAndAlignToRegion(
+        void ParentAndAlignToProvince(
             GameObject go,
-            ref CRegionHexasphere rHS,
+            ref CProvinceHexasphere pHS,
             float altitude = 0)
         {
-            //Берём центр региона
-            Vector3 regionCenter = rHS.GetRegionCenter() * mapGenerationData.Value.hexasphereScale;
+            //Берём центр провинции
+            Vector3 provinceCenter = pHS.GetProvinceCenter() * mapGenerationData.Value.hexasphereScale;
 
             //Если высота не равна нулю
             if(altitude != 0)
             {
-                Vector3 direction = regionCenter.normalized * altitude;
-                go.transform.position = regionCenter + direction;
+                Vector3 direction = provinceCenter.normalized * altitude;
+                go.transform.position = provinceCenter + direction;
             }
             //Иначе
             else
             {
-                go.transform.position = regionCenter;
+                go.transform.position = provinceCenter;
             }
 
-            //Привязываем объект к региону
-            go.transform.SetParent(rHS.selfObject.transform, true);
-            go.transform.LookAt(rHS.selfObject.transform.position);
+            //Привязываем объект к провинции
+            go.transform.SetParent(pHS.selfObject.transform, true);
+            go.transform.LookAt(pHS.selfObject.transform.position);
         }
         #endregion
 
@@ -749,35 +749,35 @@ namespace SO.UI
             }
         }
 
-        readonly EcsFilterInject<Inc<CRegionCore, CNonDeletedUI>> regionNonDeletedUIFilter = default;
-        readonly EcsFilterInject<Inc<CRegionDisplayedGUIPanels, CNonDeletedUI>> regionDisplayedNonDeletedGUIFilter = default;
-        readonly EcsFilterInject<Inc<CRegionDisplayedGUIPanels>, Exc<CNonDeletedUI>> regionDisplayedDeletedGUIFilter = default;
-        void GUICreateRegionGUIPanels(
-            ref CRegionCore rC)
+        readonly EcsFilterInject<Inc<CProvinceCore, CNonDeletedUI>> provinceNonDeletedUIFilter = default;
+        readonly EcsFilterInject<Inc<CProvinceDisplayedGUIPanels, CNonDeletedUI>> provinceDisplayedNonDeletedGUIFilter = default;
+        readonly EcsFilterInject<Inc<CProvinceDisplayedGUIPanels>, Exc<CNonDeletedUI>> provinceDisplayedDeletedGUIFilter = default;
+        void GUICreateProvinceGUIPanels(
+            ref CProvinceCore pC)
         {
-            //Берём сущность региона
-            rC.selfPE.Unpack(world.Value, out int regionEntity);
+            //Берём сущность провинции
+            pC.selfPE.Unpack(world.Value, out int provinceEntity);
             
-            //Если регион не имеет компонента панелей GUI
-            if(regionDisplayedGUIPanelsPool.Value.Has(regionEntity) == false)
+            //Если провинция не имеет компонента панелей GUI
+            if(provinceDisplayedGUIPanelsPool.Value.Has(provinceEntity) == false)
             {
                 //Назначаем ему компонент панелей GUI
-                ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Add(regionEntity);
+                ref CProvinceDisplayedGUIPanels provinceDisplayedGUIPanels = ref provinceDisplayedGUIPanelsPool.Value.Add(provinceEntity);
             }
         }
 
-        void GUIDeleteRegionGUIPanels(
-            EcsPackedEntity regionPE)
+        void GUIDeleteProvinceGUIPanels(
+            EcsPackedEntity provincePE)
         {
-            //Берём сущность региона и компонент панелей GUI
-            regionPE.Unpack(world.Value, out int regionEntity);
-            ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Get(regionEntity);
+            //Берём сущность провинции и компонент панелей GUI
+            provincePE.Unpack(world.Value, out int provinceEntity);
+            ref CProvinceDisplayedGUIPanels provinceDisplayedGUIPanels = ref provinceDisplayedGUIPanelsPool.Value.Get(provinceEntity);
 
             //Если никакая из панелей не существует
-            if(regionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel == null)
+            if(provinceDisplayedGUIPanels.mASbpnProvincesTabSummaryPanel == null)
             {
-                //Удаляем с сущности региона компонент панелей GUI
-                regionDisplayedGUIPanelsPool.Value.Del(regionEntity);
+                //Удаляем с сущности провинции компонент панелей GUI
+                provinceDisplayedGUIPanelsPool.Value.Del(provinceEntity);
             }
         }
 
@@ -846,41 +846,41 @@ namespace SO.UI
                         CountrySbpnShowOverviewTab(ref country);
                     }
                 }
-                //Иначе, если запрашивается отображение вкладок региона
-                else if (requestComp.requestType >= ObjectPanelActionRequestType.RegionOverview
-                    && requestComp.requestType <= ObjectPanelActionRequestType.RegionOverview)
+                //Иначе, если запрашивается отображение вкладок провинции
+                else if (requestComp.requestType >= ObjectPanelActionRequestType.ProvinceOverview
+                    && requestComp.requestType <= ObjectPanelActionRequestType.ProvinceOverview)
                 {
-                    //Берём регион
-                    requestComp.objectPE.Unpack(world.Value, out int regionEntity);
-                    ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
-                    ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                    //Берём провинцию
+                    requestComp.objectPE.Unpack(world.Value, out int provinceEntity);
+                    ref CProvinceHexasphere pHS = ref pHSPool.Value.Get(provinceEntity);
+                    ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
                     //Если запрашивается отображение обзорной вкладки
-                    if (requestComp.requestType == ObjectPanelActionRequestType.RegionOverview)
+                    if (requestComp.requestType == ObjectPanelActionRequestType.ProvinceOverview)
                     {
-                        //Отображаем обзорную вкладку региона
-                        RegionSbpnShowOverviewTab(ref rHS, ref rC);
+                        //Отображаем обзорную вкладку провинции
+                        ProvinceSbpnShowOverviewTab(ref pHS, ref pC);
                     }
                 }
-                //Иначе, если запрашивается отображение вкладок стратегической области
-                else if (requestComp.requestType >= ObjectPanelActionRequestType.StrategicAreaOverview
-                    && requestComp.requestType <= ObjectPanelActionRequestType.StrategicAreaRegions)
+                //Иначе, если запрашивается отображение вкладок области карты
+                else if (requestComp.requestType >= ObjectPanelActionRequestType.MapAreaOverview
+                    && requestComp.requestType <= ObjectPanelActionRequestType.MapAreaProvinces)
                 {
                     //Берём область
-                    requestComp.objectPE.Unpack(world.Value, out int sAEntity);
-                    ref CStrategicArea sA = ref sAPool.Value.Get(sAEntity);
+                    requestComp.objectPE.Unpack(world.Value, out int mAEntity);
+                    ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
 
                     //Если запрашивается отображение обзорной вкладки
-                    if (requestComp.requestType == ObjectPanelActionRequestType.StrategicAreaOverview)
+                    if (requestComp.requestType == ObjectPanelActionRequestType.MapAreaOverview)
                     {
                         //Отображаем обзорную вкладку области
-                        StrategicAreaSbpnShowOverviewTab(ref sA);
+                        MapAreaSbpnShowOverviewTab(ref mA);
                     }
-                    //Иначе, если запрашивается отображение вкладки регионов
-                    else if (requestComp.requestType == ObjectPanelActionRequestType.StrategicAreaRegions)
+                    //Иначе, если запрашивается отображение вкладки провинций
+                    else if (requestComp.requestType == ObjectPanelActionRequestType.MapAreaProvinces)
                     {
-                        //Отображаем вкладку регионов области
-                        StrategicAreaSbpnShowRegionsTab(ref sA, requestComp.secondObjectPE);
+                        //Отображаем вкладку провинций области
+                        MapAreaSbpnShowProvincesTab(ref mA, requestComp.secondObjectPE);
                     }
                 }
                 //Иначе, если запрашивается отображение вкладок менеджера флотов
@@ -914,11 +914,11 @@ namespace SO.UI
                 //Скрываем активную вкладку
                 objectPanel.countrySubpanel.HideActiveTab();
             }
-            //Иначе, если активна подпанель региона
-            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.Region)
+            //Иначе, если активна подпанель провинции
+            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.Province)
             {
                 //Скрываем активную вкладку
-                objectPanel.regionSubpanel.HideActiveTab();
+                objectPanel.provinceSubpanel.HideActiveTab();
             }
             //Иначе, если активна подпанель менеджера флотов
             else if (objectPanel.activeSubpanelType == ObjectSubpanelType.FleetManager)
@@ -1118,9 +1118,9 @@ namespace SO.UI
         #endregion
 
         #region RegionSubpanel
-        void RegionSbpnShowTab(
-            UIASubpanelTab currentRegionTab,
-            ref CRegionCore currentRC,
+        void ProvinceSbpnShowTab(
+            UIASubpanelTab currentProvinceTab,
+            ref CProvinceCore currentPC,
             out bool isSamePanel,
             out bool isSameSubpanel,
             out bool isSameTab,
@@ -1133,17 +1133,17 @@ namespace SO.UI
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель региона
-            UIRegionSubpanel regionSubpanel = objectPanel.regionSubpanel;
+            //Берём подпанель провинции
+            UIProvinceSubpanel provinceSubpanel = objectPanel.provinceSubpanel;
 
-            //Отображаем подпанель региона, если необходимо
+            //Отображаем подпанель провинции, если необходимо
             ObjectPnOpenSubpanel(
-                regionSubpanel, ObjectSubpanelType.Region,
+                provinceSubpanel, ObjectSubpanelType.Province,
                 out isSamePanel,
                 out isSameSubpanel);
 
             //Если открыта необходимая вкладка
-            if (regionSubpanel.activeTab == currentRegionTab)
+            if (provinceSubpanel.activeTab == currentProvinceTab)
             {
                 //Если была открыта та же подпанель
                 if (isSameSubpanel == true)
@@ -1151,8 +1151,8 @@ namespace SO.UI
                     //Сообщаем, что была открыта та же вкладка
                     isSameTab = true;
 
-                    //Если вкладка была открыта для того же региона
-                    if (regionSubpanel.activeTab.objectPE.EqualsTo(currentRC.selfPE) == true)
+                    //Если вкладка была открыта для той же провинции
+                    if (provinceSubpanel.activeTab.objectPE.EqualsTo(currentPC.selfPE) == true)
                     {
                         //То сообщаем, что был отображён тот же объект
                         isSameObject = true;
@@ -1191,10 +1191,10 @@ namespace SO.UI
             else
             {
                 //Отображаем запрошенную вкладку
-                regionSubpanel.tabGroup.OnTabSelected(currentRegionTab.selfTabButton);
+                provinceSubpanel.tabGroup.OnTabSelected(currentProvinceTab.selfTabButton);
 
                 //Указываем её как активную вкладку
-                regionSubpanel.activeTab = currentRegionTab;
+                provinceSubpanel.activeTab = currentProvinceTab;
             }
 
             //Если был отображён тот же объект
@@ -1205,27 +1205,27 @@ namespace SO.UI
             //Иначе
             else
             {
-                //Указываем PE текущего региона
-                regionSubpanel.activeTab.objectPE = currentRC.selfPE;
+                //Указываем PE текущей провинции
+                provinceSubpanel.activeTab.objectPE = currentPC.selfPE;
 
-                //Отображаем название панели - название региона
-                objectPanel.objectName.text = currentRC.Index.ToString();
+                //Отображаем название панели - название провинции
+                objectPanel.objectName.text = currentPC.Index.ToString();
             }
         }
 
-        void RegionSbpnShowOverviewTab(
-            ref CRegionHexasphere rHS, ref CRegionCore rC)
+        void ProvinceSbpnShowOverviewTab(
+            ref CProvinceHexasphere pHS, ref CProvinceCore pC)
         {
-            //Берём подпанель региона
-            UIRegionSubpanel regionSubpanel = sOUI.Value.gameWindow.objectPanel.regionSubpanel;
+            //Берём подпанель провинции
+            UIProvinceSubpanel provinceSubpanel = sOUI.Value.gameWindow.objectPanel.provinceSubpanel;
 
             //Берём обзорную вкладку
-            Game.GUI.Object.Region.UIOverviewTab overviewTab = regionSubpanel.overviewTab;
+            Game.GUI.Object.Province.UIOverviewTab overviewTab = provinceSubpanel.overviewTab;
 
             //Отображаем обзорную вкладку
-            RegionSbpnShowTab(
+            ProvinceSbpnShowTab(
                 overviewTab,
-                ref rC,
+                ref pC,
                 out bool isSamePanel,
                 out bool isSameSubpanel,
                 out bool isSameTab,
@@ -1233,10 +1233,10 @@ namespace SO.UI
         }
         #endregion
 
-        #region StrategicAreaSubpanel
-        void StrategicAreaSbpnShowTab(
-            UIASubpanelTab currentSATab,
-            ref CStrategicArea currentSA,
+        #region MapAreaSubpanel
+        void MapAreaSbpnShowTab(
+            UIASubpanelTab currentMATab,
+            ref CMapArea currentMA,
             out bool isSamePanel,
             out bool isSameSubpanel,
             out bool isSameTab,
@@ -1249,17 +1249,17 @@ namespace SO.UI
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель стратегической области
-            UIStrategicAreaSubpanel sASubpanel = objectPanel.strategicAreaSubpanel;
+            //Берём подпанель области карты
+            UIMapAreaSubpanel mASubpanel = objectPanel.mapAreaSubpanel;
 
             //Отображаем подпанель области, если необходимо
             ObjectPnOpenSubpanel(
-                sASubpanel, ObjectSubpanelType.StrategicArea,
+                mASubpanel, ObjectSubpanelType.MapArea,
                 out isSamePanel,
                 out isSameSubpanel);
 
             //Если открыта необходимая вкладка
-            if (sASubpanel.activeTab == currentSATab)
+            if (mASubpanel.activeTab == currentMATab)
             {
                 //Если была открыта та же подпанель
                 if (isSameSubpanel == true)
@@ -1268,7 +1268,7 @@ namespace SO.UI
                     isSameTab = true;
 
                     //Если вкладка была открыта для той же области
-                    if (sASubpanel.activeTab.objectPE.EqualsTo(currentSA.selfPE) == true)
+                    if (mASubpanel.activeTab.objectPE.EqualsTo(currentMA.selfPE) == true)
                     {
                         //То сообщаем, что был отображён тот же объект
                         isSameObject = true;
@@ -1307,10 +1307,10 @@ namespace SO.UI
             else
             {
                 //Отображаем запрошенную вкладку
-                sASubpanel.tabGroup.OnTabSelected(currentSATab.selfTabButton);
+                mASubpanel.tabGroup.OnTabSelected(currentMATab.selfTabButton);
 
                 //Указываем её как активную вкладку
-                sASubpanel.activeTab = currentSATab;
+                mASubpanel.activeTab = currentMATab;
             }
 
             //Если был отображён тот же объект
@@ -1322,45 +1322,45 @@ namespace SO.UI
             else
             {
                 //Указываем PE текущей области
-                sASubpanel.activeTab.objectPE = currentSA.selfPE;
+                mASubpanel.activeTab.objectPE = currentMA.selfPE;
 
                 //Отображаем название панели - название области
-                objectPanel.objectName.text = currentSA.selfPE.Id.ToString();
+                objectPanel.objectName.text = currentMA.selfPE.Id.ToString();
             }
         }
 
-        void StrategicAreaSbpnShowOverviewTab(
-            ref CStrategicArea sA)
+        void MapAreaSbpnShowOverviewTab(
+            ref CMapArea mA)
         {
-            //Берём подпанель стратегической области
-            UIStrategicAreaSubpanel sASubpanel = sOUI.Value.gameWindow.objectPanel.strategicAreaSubpanel;
+            //Берём подпанель области карты
+            UIMapAreaSubpanel mASubpanel = sOUI.Value.gameWindow.objectPanel.mapAreaSubpanel;
 
             //Берём обзорную вкладку
-            Game.GUI.Object.StrategicArea.UIOverviewTab overviewTab = sASubpanel.overviewTab;
+            Game.GUI.Object.MapArea.UIOverviewTab overviewTab = mASubpanel.overviewTab;
 
             //Отображаем обзорную вкладку
-            StrategicAreaSbpnShowTab(
+            MapAreaSbpnShowTab(
                 overviewTab,
-                ref sA,
+                ref mA,
                 out bool isSamePanel,
                 out bool isSameSubpanel,
                 out bool isSameTab,
                 out bool isSameObject);
         }
 
-        void StrategicAreaSbpnShowRegionsTab(
-            ref CStrategicArea sA, EcsPackedEntity currentRCPE = new())
+        void MapAreaSbpnShowProvincesTab(
+            ref CMapArea mA, EcsPackedEntity currentPCPE = new())
         {
-            //Берём подпанель стратегической области
-            UIStrategicAreaSubpanel sASubpanel = sOUI.Value.gameWindow.objectPanel.strategicAreaSubpanel;
+            //Берём подпанель области карты
+            UIMapAreaSubpanel mASubpanel = sOUI.Value.gameWindow.objectPanel.mapAreaSubpanel;
 
-            //Берём вкладку регионов
-            Game.GUI.Object.StrategicArea.UIRegionsTab regionsTab = sASubpanel.regionsTab;
+            //Берём вкладку провинций
+            Game.GUI.Object.MapArea.UIProvincesTab provincesTab = mASubpanel.provincesTab;
 
-            //Отображаем вкладку регионов
-            StrategicAreaSbpnShowTab(
-                regionsTab,
-                ref sA,
+            //Отображаем вкладку провинций
+            MapAreaSbpnShowTab(
+                provincesTab,
+                ref mA,
                 out bool isSamePanel,
                 out bool isSameSubpanel,
                 out bool isSameTab,
@@ -1407,123 +1407,123 @@ namespace SO.UI
             //Иначе
             else
             {
-                //Проверяем, какие регионы должны быть отображены в этом списке
-                //Для каждого региона области
-                for(int a = 0; a < sA.regionPEs.Length; a++)
+                //Проверяем, какие провинции должны быть отображены в этом списке
+                //Для каждой провинции области
+                for (int a = 0; a < mA.provincePEs.Length; a++)
                 {
-                    //Берём сущность региона и назначаем компонент "неудаляемый UI"
-                    sA.regionPEs[a].Unpack(world.Value, out int regionEntity);
-                    ref CNonDeletedUI regionNonDeletedUI = ref nonDeletedUIPool.Value.Add(regionEntity);
+                    //Берём сущность провинции и назначаем компонент "неудаляемый UI"
+                    mA.provincePEs[a].Unpack(world.Value, out int provinceEntity);
+                    ref CNonDeletedUI provinceNonDeletedUI = ref nonDeletedUIPool.Value.Add(provinceEntity);
                 }
 
-                //Удаляем обзорную панель вкладки регионов с каждого региона, которого не должно быть в списке
-                //Для каждого региона с отображаемыми панелями GUI, но без "неудаляемого UI"
-                foreach(int regionEntity in regionDisplayedDeletedGUIFilter.Value)
+                //Удаляем обзорную панель вкладки провинций с каждой провинции, которой не должно быть в списке
+                //Для каждой провинции с отображаемыми панелями GUI, но без "неудаляемого UI"
+                foreach (int provinceEntity in provinceDisplayedDeletedGUIFilter.Value)
                 {
                     //Берём компонент панелей GUI
-                    ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Get(regionEntity);
+                    ref CProvinceDisplayedGUIPanels provinceDisplayedGUIPanels = ref provinceDisplayedGUIPanelsPool.Value.Get(provinceEntity);
 
-                    //Если у региона есть обзорная панель вкладки регионов
-                    if(regionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel != null)
+                    //Если у провинции есть обзорная панель вкладки провинций
+                    if (provinceDisplayedGUIPanels.mASbpnProvincesTabSummaryPanel != null)
                     {
                         //Удаляем обзорную панель
-                        StrategicAreaSbpnRegionsTabDeleteRegionSummaryPanel(regionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel.selfPE);
+                        MapAreaSbpnProvincesTabDeleteProvinceSummaryPanel(provinceDisplayedGUIPanels.mASbpnProvincesTabSummaryPanel.selfPE);
                     }
                 }
 
-                //Обновляем панели регионов, которые уже имеют обзорные панели
-                //Для каждого региона с панелями GUI и "неудаляемым UI"
-                foreach(int regionEntity in regionDisplayedNonDeletedGUIFilter.Value)
+                //Обновляем панели провинций, которые уже имеют обзорные панели
+                //Для каждой провинции с панелями GUI и "неудаляемым UI"
+                foreach (int provinceEntity in provinceDisplayedNonDeletedGUIFilter.Value)
                 {
-                    //Берём регион и компонент панелей GUI
-                    ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
-                    ref CRegionEconomy rE = ref rEPool.Value.Get(regionEntity);
-                    ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Get(regionEntity);
+                    //Берём провинцию и компонент панелей GUI
+                    ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
+                    ref CProvinceEconomy pE = ref pEPool.Value.Get(provinceEntity);
+                    ref CProvinceDisplayedGUIPanels provinceDisplayedGUIPanels = ref provinceDisplayedGUIPanelsPool.Value.Get(provinceEntity);
 
-                    //Если у региона есть обзорная панель вкладки регионов
-                    if(regionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel != null)
+                    //Если у провинции есть обзорная панель вкладки провинций
+                    if (provinceDisplayedGUIPanels.mASbpnProvincesTabSummaryPanel != null)
                     {
                         //Обновляем её данные
-                        regionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel.RefreshPanel(ref rC, ref rE);
+                        provinceDisplayedGUIPanels.mASbpnProvincesTabSummaryPanel.RefreshPanel(ref pC, ref pE);
 
-                        //И удаляем с региона "неудаляемый UI"
-                        nonDeletedUIPool.Value.Del(regionEntity);
+                        //И удаляем с провинции "неудаляемый UI"
+                        nonDeletedUIPool.Value.Del(provinceEntity);
                     }
                     //Иначе панель должна создаваться, но это оставляем на следующий цикл, в котором панели создаются
                 }
 
-                //Создаём обзорные панели для регионов, которые не имеют их, но должны
-                //Для каждого региона с "неудаляемым UI"
-                foreach(int regionEntity in regionNonDeletedUIFilter.Value)
+                //Создаём обзорные панели для провинций, которые не имеют их, но должны
+                //Для каждой провинции с "неудаляемым UI"
+                foreach (int provinceEntity in provinceNonDeletedUIFilter.Value)
                 {
-                    //Берём регион
-                    ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
-                    ref CRegionEconomy rE = ref rEPool.Value.Get(regionEntity);
+                    //Берём провинцию
+                    ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
+                    ref CProvinceEconomy pE = ref pEPool.Value.Get(provinceEntity);
 
                     //Создаём обзорную панель
-                    StrategicAreaSbpnRegionsTabCreateRegionSummaryPanel(ref rC, ref rE);
+                    MapAreaSbpnProvincesTabCreateProvinceSummaryPanel(ref pC, ref pE);
 
-                    //И удаляем с региона "неудаляемый UI"
-                    nonDeletedUIPool.Value.Del(regionEntity);
+                    //И удаляем с провинции "неудаляемый UI"
+                    nonDeletedUIPool.Value.Del(provinceEntity);
                 }
             }
 
-            //Если PE текущего региона не пуста
-            if (currentRCPE.Unpack(world.Value, out int currentRegionEntity))
+            //Если PE текущей провинции не пуста
+            if (currentPCPE.Unpack(world.Value, out int currentProvinceEntity))
             {
-                //Берём сущность текущего региона и компонент панелей GUI
-                ref CRegionDisplayedGUIPanels currentRegionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Get(currentRegionEntity);
+                //Берём сущность текущей провинции и компонент панелей GUI
+                ref CProvinceDisplayedGUIPanels currentProvinceDisplayedGUIPanels = ref provinceDisplayedGUIPanelsPool.Value.Get(currentProvinceEntity);
 
-                //Центрируем список на текущем регионе
-                regionsTab.scrollView.FocusOnItem(currentRegionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel.selfRect);
+                //Центрируем список на текущей провинции
+                provincesTab.scrollView.FocusOnItem(currentProvinceDisplayedGUIPanels.mASbpnProvincesTabSummaryPanel.selfRect);
             }
         }
 
-        void StrategicAreaSbpnCreateRegionSummaryPanel(
+        void MapAreaSbpnCreateProvinceSummaryPanel(
             ref RGameCreatePanel requestComp)
         {
-            //Берём регион
-            requestComp.objectPE.Unpack(world.Value, out int regionEntity);
-            ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
-            ref CRegionEconomy rE = ref rEPool.Value.Get(regionEntity);
+            //Берём провинцию
+            requestComp.objectPE.Unpack(world.Value, out int provinceEntity);
+            ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
+            ref CProvinceEconomy pE = ref pEPool.Value.Get(provinceEntity);
 
             //Создаём обзорную панель
-            StrategicAreaSbpnRegionsTabCreateRegionSummaryPanel(ref rC, ref rE);
+            MapAreaSbpnProvincesTabCreateProvinceSummaryPanel(ref pC, ref pE);
         }
 
-        void StrategicAreaSbpnRegionsTabCreateRegionSummaryPanel(
-            ref CRegionCore rC, ref CRegionEconomy rE)
+        void MapAreaSbpnProvincesTabCreateProvinceSummaryPanel(
+            ref CProvinceCore pC, ref CProvinceEconomy pE)
         {
-            //Берём сущность региона
-            rC.selfPE.Unpack(world.Value, out int regionEntity);
+            //Берём сущность провинции
+            pC.selfPE.Unpack(world.Value, out int provinceEntity);
 
             //Создаём компонент панелей GUI, если необходимо
-            GUICreateRegionGUIPanels(ref rC);
+            GUICreateProvinceGUIPanels(ref pC);
 
             //Берём компонент панелей GUI
-            ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Get(regionEntity);
+            ref CProvinceDisplayedGUIPanels provinceDisplayedGUIPanels = ref provinceDisplayedGUIPanelsPool.Value.Get(provinceEntity);
 
-            //Берём вкладку регионов
-            UIRegionsTab regionsTab = sOUI.Value.gameWindow.objectPanel.strategicAreaSubpanel.regionsTab;
+            //Берём вкладку провинций
+            UIProvincesTab provincesTab = sOUI.Value.gameWindow.objectPanel.mapAreaSubpanel.provincesTab;
 
-            //Создаём обзорную панель вкладки регионов
-            Game.GUI.Object.StrategicArea.Regions.UIRegionSummaryPanel.InstantiatePanel(
-                ref rC, ref rE, ref regionDisplayedGUIPanels,
-                regionsTab.layoutGroup);
+            //Создаём обзорную панель вкладки провинций
+            Game.GUI.Object.MapArea.Provinces.UIProvinceSummaryPanel.InstantiatePanel(
+                ref pC, ref pE, ref provinceDisplayedGUIPanels,
+                provincesTab.layoutGroup);
         }
 
-        void StrategicAreaSbpnRegionsTabDeleteRegionSummaryPanel(
-            EcsPackedEntity regionPE)
+        void MapAreaSbpnProvincesTabDeleteProvinceSummaryPanel(
+            EcsPackedEntity provincePE)
         {
-            //Берём регион и компонент панелей GUI
-            regionPE.Unpack(world.Value, out int regionEntity);
-            ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Get(regionEntity);
+            //Берём провинцию и компонент панелей GUI
+            provincePE.Unpack(world.Value, out int provinceEntity);
+            ref CProvinceDisplayedGUIPanels provinceDisplayedGUIPanels = ref provinceDisplayedGUIPanelsPool.Value.Get(provinceEntity);
 
-            //Кэшируем обзорную панель вкладки регионов
-            Game.GUI.Object.StrategicArea.Regions.UIRegionSummaryPanel.CachePanel(ref regionDisplayedGUIPanels);
+            //Кэшируем обзорную панель вкладки провинций
+            Game.GUI.Object.MapArea.Provinces.UIProvinceSummaryPanel.CachePanel(ref provinceDisplayedGUIPanels);
 
             //Удаляем компонент панелей GUI, если необходимо
-            GUIDeleteRegionGUIPanels(regionPE);
+            GUIDeleteProvinceGUIPanels(provincePE);
         }
         #endregion
 

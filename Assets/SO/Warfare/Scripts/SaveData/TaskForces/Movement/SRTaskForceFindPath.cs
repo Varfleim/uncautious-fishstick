@@ -6,11 +6,11 @@ namespace SO.Warfare.Fleet.Movement.Events
     public struct SRTaskForceFindPath
     {
         public SRTaskForceFindPath(
-            EcsPackedEntity targetRegionPE)
+            EcsPackedEntity targetProvincePE)
         {
-            this.targetRegionPE = targetRegionPE;
+            this.targetProvincePE = targetProvincePE;
         }
 
-        public readonly EcsPackedEntity targetRegionPE;
+        public readonly EcsPackedEntity targetProvincePE;
     }
 }

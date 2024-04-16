@@ -3,13 +3,13 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using Leopotam.EcsLite.Threads;
 
-using SO.Map.Region;
+using SO.Map.Province;
 
 namespace SO.Warfare.Fleet.Movement
 {
     public class SMTTaskForceMovement : EcsThreadSystem<TTaskForceMovement,
         CTaskForceMovement, CTaskForce,
-        CRegionCore>
+        CProvinceCore>
     {
         readonly EcsWorldInject world = default;
 

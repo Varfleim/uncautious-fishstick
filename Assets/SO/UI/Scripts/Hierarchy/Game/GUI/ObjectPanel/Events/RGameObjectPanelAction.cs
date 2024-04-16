@@ -7,10 +7,10 @@ namespace SO.UI.Game.GUI.Object.Events
     {
         CountryOverview,
 
-        RegionOverview,
+        ProvinceOverview,
 
-        StrategicAreaOverview,
-        StrategicAreaRegions,
+        MapAreaOverview,
+        MapAreaProvinces,
 
         FleetManagerFleets,
 

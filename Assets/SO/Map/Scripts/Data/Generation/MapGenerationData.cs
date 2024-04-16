@@ -13,7 +13,7 @@ namespace SO.Map.Generation
         public const float PHI = 1.61803399f;
         public const string shaderframeName = "ShadedFrame";
         public const string shaderframeGOName = "Shade";
-        public const string regionsRootName = "TilesRoot";
+        public const string provincesRootName = "TilesRoot";
         const int maxHexasphereParts = 50;
         public const int maxVertexCountPerChunk = 65500;
         const int vertexArraySize = 65530;
@@ -103,7 +103,7 @@ namespace SO.Map.Generation
 
         public bool isInitializationUpdate;
         public bool isMaterialUpdated;
-        public bool isRegionUpdated;
+        public bool isProvinceUpdated;
         public bool isColorUpdated;
         public bool isTextureArrayUpdated;
         public bool isUVUpdatedFast;
@@ -146,12 +146,12 @@ namespace SO.Map.Generation
         int tileTextureSize = 256;
 
         public Texture2D whiteTex;
-        public Material regionMaterial;
-        public Material regionColoredMaterial;
+        public Material provinceMaterial;
+        public Material provinceColoredMaterial;
 
-        public Material fleetRegionHighlightMaterial;
-        public Material hoverRegionHighlightMaterial;
-        public Material currentRegionHighlightMaterial;
+        public Material hoverProvinceHighlightMaterial;
+        public Material currentProvinceHighlightMaterial;
+        public Material fleetProvinceHighlightMaterial;
 
         public List<T> CheckList<T>(
             ref List<T> l)
@@ -199,12 +199,12 @@ namespace SO.Map.Generation
 
 
         [Range(10, 100)]
-        public int strategicAreaAverageSize = 30;
+        public int mapAreaAverageSize = 30;
 
         [Range(5, 30)]
-        public int strategicAreaFirstElevationSetCount = 10;
+        public int mapAreaFirstElevationSetCount = 10;
         [Range(30, 100)]
-        public int strategicAreaSecondElevationSetCount = 40;
+        public int mapAreaSecondElevationSetCount = 40;
 
         [Range(0f, 1f)]
         public float startingMoisture = 0.1f;
@@ -228,12 +228,12 @@ namespace SO.Map.Generation
 
         public float[] temperatureBands = { 0.1f, 0.3f, 0.6f };
         public float[] moistureBands = { 0.12f, 0.28f, 0.85f };
-        public DRegionBiome[] biomes =
+        public DProvinceBiome[] biomes =
         {
-        new DRegionBiome(0, 0), new DRegionBiome(4, 0), new DRegionBiome(4, 0), new DRegionBiome(4, 0),
-        new DRegionBiome(0, 0), new DRegionBiome(2, 0), new DRegionBiome(2, 1), new DRegionBiome(2, 2),
-        new DRegionBiome(0, 0), new DRegionBiome(1, 0), new DRegionBiome(1, 1), new DRegionBiome(1, 2),
-        new DRegionBiome(0, 0), new DRegionBiome(1, 1), new DRegionBiome(1, 2), new DRegionBiome(1, 3)
+        new DProvinceBiome(0, 0), new DProvinceBiome(4, 0), new DProvinceBiome(4, 0), new DProvinceBiome(4, 0),
+        new DProvinceBiome(0, 0), new DProvinceBiome(2, 0), new DProvinceBiome(2, 1), new DProvinceBiome(2, 2),
+        new DProvinceBiome(0, 0), new DProvinceBiome(1, 0), new DProvinceBiome(1, 1), new DProvinceBiome(1, 2),
+        new DProvinceBiome(0, 0), new DProvinceBiome(1, 1), new DProvinceBiome(1, 2), new DProvinceBiome(1, 3)
         };
     }
 }

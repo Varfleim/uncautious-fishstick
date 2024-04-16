@@ -10,20 +10,20 @@ namespace SO.UI
 {
     public class UIData : MonoBehaviour
     {
-        public GORegion regionPrefab;
-        public GORegionRenderer regionRendererPrefab;
+        public GOProvince provincePrefab;
+        public GOProvinceRenderer provinceRendererPrefab;
         public VerticalLayoutGroup mapPanelGroup;
         public float mapPanelAltitude;
 
-        public Game.GUI.Object.StrategicArea.Regions.UIRegionSummaryPanel sASbpnRegionsTabRegionSummaryPanelPrefab;
-        public UIRCMainMapPanel rCMainMapPanelPrefab;
+        public Game.GUI.Object.MapArea.Provinces.UIProvinceSummaryPanel mASbpnProvincesTabProvinceSummaryPanelPrefab;
+        public UIPCMainMapPanel pCMainMapPanelPrefab;
 
         public Game.GUI.Object.FleetManager.Fleets.UITaskForceSummaryPanel fMSbpnFleetsTabTaskForceSummaryPanelPrefab;
         public UITFMainMapPanel tFMainMapPanelPrefab;
 
         public ObjectPanelActionRequestType countrySubpanelDefaultTab;
-        public ObjectPanelActionRequestType regionSubpanelDefaultTab;
-        public ObjectPanelActionRequestType strategicAreaSubpanelDefaultTab;
+        public ObjectPanelActionRequestType provinceSubpanelDefaultTab;
+        public ObjectPanelActionRequestType mapAreaSubpanelDefaultTab;
         public ObjectPanelActionRequestType fleetManagerSubpanelDefaultTab;
     }
 }

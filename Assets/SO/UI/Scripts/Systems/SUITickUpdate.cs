@@ -53,17 +53,17 @@ namespace SO.UI
                 //Проверяем, требуется ли обновление в подпанели страны
                 CountrySbpnCheckRefresh();
             }
-            //Иначе, если активна подпанель региона
-            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Region)
+            //Иначе, если активна подпанель провинции
+            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Province)
             {
-                //Проверяем, требуется ли обновление в подпанели региона
-                RegionSbpnCheckRefresh();
+                //Проверяем, требуется ли обновление в подпанели провинции
+                ProvinceSbpnCheckRefresh();
             }
-            //Иначе, если активна подпанель стратегической области
-            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.StrategicArea)
+            //Иначе, если активна подпанель области карты
+            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.MapArea)
             {
                 //Проверяем, требуется ли обновление в подпанели области
-                StrategicAreaSbpnCheckRefresh();
+                MapAreaSbpnCheckRefresh();
             }
             //Иначе, если активна подпанель менеджера флотов
             else if(objectPanel.activeSubpanelType == ObjectSubpanelType.FleetManager)
@@ -106,47 +106,47 @@ namespace SO.UI
             }
         }
 
-        void RegionSbpnCheckRefresh()
+        void ProvinceSbpnCheckRefresh()
         {
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель региона
-            UIRegionSubpanel regionSubpanel = objectPanel.regionSubpanel;
+            //Берём подпанель провинции
+            UIProvinceSubpanel provinceSubpanel = objectPanel.provinceSubpanel;
 
             //Если активна обзорная вкладка
-            if (regionSubpanel.activeTab == regionSubpanel.overviewTab)
+            if (provinceSubpanel.activeTab == provinceSubpanel.overviewTab)
             {
                 //Запрашиваем обновление обзорной вкладки
                 ObjPnActionRequest(
-                    ObjectPanelActionRequestType.RegionOverview,
-                    regionSubpanel.activeTab.objectPE);
+                    ObjectPanelActionRequestType.ProvinceOverview,
+                    provinceSubpanel.activeTab.objectPE);
             }
         }
 
-        void StrategicAreaSbpnCheckRefresh()
+        void MapAreaSbpnCheckRefresh()
         {
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель стратегической области
-            UIStrategicAreaSubpanel sASubpanel = objectPanel.strategicAreaSubpanel;
+            //Берём подпанель области карты
+            UIMapAreaSubpanel mASubpanel = objectPanel.mapAreaSubpanel;
 
             //Если активна обзорная вкладка
-            if (sASubpanel.activeTab == sASubpanel.overviewTab)
+            if (mASubpanel.activeTab == mASubpanel.overviewTab)
             {
                 //Запрашиваем обновление обзорной вкладки
                 ObjPnActionRequest(
-                    ObjectPanelActionRequestType.StrategicAreaOverview,
-                    sASubpanel.activeTab.objectPE);
+                    ObjectPanelActionRequestType.MapAreaOverview,
+                    mASubpanel.activeTab.objectPE);
             }
-            //Иначе, если активна вкладка регионов
-            else if(sASubpanel.activeTab == sASubpanel.regionsTab)
+            //Иначе, если активна вкладка провинций
+            else if(mASubpanel.activeTab == mASubpanel.provincesTab)
             {
-                //Запрашиваем обновление вкладки регионов
+                //Запрашиваем обновление вкладки провинций
                 ObjPnActionRequest(
-                    ObjectPanelActionRequestType.StrategicAreaRegions,
-                    sASubpanel.activeTab.objectPE);
+                    ObjectPanelActionRequestType.MapAreaProvinces,
+                    mASubpanel.activeTab.objectPE);
             }
         }
 

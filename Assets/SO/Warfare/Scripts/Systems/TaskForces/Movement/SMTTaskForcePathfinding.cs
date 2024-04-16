@@ -3,7 +3,7 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using Leopotam.EcsLite.Threads;
 
-using SO.Map.Region;
+using SO.Map.Province;
 using SO.Warfare.Fleet.Movement.Events;
 
 namespace SO.Warfare.Fleet.Movement
@@ -11,11 +11,11 @@ namespace SO.Warfare.Fleet.Movement
     public class SMTTaskForcePathfinding : EcsThreadSystem<TTaskForcePathfinding,
         SRTaskForceFindPath,
         CTaskForce, CTaskForceMovement,
-        CRegionCore>
+        CProvinceCore>
     {
         readonly EcsWorldInject world = default;
 
-        readonly EcsCustomInject<RegionsData> regionsData = default;
+        readonly EcsCustomInject<ProvincesData> provincesData = default;
 
         protected override int GetChunkSize(IEcsSystems systems)
         {
@@ -36,7 +36,7 @@ namespace SO.Warfare.Fleet.Movement
         {
             thread.world = world.Value;
 
-            thread.regionsData = regionsData.Value;
+            thread.provincesData = provincesData.Value;
         }
     }
 }

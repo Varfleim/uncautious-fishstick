@@ -507,7 +507,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 23281289525446125, guid: deee506f46f6b5f40a33971cd88abf71, type: 3}
       propertyPath: m_Name
-      value: RegionsTabButton
+      value: ProvincesTabButton
       objectReference: {fileID: 0}
     - target: {fileID: 452486656276656824, guid: deee506f46f6b5f40a33971cd88abf71, type: 3}
       propertyPath: tabGroup
@@ -515,7 +515,7 @@ PrefabInstance:
       objectReference: {fileID: 2030912685}
     - target: {fileID: 5131526181156040073, guid: deee506f46f6b5f40a33971cd88abf71, type: 3}
       propertyPath: _widgetName
-      value: RegionsTabStrategicAreaSbpn
+      value: ProvincesTabMapAreaSbpn
       objectReference: {fileID: 0}
     - target: {fileID: 6685661392456570740, guid: deee506f46f6b5f40a33971cd88abf71, type: 3}
       propertyPath: m_text
@@ -978,7 +978,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3484955820221410152, guid: efa1a42854227d84f996208f9ea8e2f6, type: 3}
       propertyPath: m_Name
-      value: RegionsTab
+      value: ProvincesTab
       objectReference: {fileID: 0}
     - target: {fileID: 3484955820221410152, guid: efa1a42854227d84f996208f9ea8e2f6, type: 3}
       propertyPath: m_IsActive
@@ -1481,8 +1481,8 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1575359001}
-  - {fileID: 1014726370}
   - {fileID: 1123303458}
+  - {fileID: 1014726370}
   - {fileID: 2034930328}
   m_Father: {fileID: 1448718526}
   m_RootOrder: 1
@@ -2018,7 +2018,7 @@ PrefabInstance:
       objectReference: {fileID: 238893352}
     - target: {fileID: 5131526181156040073, guid: deee506f46f6b5f40a33971cd88abf71, type: 3}
       propertyPath: _widgetName
-      value: OverviewTabRegionSbpn
+      value: OverviewTabProvinceSbpn
       objectReference: {fileID: 0}
     - target: {fileID: 6685661392456570740, guid: deee506f46f6b5f40a33971cd88abf71, type: 3}
       propertyPath: m_text
@@ -2873,7 +2873,7 @@ GameObject:
   - component: {fileID: 1014726370}
   - component: {fileID: 1014726371}
   m_Layer: 5
-  m_Name: RegionSubpanel
+  m_Name: ProvinceSubpanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2893,7 +2893,7 @@ RectTransform:
   m_Children:
   - {fileID: 238893351}
   m_Father: {fileID: 517603159}
-  m_RootOrder: 1
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -2909,7 +2909,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1014726369}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f8307c813e548c43acfdd1805904888, type: 3}
+  m_Script: {fileID: 11500000, guid: 54cab8f595005a944968588aa825f53e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   parentRect: {fileID: 517603159}
@@ -3498,7 +3498,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44b6b406923f44eb196499bd257618bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _widgetName: ConquerStrategicAreaSbpn
+  _widgetName: ConquerMapAreaSbpn
   _emitter: {fileID: 0}
   _nameRegistrationType: 0
   _selectable: {fileID: 0}
@@ -3595,7 +3595,7 @@ GameObject:
   - component: {fileID: 1123303458}
   - component: {fileID: 1123303459}
   m_Layer: 5
-  m_Name: StrategicAreaSubpanel
+  m_Name: MapAreaSubpanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3615,7 +3615,7 @@ RectTransform:
   m_Children:
   - {fileID: 2030912684}
   m_Father: {fileID: 517603159}
-  m_RootOrder: 2
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -3631,14 +3631,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1123303457}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b84e8b4e2ddb39449a226de81f34e99a, type: 3}
+  m_Script: {fileID: 11500000, guid: e7242eb70f08b1049933c37f25d386c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   parentRect: {fileID: 517603159}
   tabGroup: {fileID: 2030912685}
   activeTab: {fileID: 0}
   overviewTab: {fileID: 1104655223}
-  regionsTab: {fileID: 284678719}
+  provincesTab: {fileID: 284678719}
 --- !u!1001 &1137664928
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4461,8 +4461,8 @@ MonoBehaviour:
   activeSubpanelType: 0
   activeSubpanel: {fileID: 0}
   countrySubpanel: {fileID: 1575359002}
-  regionSubpanel: {fileID: 1014726371}
-  strategicAreaSubpanel: {fileID: 1123303459}
+  mapAreaSubpanel: {fileID: 1123303459}
+  provinceSubpanel: {fileID: 1014726371}
   fleetManagerSubpanel: {fileID: 2034930329}
 --- !u!1 &1512882252
 GameObject:
@@ -4567,7 +4567,7 @@ PrefabInstance:
       objectReference: {fileID: 2030912685}
     - target: {fileID: 5131526181156040073, guid: deee506f46f6b5f40a33971cd88abf71, type: 3}
       propertyPath: _widgetName
-      value: OverviewTabStrategicAreaSbpn
+      value: OverviewTabMapAreaSbpn
       objectReference: {fileID: 0}
     - target: {fileID: 6685661392456570740, guid: deee506f46f6b5f40a33971cd88abf71, type: 3}
       propertyPath: m_text
@@ -5283,7 +5283,7 @@ MonoBehaviour:
   sceneData: {fileID: 2105182964}
   uIData: {fileID: 2105182970}
   mapGenerationData: {fileID: 2105182967}
-  regionsData: {fileID: 2105182966}
+  provincesData: {fileID: 2105182966}
   countriesData: {fileID: 2105182969}
   inputData: {fileID: 2105182968}
   sOUI: {fileID: 199122799}
@@ -5328,12 +5328,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   needRefreshPathMatrix: 000000000000000000000000
-  openRegionValues: 000000000000000000000000
-  closeRegionValues: 000000000000000000000000
+  openProvinceValues: 000000000000000000000000
+  closeProvinceValues: 000000000000000000000000
   pathfindingSearchLimits: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   needRefreshRouteMatrix: 0
-  openRegionValue: 1
-  closeRegionValue: 2
+  openProvinceValue: 1
+  closeProvinceValue: 2
   pathFindingSearchLimit: 0
 --- !u!114 &2105182967
 MonoBehaviour:
@@ -5361,17 +5361,17 @@ MonoBehaviour:
   bevelNormalsColors: []
   isInitializationUpdate: 0
   isMaterialUpdated: 0
-  isRegionUpdated: 0
+  isProvinceUpdated: 0
   isColorUpdated: 0
   isTextureArrayUpdated: 0
   isUVUpdatedFast: 0
   defaultShadedColor: {r: 0, g: 0, b: 0, a: 1}
   whiteTex: {fileID: 0}
-  regionMaterial: {fileID: 2100000, guid: 94c20dd7e4318a84699730a0249959c6, type: 2}
-  regionColoredMaterial: {fileID: 2100000, guid: cfb2b97224c83d7469fe4cb0ee5230cb, type: 2}
-  fleetRegionHighlightMaterial: {fileID: 2100000, guid: afdfc69824eb7e94fa4b414aa028c688, type: 2}
-  hoverRegionHighlightMaterial: {fileID: 2100000, guid: e4e88b3e31bcf424ea43fece2e5df2f3, type: 2}
-  currentRegionHighlightMaterial: {fileID: 2100000, guid: 4157582d0003a534db2a3ad4fd4c72bc, type: 2}
+  provinceMaterial: {fileID: 2100000, guid: 94c20dd7e4318a84699730a0249959c6, type: 2}
+  provinceColoredMaterial: {fileID: 2100000, guid: cfb2b97224c83d7469fe4cb0ee5230cb, type: 2}
+  hoverProvinceHighlightMaterial: {fileID: 2100000, guid: e4e88b3e31bcf424ea43fece2e5df2f3, type: 2}
+  currentProvinceHighlightMaterial: {fileID: 2100000, guid: 4157582d0003a534db2a3ad4fd4c72bc, type: 2}
+  fleetProvinceHighlightMaterial: {fileID: 2100000, guid: afdfc69824eb7e94fa4b414aa028c688, type: 2}
   jitterProbability: 0.25
   chunkSizeMin: 30
   chunkSizeMax: 100
@@ -5382,9 +5382,9 @@ MonoBehaviour:
   elevationMinimum: 0
   elevationMaximum: 5
   erosionPercentage: 100
-  strategicAreaAverageSize: 30
-  strategicAreaFirstElevationSetCount: 5
-  strategicAreaSecondElevationSetCount: 30
+  mapAreaAverageSize: 30
+  mapAreaFirstElevationSetCount: 10
+  mapAreaSecondElevationSetCount: 40
   startingMoisture: 0.1
   evaporationFactor: 0.5
   precipitationFactor: 0.25
@@ -5439,7 +5439,7 @@ MonoBehaviour:
   swiwelMinZoom: 90
   swiwelMaxZoom: 30
   isMouseOver: 0
-  lastHitRegionIndex: 0
+  lastHitProvinceIndex: 0
 --- !u!114 &2105182969
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5464,17 +5464,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ce503b1f7117b74a928552187931123, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  regionPrefab: {fileID: 3872802071885926373, guid: d9190ad3472f7894a9412fa2765519c6, type: 3}
-  regionRendererPrefab: {fileID: 5453556824984065676, guid: 60b48bccd974509429a742c6a404faf7, type: 3}
+  provincePrefab: {fileID: 3872802071885926373, guid: d9190ad3472f7894a9412fa2765519c6, type: 3}
+  provinceRendererPrefab: {fileID: 5453556824984065676, guid: 60b48bccd974509429a742c6a404faf7, type: 3}
   mapPanelGroup: {fileID: 6594349263422155975, guid: 3f0a78a1fae501a4585683bc105b9425, type: 3}
   mapPanelAltitude: 0.2
-  sASbpnRegionsTabRegionSummaryPanelPrefab: {fileID: 2468858683526350446, guid: 405b19abf5e9bdb408a06bbde3a097c6, type: 3}
-  rCMainMapPanelPrefab: {fileID: 8938394213872120736, guid: fe74c27f2a6168044bbffb0db420f74a, type: 3}
+  mASbpnProvincesTabProvinceSummaryPanelPrefab: {fileID: 2468858683526350446, guid: 405b19abf5e9bdb408a06bbde3a097c6, type: 3}
+  pCMainMapPanelPrefab: {fileID: 8938394213872120736, guid: fe74c27f2a6168044bbffb0db420f74a, type: 3}
   fMSbpnFleetsTabTaskForceSummaryPanelPrefab: {fileID: 1541951279726250598, guid: 4f76fed99dc049f47bd3a5a35ff42070, type: 3}
   tFMainMapPanelPrefab: {fileID: 8657998564761547949, guid: d529b1ff8532a8b43a1a8ff2ba891ce1, type: 3}
   countrySubpanelDefaultTab: 0
-  regionSubpanelDefaultTab: 1
-  strategicAreaSubpanelDefaultTab: 3
+  provinceSubpanelDefaultTab: 1
+  mapAreaSubpanelDefaultTab: 3
   fleetManagerSubpanelDefaultTab: 4
 --- !u!1001 &283627025941335466
 PrefabInstance:

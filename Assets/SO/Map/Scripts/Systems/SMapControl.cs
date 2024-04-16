@@ -9,11 +9,11 @@ using Leopotam.EcsLite.Di;
 using SO.UI;
 using SO.UI.Game.Map.Events;
 using SO.Country;
-using SO.Map.StrategicArea;
+using SO.Map.MapArea;
 using SO.Map.Hexasphere;
 using SO.Map.Generation;
 using SO.Map.Events;
-using SO.Map.Region;
+using SO.Map.Province;
 
 namespace SO.Map
 {
@@ -24,11 +24,11 @@ namespace SO.Map
 
 
         //Карта
-        readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
-        readonly EcsPoolInject<CRegionCore> rCPool = default;
+        readonly EcsPoolInject<CProvinceHexasphere> pHSPool = default;
+        readonly EcsPoolInject<CProvinceCore> pCPool = default;
 
-        readonly EcsFilterInject<Inc<CStrategicArea>> sAFilter = default;
-        readonly EcsPoolInject<CStrategicArea> sAPool = default;
+        readonly EcsFilterInject<Inc<CMapArea>> mAFilter = default;
+        readonly EcsPoolInject<CMapArea> mAPool = default;
 
         //Страны
         readonly EcsFilterInject<Inc<CCountry>> countryFilter = default;
@@ -38,7 +38,7 @@ namespace SO.Map
         //Данные
         readonly EcsCustomInject<SceneData> sceneData = default;
         readonly EcsCustomInject<MapGenerationData> mapGenerationData = default;
-        readonly EcsCustomInject<RegionsData> regionsData = default;
+        readonly EcsCustomInject<ProvincesData> provincesData = default;
         readonly EcsCustomInject<InputData> inputData = default;
         readonly EcsCustomInject<RuntimeData> runtimeData = default;
 
@@ -58,11 +58,11 @@ namespace SO.Map
             }
 
             //Обновляем яркость материалов подсветки
-            mapGenerationData.Value.fleetRegionHighlightMaterial.SetFloat(
+            mapGenerationData.Value.fleetProvinceHighlightMaterial.SetFloat(
                 ShaderParameters.ColorShift, Mathf.PingPong(UnityEngine.Time.time * 0.25f, 1f));
-            mapGenerationData.Value.hoverRegionHighlightMaterial.SetFloat(
+            mapGenerationData.Value.hoverProvinceHighlightMaterial.SetFloat(
                 ShaderParameters.ColorShift, Mathf.PingPong(UnityEngine.Time.time * 0.25f, 1f));
-            mapGenerationData.Value.currentRegionHighlightMaterial.SetFloat(
+            mapGenerationData.Value.currentProvinceHighlightMaterial.SetFloat(
                 ShaderParameters.ColorShift, Mathf.PingPong(UnityEngine.Time.time * 0.25f, 1f));
 
             //Если требуется обновление материалов
@@ -72,7 +72,7 @@ namespace SO.Map
                 MapMaterialPropertiesUpdate(mapGenerationData.Value.isInitializationUpdate);
 
                 mapGenerationData.Value.isMaterialUpdated = false;
-                mapGenerationData.Value.isRegionUpdated = false;
+                mapGenerationData.Value.isProvinceUpdated = false;
                 mapGenerationData.Value.isInitializationUpdate = false;
             }
 
@@ -96,8 +96,8 @@ namespace SO.Map
                 mapGenerationData.Value.isUVUpdatedFast = false;
             }
 
-            //Проверяем события подсветки регионов
-            RegionHighlightRequest();
+            //Проверяем события подсветки провинций
+            ProvinceHighlightRequest();
         }
 
         readonly EcsFilterInject<Inc<RChangeMapMode>> changeMapModeRequestFilter = default;
@@ -119,14 +119,14 @@ namespace SO.Map
                     //Отображаем режим типов местности
                     MapDisplayModeTerrain();
                 }
-                //Если запрашивается отображение режима стратегических областей
-                else if(requestComp.requestType == ChangeMapModeRequestType.StrategicArea)
+                //Если запрашивается отображение режима областей карты
+                else if (requestComp.requestType == ChangeMapModeRequestType.MapArea)
                 {
-                    //Указываем режим карты стратегических областей как активный
-                    inputData.Value.mapMode = MapMode.StrategicArea;
+                    //Указываем режим карты областей как активный
+                    inputData.Value.mapMode = MapMode.MapArea;
 
-                    //Отображаем режим карты стратегических областей
-                    MapDisplayModeStrategicArea();
+                    //Отображаем режим карты областей
+                    MapDisplayModeMapArea();
                 }
                 //Иначе, если запрашивается отображение стран
                 else if (requestComp.requestType == ChangeMapModeRequestType.Country)
@@ -150,60 +150,60 @@ namespace SO.Map
                 //Отображаем режим типов местности
                 MapDisplayModeTerrain();
             }
-            //Иначе, если текущий режим карты - режим стратегических областей
-            else if(inputData.Value.mapMode == MapMode.StrategicArea)
+            //Иначе, если текущий режим карты - режим областей карты
+            else if (inputData.Value.mapMode == MapMode.MapArea)
             {
-                //Отображаем режим стратегических областей
-                MapDisplayModeStrategicArea();
+                //Отображаем режим областей
+                MapDisplayModeMapArea();
             }
         }
 
         void MapDisplayModeTerrain()
         {
-            //Для каждой стратегической области
-            foreach (int sAEntity in sAFilter.Value)
+            //Для каждой области карты
+            foreach (int mAEntity in mAFilter.Value)
             {
-                //Берём стратегическую область
-                ref CStrategicArea sA = ref sAPool.Value.Get(sAEntity);
+                //Берём область
+                ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
 
                 //Определяем цвет области
-                Color sAColor = Color.Lerp(Color.yellow, Color.red, (float)sA.Elevation / mapGenerationData.Value.elevationMaximum);
+                Color mAColor = Color.Lerp(Color.yellow, Color.red, (float)mA.Elevation / mapGenerationData.Value.elevationMaximum);
 
-                //Для каждого региона области
-                for(int a = 0; a < sA.regionPEs.Length; a++)
+                //Для каждой провинции области
+                for (int a = 0; a < mA.provincePEs.Length; a++)
                 {
-                    //Берём регион
-                    sA.regionPEs[a].Unpack(world.Value, out int regionEntity);
-                    ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                    //Берём провинцию
+                    mA.provincePEs[a].Unpack(world.Value, out int provinceEntity);
+                    ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
-                    //Устанавливаем цвет региона соответственно высоте области
-                    RegionSetColor(
-                        ref rC,
-                        sAColor);
+                    //Устанавливаем цвет провинции соответственно высоте области
+                    ProvinceSetColor(
+                        ref pC,
+                        mAColor);
 
                 }
             }
         }
 
-        void MapDisplayModeStrategicArea()
+        void MapDisplayModeMapArea()
         {
-            //Для каждой стратегической области
-            foreach(int sAEntity in sAFilter.Value)
+            //Для каждой области карты
+            foreach (int mAEntity in mAFilter.Value)
             {
-                //Берём стратегическую область
-                ref CStrategicArea sA = ref sAPool.Value.Get(sAEntity);
+                //Берём область
+                ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
 
-                //Для каждого региона области
-                for(int a = 0; a < sA.regionPEs.Length; a++)
+                //Для каждой провинции области
+                for (int a = 0; a < mA.provincePEs.Length; a++)
                 {
-                    //Берём регион
-                    sA.regionPEs[a].Unpack(world.Value, out int regionEntity);
-                    ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                    //Берём провинцию
+                    mA.provincePEs[a].Unpack(world.Value, out int provinceEntity);
+                    ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
-                    //Устанавливаем цвет региона 
-                    RegionSetColor(
-                        ref rC,
-                        sA.selfColor);
+                    //Устанавливаем цвет провинции
+                    ProvinceSetColor(
+                        ref pC,
+                        mA.selfColor);
                 }
             }
         }
@@ -216,24 +216,24 @@ namespace SO.Map
                 //Берём страну
                 ref CCountry country = ref countryPool.Value.Get(countryEntity);
 
-                //Для каждой стратегической области страны
-                for (int a = 0; a < country.ownedSAPEs.Count; a++)
+                //Для каждой области карты страны
+                for (int a = 0; a < country.ownedMAPEs.Count; a++)
                 {
                     //Берём область
-                    country.ownedSAPEs[a].Unpack(world.Value, out int sAEntity);
-                    ref CStrategicArea sA = ref sAPool.Value.Get(sAEntity);
+                    country.ownedMAPEs[a].Unpack(world.Value, out int mAEntity);
+                    ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
 
-                    //Для каждого региона области
-                    for (int b = 0; b < sA.regionPEs.Length; b++)
+                    //Для каждой провинции области
+                    for (int b = 0; b < mA.provincePEs.Length; b++)
                     {
-                        //Берём регион
-                        sA.regionPEs[b].Unpack(world.Value, out int regionEntity);
-                        ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                        //Берём провинцию
+                        mA.provincePEs[b].Unpack(world.Value, out int provinceEntity);
+                        ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
                         //ТЕСТ
-                        //Устанавливаем цвет региона
-                        RegionSetColor(
-                            ref rC,
+                        //Устанавливаем цвет провинции
+                        ProvinceSetColor(
+                            ref pC,
                             runtimeData.Value.playerColor);
                         //ТЕСТ
                     }
@@ -244,26 +244,26 @@ namespace SO.Map
         void MapMaterialPropertiesUpdate(
             bool isInitializationUpdate = false)
         {
-            //Если нужно обновить регионы
-            if (mapGenerationData.Value.isRegionUpdated == true)
+            //Если нужно обновить провинции
+            if (mapGenerationData.Value.isProvinceUpdated == true)
             {
-                //Обновляем регионы
+                //Обновляем провинции
                 MapRebuildTiles();
 
-                //Отмечаем, что регионы были обновлены
-                mapGenerationData.Value.isRegionUpdated = false;
+                //Отмечаем, что провинции были обновлены
+                mapGenerationData.Value.isProvinceUpdated = false;
             }
 
-            //Обновляем материалы регионов и тени
+            //Обновляем материалы провинций и тени
             MapUpdateShadedMaterials(isInitializationUpdate);
             MapUpdateMeshRenderersShadowSupport();
 
-            //Обновляем материал регионов
-            mapGenerationData.Value.regionMaterial.SetFloat("_GradientIntensity", 1f - mapGenerationData.Value.gradientIntensity);
-            mapGenerationData.Value.regionMaterial.SetFloat("_ExtrusionMultiplier", MapGenerationData.ExtrudeMultiplier);
-            mapGenerationData.Value.regionMaterial.SetColor("_Color", mapGenerationData.Value.tileTintColor);
-            mapGenerationData.Value.regionMaterial.SetColor("_AmbientColor", mapGenerationData.Value.ambientColor);
-            mapGenerationData.Value.regionMaterial.SetFloat("_MinimumLight", mapGenerationData.Value.minimumLight);
+            //Обновляем материал провинций
+            mapGenerationData.Value.provinceMaterial.SetFloat("_GradientIntensity", 1f - mapGenerationData.Value.gradientIntensity);
+            mapGenerationData.Value.provinceMaterial.SetFloat("_ExtrusionMultiplier", MapGenerationData.ExtrudeMultiplier);
+            mapGenerationData.Value.provinceMaterial.SetColor("_Color", mapGenerationData.Value.tileTintColor);
+            mapGenerationData.Value.provinceMaterial.SetColor("_AmbientColor", mapGenerationData.Value.ambientColor);
+            mapGenerationData.Value.provinceMaterial.SetFloat("_MinimumLight", mapGenerationData.Value.minimumLight);
 
             //Обновляем размер коллайдера
             sceneData.Value.hexashpereCollider.radius = 0.5f * (1.0f + MapGenerationData.ExtrudeMultiplier);
@@ -301,19 +301,19 @@ namespace SO.Map
             //Создаём счётчик вершин
             int verticesCount = 0;
 
-            //Определяем количество регионов
-            int tileCount = regionsData.Value.regionPEs.Length;
+            //Определяем количество провинций
+            int tileCount = provincesData.Value.provincePEs.Length;
 
             //Создаём массивы индексов гексов и пентагонов
             int[] hexIndices = mapGenerationData.Value.hexagonIndicesExtruded;
             int[] pentIndices = mapGenerationData.Value.pentagonIndicesExtruded;
 
-            //Для каждого региона
+            //Для каждого провинции
             for (int k = 0; k < tileCount; k++)
             {
-                //Берём компонент региона
-                regionsData.Value.regionPEs[k].Unpack(world.Value, out int regionEntity);
-                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+                //Берём компонент провинции
+                provincesData.Value.provincePEs[k].Unpack(world.Value, out int provinceEntity);
+                ref CProvinceHexasphere pHS = ref pHSPool.Value.Get(provinceEntity);
 
                 //Если количество вершин больше максимального количества вершин на чанк
                 if (verticesCount > MapGenerationData.maxVertexCountPerChunk)
@@ -330,8 +330,8 @@ namespace SO.Map
                     verticesCount = 0;
                 }
 
-                //Берём массив вершин региона
-                DHexaspherePoint[] tileVertices = rHS.vertexPoints;
+                //Берём массив вершин провинций
+                DHexaspherePoint[] tileVertices = pHS.vertexPoints;
 
                 //Определяем количество вершин
                 int tileVerticesCount = tileVertices.Length;
@@ -342,7 +342,7 @@ namespace SO.Map
                 //Для каждой вершины
                 for (int b = 0; b < tileVerticesCount; b++)
                 {
-                    //Берём вершину региона
+                    //Берём вершину провинции
                     DHexaspherePoint point = tileVertices[b];
 
                     //Берём координату центра вершины и заносим её в список вершин
@@ -363,7 +363,7 @@ namespace SO.Map
                 //Создаём массив индексов
                 int[] indicesArray;
 
-                //Если число вершин региона равно шести
+                //Если число вершин провинции равно шести
                 if (tileVerticesCount == 6)
                 {
                     //Заносим вершины основания гекса в список
@@ -443,7 +443,7 @@ namespace SO.Map
                 mapGenerationData.Value.shadedMRs[k] = mr;
 
 
-                mr.sharedMaterial = mapGenerationData.Value.regionMaterial;
+                mr.sharedMaterial = mapGenerationData.Value.provinceMaterial;
             }
         }
 
@@ -470,23 +470,23 @@ namespace SO.Map
             //Создаём счётчик вершин
             int verticesCount = 0;
 
-            //Определяем количество регионов
-            int tileCount = regionsData.Value.regionPEs.Length;
+            //Определяем количество провинций
+            int tileCount = provincesData.Value.provincePEs.Length;
 
-            //Определяем стандартный цвет региона
+            //Определяем стандартный цвет провинции
             Color32 color = mapGenerationData.Value.DefaultShadedColor;
 
-            //Для каждого региона
+            //Для каждой провинции
             for (int k = 0; k < tileCount; k++)
             {
-                //Берём компонент региона
-                regionsData.Value.regionPEs[k].Unpack(world.Value, out int regionEntity);
-                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
-                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                //Берём компонент провинции
+                provincesData.Value.provincePEs[k].Unpack(world.Value, out int provinceEntity);
+                ref CProvinceHexasphere pHS = ref pHSPool.Value.Get(provinceEntity);
+                ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
-                //Берём родительскую стратегическую область региона
-                rC.ParentStrategicAreaPE.Unpack(world.Value, out int sAEntity);
-                ref CStrategicArea sA = ref sAPool.Value.Get(sAEntity);
+                //Берём родительскую область карты провинции
+                pC.ParentMapAreaPE.Unpack(world.Value, out int mAEntity);
+                ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
 
                 //Если количество вершин больше максимального количества вершин на чанк
                 if (verticesCount > MapGenerationData.maxVertexCountPerChunk)
@@ -502,8 +502,8 @@ namespace SO.Map
                     verticesCount = 0;
                 }
 
-                //Берём массив вершин региона
-                DHexaspherePoint[] tileVertices = rHS.vertexPoints;
+                //Берём массив вершин провинции
+                DHexaspherePoint[] tileVertices = pHS.vertexPoints;
 
                 //Определяем количество вершин
                 int tileVerticesCount = tileVertices.Length;
@@ -524,7 +524,7 @@ namespace SO.Map
                     uvArray = mapGenerationData.Value.pentagonUVsExtruded;
                 }
 
-                //Помещаем цвет региона или текстуру в массив текстур
+                //Помещаем цвет провинции или текстуру в массив текстур
                 Texture2D tileTexture;
 
                 //Определяем индекс, масштаб и смещение текстуры
@@ -532,14 +532,14 @@ namespace SO.Map
                 Vector2 textureScale;
                 Vector2 textureOffset;
 
-                //Если регион имеет собственный материал, этот материал имеет текстуру и текстура не пуста
-                if (rHS.customMaterial && rHS.customMaterial.HasProperty(ShaderParameters.MainTex) && rHS.customMaterial.mainTexture != null)
+                //Если провинция имеет собственный материал, этот материал имеет текстуру и текстура не пуста
+                if (pHS.customMaterial && pHS.customMaterial.HasProperty(ShaderParameters.MainTex) && pHS.customMaterial.mainTexture != null)
                 {
                     //Берём параметры этой текстуры
-                    tileTexture = (Texture2D)rHS.customMaterial.mainTexture;
+                    tileTexture = (Texture2D)pHS.customMaterial.mainTexture;
                     textureIndex = mapGenerationData.Value.texArray.IndexOf(tileTexture);
-                    textureScale = rHS.customMaterial.mainTextureScale;
-                    textureOffset = rHS.customMaterial.mainTextureOffset;
+                    textureScale = pHS.customMaterial.mainTextureScale;
+                    textureOffset = pHS.customMaterial.mainTextureOffset;
                 }
                 //Иначе
                 else
@@ -561,10 +561,10 @@ namespace SO.Map
                 //Если требуется обновление цветов
                 if (mapGenerationData.Value.isColorUpdated == true)
                 {
-                    //Если регион имеет собственный материал, то берём его цвет
-                    if (rHS.customMaterial != null)
+                    //Если провинция имеет собственный материал, то берём его цвет
+                    if (pHS.customMaterial != null)
                     {
-                        color = rHS.customMaterial.color;
+                        color = pHS.customMaterial.color;
                     }
                     //Иначе берём стандартный цвет
                     else
@@ -576,24 +576,24 @@ namespace SO.Map
                 //Если это обновление на этапе инициализации
                 if (isInitializationUpdate == true)
                 {
-                    //Заполняем индексы UV-координат региона
-                    rHS.uvShadedChunkStart = verticesCount;
-                    rHS.uvShadedChunkIndex = chunkIndex;
-                    rHS.uvShadedChunkLength = uvArray.Length;
+                    //Заполняем индексы UV-координат провинции
+                    pHS.uvShadedChunkStart = verticesCount;
+                    pHS.uvShadedChunkIndex = chunkIndex;
+                    pHS.uvShadedChunkLength = uvArray.Length;
                 }
 
-                //Обновляем визуальную выдавленность региона
-                if (sA.Elevation > 0)
+                //Обновляем визуальную выдавленность провинции
+                if (mA.Elevation > 0)
                 {
-                    rHS.ExtrudeAmount = (float)sA.Elevation / mapGenerationData.Value.elevationMaximum;
+                    pHS.ExtrudeAmount = (float)mA.Elevation / mapGenerationData.Value.elevationMaximum;
                 }
                 else
                 {
-                    rHS.ExtrudeAmount = 0;
+                    pHS.ExtrudeAmount = 0;
                 }
 
-                //Обновляем положения рендереров для региона
-                RegionRefreshRenderers(ref rHS);
+                //Обновляем положения рендереров для провинции
+                ProvinceRefreshRenderers(ref pHS);
 
                 //Для каждых UV-координат в списке
                 for (int b = 0; b < uvArray.Length; b++)
@@ -603,7 +603,7 @@ namespace SO.Map
                     uv4.x = uvArray[b].x * textureScale.x + textureOffset.x;
                     uv4.y = uvArray[b].y * textureScale.y + textureOffset.y;
                     uv4.z = textureIndex;
-                    uv4.w = rHS.ExtrudeAmount;
+                    uv4.w = pHS.ExtrudeAmount;
 
                     //Если это не обновление на этапе инициализации
                     if (isInitializationUpdate == false)
@@ -646,7 +646,7 @@ namespace SO.Map
                 }
 
                 mapGenerationData.Value.shadedMFs[k].sharedMesh = mapGenerationData.Value.shadedMeshes[k];
-                mapGenerationData.Value.shadedMRs[k].sharedMaterial = mapGenerationData.Value.regionMaterial;
+                mapGenerationData.Value.shadedMRs[k].sharedMaterial = mapGenerationData.Value.provinceMaterial;
             }
 
             //Если требуется обновление массива текстур
@@ -692,7 +692,7 @@ namespace SO.Map
                 }
                 //Применяем конечный массив и задаём его как массив текстур для материала
                 mapGenerationData.Value.finalTexArray.Apply();
-                mapGenerationData.Value.regionMaterial.SetTexture(
+                mapGenerationData.Value.provinceMaterial.SetTexture(
                     ShaderParameters.MainTex,
                     mapGenerationData.Value.finalTexArray);
 
@@ -746,10 +746,10 @@ namespace SO.Map
         void MapUpdateLightingMode()
         {
             //Обновляем материалы
-            MapUpdateLightingMaterial(mapGenerationData.Value.regionMaterial);
-            MapUpdateLightingMaterial(mapGenerationData.Value.regionColoredMaterial);
+            MapUpdateLightingMaterial(mapGenerationData.Value.provinceMaterial);
+            MapUpdateLightingMaterial(mapGenerationData.Value.provinceColoredMaterial);
 
-            mapGenerationData.Value.regionMaterial.EnableKeyword("HEXA_ALPHA");
+            mapGenerationData.Value.provinceMaterial.EnableKeyword("HEXA_ALPHA");
         }
 
         void MapUpdateLightingMaterial(
@@ -865,12 +865,12 @@ namespace SO.Map
             mapGenerationData.Value.bevelNormals.Apply();
 
             //Задаём текстуру материалу
-            mapGenerationData.Value.regionMaterial.SetTexture("_BumpMask", mapGenerationData.Value.bevelNormals);
+            mapGenerationData.Value.provinceMaterial.SetTexture("_BumpMask", mapGenerationData.Value.bevelNormals);
         }
 
         void MapUpdateMeshRenderersShadowSupport()
         {
-            //Для каждого мешрендерера регионов
+            //Для каждого мешрендерера провинции
             for (int a = 0; a < mapGenerationData.Value.shadedMRs.Length; a++)
             {
                 //Если рендерер не пуст и его имя верно
@@ -937,48 +937,48 @@ namespace SO.Map
             return gO;
         }
 
-        readonly EcsFilterInject<Inc<RGameShowRegionHighlight>> gameShowRegionHighlightRequestFilter = default;
-        readonly EcsPoolInject<RGameShowRegionHighlight> gameShowRegionHighlightRequestPool = default;
+        readonly EcsFilterInject<Inc<RGameShowProvinceHighlight>> gameShowProvinceHighlightRequestFilter = default;
+        readonly EcsPoolInject<RGameShowProvinceHighlight> gameShowProvinceHighlightRequestPool = default;
 
-        readonly EcsFilterInject<Inc<RGameHideRegionHighlight>> gameHideRegionHighlightRequestFilter = default;
-        readonly EcsPoolInject<RGameHideRegionHighlight> gameHideRegionHighlightRequestPool = default;
-        void RegionHighlightRequest()
+        readonly EcsFilterInject<Inc<RGameHideProvinceHighlight>> gameHideProvinceHighlightRequestFilter = default;
+        readonly EcsPoolInject<RGameHideProvinceHighlight> gameHideProvinceHighlightRequestPool = default;
+        void ProvinceHighlightRequest()
         {
-            //Для каждого запроса включения подсветки региона
-            foreach (int requestEntity in gameShowRegionHighlightRequestFilter.Value)
+            //Для каждого запроса включения подсветки провинции
+            foreach (int requestEntity in gameShowProvinceHighlightRequestFilter.Value)
             {
                 //Берём запрос
-                ref RGameShowRegionHighlight requestComp = ref gameShowRegionHighlightRequestPool.Value.Get(requestEntity);
+                ref RGameShowProvinceHighlight requestComp = ref gameShowProvinceHighlightRequestPool.Value.Get(requestEntity);
 
-                //Если запрашивается подсветка наведения региона
-                if (requestComp.requestType == RegionHighlightRequestType.Hover)
+                //Если запрашивается подсветка наведения провинции
+                if (requestComp.requestType == ProvinceHighlightRequestType.Hover)
                 {
-                    //Включаем подсветку наведения региона
-                    RegionShowHoverHighlight(ref requestComp);
+                    //Включаем подсветку наведения провинции
+                    ProvinceShowHoverHighlight(ref requestComp);
                 }
 
-                gameShowRegionHighlightRequestPool.Value.Del(requestEntity);
+                gameShowProvinceHighlightRequestPool.Value.Del(requestEntity);
             }
 
-            //Для каждого запроса выключения подсветки региона
-            foreach (int requestEntity in gameHideRegionHighlightRequestFilter.Value)
+            //Для каждого запроса выключения подсветки провинции
+            foreach (int requestEntity in gameHideProvinceHighlightRequestFilter.Value)
             {
                 //Берём запрос
-                ref RGameHideRegionHighlight requestComp = ref gameHideRegionHighlightRequestPool.Value.Get(requestEntity);
+                ref RGameHideProvinceHighlight requestComp = ref gameHideProvinceHighlightRequestPool.Value.Get(requestEntity);
 
-                //Если запрашивается подсветка наведения региона
-                if (requestComp.requestType == RegionHighlightRequestType.Hover)
+                //Если запрашивается подсветка наведения провинции
+                if (requestComp.requestType == ProvinceHighlightRequestType.Hover)
                 {
-                    //Выключаем подсветку наведения региона
-                    RegionHideHoverHighlight(ref requestComp);
+                    //Выключаем подсветку наведения провинции
+                    ProvinceHideHoverHighlight(ref requestComp);
                 }
 
-                gameHideRegionHighlightRequestPool.Value.Del(requestEntity);
+                gameHideProvinceHighlightRequestPool.Value.Del(requestEntity);
             }
         }
 
-        void RegionSetColor(
-            ref CRegionCore rC,
+        void ProvinceSetColor(
+            ref CProvinceCore pC,
             Color color)
         {
             //Берём кэшированный материал
@@ -988,13 +988,13 @@ namespace SO.Map
             if (mapGenerationData.Value.colorCache.ContainsKey(color) == false)
             {
                 //То создаём новый материал и кэшируем его
-                material = GameObject.Instantiate(mapGenerationData.Value.regionColoredMaterial);
+                material = GameObject.Instantiate(mapGenerationData.Value.provinceColoredMaterial);
                 mapGenerationData.Value.colorCache.Add(color, material);
 
                 //Заполняем основные данные материала
                 material.hideFlags = HideFlags.DontSave;
                 material.color = color;
-                material.SetFloat(ShaderParameters.RegionAlpha, 1f);
+                material.SetFloat(ShaderParameters.ProvinceAlpha, 1f);
             }
             //Иначе
             else
@@ -1003,24 +1003,24 @@ namespace SO.Map
                 material = mapGenerationData.Value.colorCache[color];
             }
 
-            //Устанавливаем материал региона
-            RegionSetMaterial(
-                rC.Index,
+            //Устанавливаем материал провинции
+            ProvinceSetMaterial(
+                pC.Index,
                 material);
         }
 
-        bool RegionSetMaterial(
-            int regionIndex,
+        bool ProvinceSetMaterial(
+            int provinceIndex,
             Material material,
             bool temporary = false)
         {
-            //Берём регион
-            regionsData.Value.regionPEs[regionIndex].Unpack(world.Value, out int regionEntity);
-            ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
-            ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+            //Берём провинцию
+            provincesData.Value.provincePEs[provinceIndex].Unpack(world.Value, out int provinceEntity);
+            ref CProvinceHexasphere pHS = ref pHSPool.Value.Get(provinceEntity);
+            ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
-            //Если этот основной материал уже назначен региону
-            if (rHS.customMaterial == material)
+            //Если этот основной материал уже назначен провинции
+            if (pHS.customMaterial == material)
             {
                 //То ничего не меняется
                 return false;
@@ -1060,90 +1060,90 @@ namespace SO.Map
             //Иначе
             else
             {
-                List<Color32> colorChunk = mapGenerationData.Value.colorShaded[rHS.uvShadedChunkIndex];
-                for (int k = 0; k < rHS.uvShadedChunkLength; k++)
+                List<Color32> colorChunk = mapGenerationData.Value.colorShaded[pHS.uvShadedChunkIndex];
+                for (int k = 0; k < pHS.uvShadedChunkLength; k++)
                 {
-                    colorChunk[rHS.uvShadedChunkStart + k] = materialColor;
+                    colorChunk[pHS.uvShadedChunkStart + k] = materialColor;
                 }
-                mapGenerationData.Value.colorShadedDirty[rHS.uvShadedChunkIndex] = true;
+                mapGenerationData.Value.colorShadedDirty[pHS.uvShadedChunkIndex] = true;
             }
 
             //Если материал - не материал подсветки наведения
-            if (material != mapGenerationData.Value.hoverRegionHighlightMaterial)
+            if (material != mapGenerationData.Value.hoverProvinceHighlightMaterial)
             {
                 //Если это временный материал
                 if (temporary == true)
                 {
-                    rHS.tempMaterial = material;
+                    pHS.tempMaterial = material;
                 }
                 //Иначе
                 else
                 {
-                    rHS.customMaterial = material;
+                    pHS.customMaterial = material;
                 }
             }
 
             return true;
         }
 
-        readonly EcsPoolInject<CRegionHoverHighlightRenderer> regionHoverHighlightRendererPool = default;
-        void RegionShowHoverHighlight(
-            ref RGameShowRegionHighlight requestComp)
+        readonly EcsPoolInject<CProvinceHoverHighlightRenderer> provinceHoverHighlightRendererPool = default;
+        void ProvinceShowHoverHighlight(
+            ref RGameShowProvinceHighlight requestComp)
         {
-            //Берём регион
-            requestComp.regionPE.Unpack(world.Value, out int regionEntity);
-            ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+            //Берём провинцию
+            requestComp.provincePE.Unpack(world.Value, out int provinceEntity);
+            ref CProvinceHexasphere pHS = ref pHSPool.Value.Get(provinceEntity);
 
-            //Если у региона нет компонента рендерера наведения
-            if (regionHoverHighlightRendererPool.Value.Has(regionEntity) == false)
+            //Если у провинции нет компонента рендерера наведения
+            if (provinceHoverHighlightRendererPool.Value.Has(provinceEntity) == false)
             {
                 //Назначаем его
-                ref CRegionHoverHighlightRenderer regionRenderer = ref regionHoverHighlightRendererPool.Value.Add(regionEntity);
+                ref CProvinceHoverHighlightRenderer provinceRenderer = ref provinceHoverHighlightRendererPool.Value.Add(provinceEntity);
 
                 //Создаём новый рендерер 
-                GORegionRenderer.InstantiateRegionRenderer(ref rHS, ref regionRenderer);
+                GOProvinceRenderer.InstantiateProvinceRenderer(ref pHS, ref provinceRenderer);
 
-                regionRenderer.renderer.regionRenderer.material = mapGenerationData.Value.hoverRegionHighlightMaterial;
+                provinceRenderer.renderer.provinceRenderer.material = mapGenerationData.Value.hoverProvinceHighlightMaterial;
             }
         }
 
-        void RegionHideHoverHighlight(
-            ref RGameHideRegionHighlight requestComp)
+        void ProvinceHideHoverHighlight(
+            ref RGameHideProvinceHighlight requestComp)
         {
-            //Берём регион
-            requestComp.regionPE.Unpack(world.Value, out int regionEntity);
-            ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+            //Берём провинцию
+            requestComp.provincePE.Unpack(world.Value, out int provinceEntity);
+            ref CProvinceHexasphere pHS = ref pHSPool.Value.Get(provinceEntity);
 
-            //Если у региона есть компонент рендерера наведения
-            if (regionHoverHighlightRendererPool.Value.Has(regionEntity) == true)
+            //Если у провинции есть компонент рендерера наведения
+            if (provinceHoverHighlightRendererPool.Value.Has(provinceEntity) == true)
             {
                 //Берём его
-                ref CRegionHoverHighlightRenderer regionRenderer = ref regionHoverHighlightRendererPool.Value.Get(regionEntity);
+                ref CProvinceHoverHighlightRenderer provinceRenderer = ref provinceHoverHighlightRendererPool.Value.Get(provinceEntity);
 
                 //Кэшируем его
-                GORegionRenderer.CacheRegionRenderer(ref regionRenderer);
+                GOProvinceRenderer.CacheProvinceRenderer(ref provinceRenderer);
 
                 //Удаляем компонент рендерера
-                regionHoverHighlightRendererPool.Value.Del(regionEntity);
+                provinceHoverHighlightRendererPool.Value.Del(provinceEntity);
             }
         }
 
-        void RegionRefreshRenderers(
-            ref CRegionHexasphere rHS)
+        void ProvinceRefreshRenderers(
+            ref CProvinceHexasphere pHS)
         {
-            //Берём сущность региона
-            rHS.selfPE.Unpack(world.Value, out int regionEntity);
+            //Берём сущность провинции
+            pHS.selfPE.Unpack(world.Value, out int provinceEntity);
 
-            //Если у региона есть компонент рендерера наведения
-            if (regionHoverHighlightRendererPool.Value.Has(regionEntity) == true)
+            //Если у провинции есть компонент рендерера наведения
+            if (provinceHoverHighlightRendererPool.Value.Has(provinceEntity) == true)
             {
                 //Берём его
-                ref CRegionHoverHighlightRenderer regionRenderer = ref regionHoverHighlightRendererPool.Value.Get(regionEntity);
+                ref CProvinceHoverHighlightRenderer provinceRenderer = ref provinceHoverHighlightRendererPool.Value.Get(provinceEntity);
 
                 //Обновляем его
-                GORegionRenderer.RefreshRegionRenderer(
-                    ref rHS,
-                    regionRenderer.renderer);
+                GOProvinceRenderer.RefreshProvinceRenderer(
+                    ref pHS,
+                    provinceRenderer.renderer);
             }
         }
     }

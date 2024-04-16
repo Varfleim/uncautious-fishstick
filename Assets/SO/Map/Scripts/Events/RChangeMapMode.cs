@@ -4,7 +4,7 @@ namespace SO.Map.Events
     {
         None,
         Terrain,
-        StrategicArea,
+        MapArea,
         Country,
         Exploration
     }

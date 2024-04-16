@@ -57,28 +57,28 @@ namespace SO.Country
             //ТЕСТ
             inputData.Value.playerCountryPE = country.selfPE;
 
-            //Запрашиваем инициализацию стартового региона страны
-            CountryStartRegionInitializerRequest(country.selfPE);
+            //Запрашиваем инициализацию стартовой провинции страны
+            CountryStartProvinceInitializerRequest(country.selfPE);
             //ТЕСТ
 
             //Создаём событие, сообщающее о создании новой страны
             ObjectNewCreatedEvent(country.selfPE, ObjectNewCreatedType.Country);
         }
 
-        readonly EcsPoolInject<RRegionInitializer> regionInitializerRequestPool = default;
-        readonly EcsPoolInject<RRegionInitializerOwner> regionInitializerOwnerRequestPool = default;
-        void CountryStartRegionInitializerRequest(
+        readonly EcsPoolInject<RProvinceInitializer> provinceInitializerRequestPool = default;
+        readonly EcsPoolInject<RProvinceInitializerOwner> provinceInitializerOwnerRequestPool = default;
+        void CountryStartProvinceInitializerRequest(
             EcsPackedEntity countryPE)
         {
             //Создаём новую сущность и назначаем ей запрос применения инициализатора
             int requestEntity = world.Value.NewEntity();
-            ref RRegionInitializer requestCoreComp = ref regionInitializerRequestPool.Value.Add(requestEntity);
+            ref RProvinceInitializer requestCoreComp = ref provinceInitializerRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
             requestCoreComp = new();
             
             //Назначаем компонент владельца
-            ref RRegionInitializerOwner requestOwnerComp = ref regionInitializerOwnerRequestPool.Value.Add(requestEntity);
+            ref RProvinceInitializerOwner requestOwnerComp = ref provinceInitializerOwnerRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
             requestOwnerComp = new(countryPE);

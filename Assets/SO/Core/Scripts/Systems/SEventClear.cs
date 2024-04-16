@@ -10,15 +10,15 @@ namespace SO
     public class SEventClear : IEcsRunSystem
     {
         //События карты
-        readonly EcsFilterInject<Inc<ERegionChangeOwner>> regionChangeOwnerEventFilter = default;
-        readonly EcsPoolInject<ERegionChangeOwner> regionChangeOwnerEventPool = default;
+        readonly EcsFilterInject<Inc<EProvinceChangeOwner>> provinceChangeOwnerEventFilter = default;
+        readonly EcsPoolInject<EProvinceChangeOwner> provinceChangeOwnerEventPool = default;
 
-        readonly EcsFilterInject<Inc<EStrategicAreaChangeOwner>> sAChangeOwnerEventFilter = default;
-        readonly EcsPoolInject<EStrategicAreaChangeOwner> sAChangeOwnerEventPool = default;
+        readonly EcsFilterInject<Inc<EMapAreaChangeOwner>> mAChangeOwnerEventFilter = default;
+        readonly EcsPoolInject<EMapAreaChangeOwner> mAChangeOwnerEventPool = default;
 
         //События военного дела
-        readonly EcsFilterInject<Inc<ETaskForceChangeRegion>> tFChangeRegionEventFilter = default;
-        readonly EcsPoolInject<ETaskForceChangeRegion> tFChangeRegionEventPool = default;
+        readonly EcsFilterInject<Inc<ETaskForceChangeProvince>> tFChangeProvinceEventFilter = default;
+        readonly EcsPoolInject<ETaskForceChangeProvince> tFChangeProvinceEventPool = default;
 
         //Общие события
         readonly EcsFilterInject<Inc<EObjectNewCreated>> objectNewCreatedEventFilter = default;
@@ -33,25 +33,25 @@ namespace SO
                 objectNewCreatedEventPool.Value.Del(eventEntity);
             }
 
-            //Для каждого события смены владельца региона
-            foreach (int eventEntity in regionChangeOwnerEventFilter.Value)
+            //Для каждого события смены владельца провинции
+            foreach (int eventEntity in provinceChangeOwnerEventFilter.Value)
             {
                 //Удаляем компонент события
-                regionChangeOwnerEventPool.Value.Del(eventEntity);
+                provinceChangeOwnerEventPool.Value.Del(eventEntity);
             }
 
-            //Для каждого события смены владельца стратегической области
-            foreach (int eventEntity in sAChangeOwnerEventFilter.Value)
+            //Для каждого события смены владельца области карты
+            foreach (int eventEntity in mAChangeOwnerEventFilter.Value)
             {
                 //Удаляем компонент события
-                sAChangeOwnerEventPool.Value.Del(eventEntity);
+                mAChangeOwnerEventPool.Value.Del(eventEntity);
             }
 
-            //Для каждого события смены региона оперативной группой
-            foreach (int eventEntity in tFChangeRegionEventFilter.Value)
+            //Для каждого события смены провинции оперативной группой
+            foreach (int eventEntity in tFChangeProvinceEventFilter.Value)
             {
                 //Удаляем компонент события
-                tFChangeRegionEventPool.Value.Del(eventEntity);
+                tFChangeProvinceEventPool.Value.Del(eventEntity);
             }
         }
     }

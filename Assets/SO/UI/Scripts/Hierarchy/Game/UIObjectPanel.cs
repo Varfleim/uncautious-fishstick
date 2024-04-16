@@ -3,8 +3,6 @@ using UnityEngine;
 
 using TMPro;
 
-using Leopotam.EcsLite;
-
 using SO.UI.Game.GUI.Object;
 
 namespace SO.UI.Game.GUI
@@ -14,8 +12,8 @@ namespace SO.UI.Game.GUI
         None,
 
         Country,
-        StrategicArea,
-        Region,
+        MapArea,
+        Province,
         FleetManager
     }
 
@@ -28,8 +26,8 @@ namespace SO.UI.Game.GUI
         public UIAObjectSubpanel activeSubpanel;
 
         public UICountrySubpanel countrySubpanel;
-        public UIRegionSubpanel regionSubpanel;
-        public UIStrategicAreaSubpanel strategicAreaSubpanel;
+        public UIMapAreaSubpanel mapAreaSubpanel;
+        public UIProvinceSubpanel provinceSubpanel;
         public UIFleetManagerSubpanel fleetManagerSubpanel;
 
         public void HideActiveSubpanel()

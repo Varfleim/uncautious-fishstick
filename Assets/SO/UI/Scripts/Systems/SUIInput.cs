@@ -19,12 +19,12 @@ using SO.Warfare.Fleet.Events;
 using SO.Warfare.Fleet.Missions.Events;
 using SO.Warfare.Fleet.Movement;
 using SO.Warfare.Fleet.Movement.Events;
-using SO.Map.StrategicArea;
+using SO.Map.MapArea;
 using SO.Map.Hexasphere;
 using SO.Map.UI;
 using SO.Map.Generation;
 using SO.Map.Events;
-using SO.Map.Region;
+using SO.Map.Province;
 
 namespace SO.UI
 {
@@ -37,13 +37,13 @@ namespace SO.UI
 
 
         //Карта
-        readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
-        readonly EcsPoolInject<CRegionCore> rCPool = default;
+        readonly EcsPoolInject<CProvinceHexasphere> pHSPool = default;
+        readonly EcsPoolInject<CProvinceCore> pCPool = default;
 
-        readonly EcsFilterInject<Inc<CRegionCore, CRegionDisplayedGUIPanels>> regionDisplayedGUIPanelsFilter = default;
-        readonly EcsPoolInject<CRegionDisplayedGUIPanels> regionDisplayedGUIPanelsPool = default;
+        readonly EcsFilterInject<Inc<CProvinceCore, CProvinceDisplayedGUIPanels>> provinceDisplayedGUIPanelsFilter = default;
+        readonly EcsPoolInject<CProvinceDisplayedGUIPanels> provinceDisplayedGUIPanelsPool = default;
 
-        readonly EcsPoolInject<CStrategicArea> sAPool = default;
+        readonly EcsPoolInject<CMapArea> mAPool = default;
 
         //Страны
         readonly EcsPoolInject<CCountry> countryPool = default;
@@ -62,7 +62,7 @@ namespace SO.UI
         //Данные
         readonly EcsCustomInject<UIData> uIData = default;
         readonly EcsCustomInject<MapGenerationData> mapGenerationData = default;
-        readonly EcsCustomInject<RegionsData> regionsData = default;
+        readonly EcsCustomInject<ProvincesData> provincesData = default;
         readonly EcsCustomInject<InputData> inputData = default;
         readonly EcsCustomInject<RuntimeData> runtimeData = default;
 
@@ -431,17 +431,17 @@ namespace SO.UI
                 //Проверяем клики в подпанели страны
                 CountrySbpnClickAction(ref clickEvent);
             }
-            //Иначе, если активна подпанель региона
-            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Region)
+            //Иначе, если активна подпанель провинции
+            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Province)
             {
-                //Проверяем клики в подпанели региона
-                RegionSbpnClickAction(ref clickEvent);
+                //Проверяем клики в подпанели провинции
+                ProvinceSbpnClickAction(ref clickEvent);
             }
-            //Иначе, если активна подпанель стратегической области
-            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.StrategicArea)
+            //Иначе, если активна подпанель области карты
+            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.MapArea)
             {
                 //Проверяем клики в подпанели области
-                StrategicAreaSbpnClickAction(ref clickEvent);
+                MapAreaSbpnClickAction(ref clickEvent);
             }
             //Иначе, если активна подпанель менеджера флотов
             else if (objectPanel.activeSubpanelType == ObjectSubpanelType.FleetManager)
@@ -487,97 +487,97 @@ namespace SO.UI
         }
         #endregion
 
-        #region RegionSubpanel
-        void RegionSbpnClickAction(
+        #region ProvinceSubpanel
+        void ProvinceSbpnClickAction(
             ref EcsUguiClickEvent clickEvent)
         {
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель региона
-            UIRegionSubpanel regionSubpanel = objectPanel.regionSubpanel;
+            //Берём подпанель провинции
+            UIProvinceSubpanel provinceSubpanel = objectPanel.provinceSubpanel;
 
             //Если нажата кнопка обзорной вкладки
-            if (clickEvent.WidgetName == "OverviewTabRegionSbpn")
+            if (clickEvent.WidgetName == "OverviewTabProvinceSbpn")
             {
                 //Запрашиваем отображение обзорной вкладки
                 ObjectPnActionRequest(
-                    ObjectPanelActionRequestType.RegionOverview,
-                    regionSubpanel.activeTab.objectPE);
+                    ObjectPanelActionRequestType.ProvinceOverview,
+                    provinceSubpanel.activeTab.objectPE);
             }
         }
         #endregion
 
-        #region StrategicAreaSubpanel
-        void StrategicAreaSbpnClickAction(
+        #region MapAreaSubpanel
+        void MapAreaSbpnClickAction(
             ref EcsUguiClickEvent clickEvent)
         {
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель стратегической области
-            UIStrategicAreaSubpanel sASubpanel = objectPanel.strategicAreaSubpanel;
+            //Берём подпанель области карты
+            UIMapAreaSubpanel mASubpanel = objectPanel.mapAreaSubpanel;
 
             //Если нажата кнопка обзорной вкладки
-            if (clickEvent.WidgetName == "OverviewTabStrategicAreaSbpn")
+            if (clickEvent.WidgetName == "OverviewTabMapAreaSbpn")
             {
                 //Запрашиваем отображение обзорной вкладки
                 ObjectPnActionRequest(
-                    ObjectPanelActionRequestType.StrategicAreaOverview,
-                    sASubpanel.activeTab.objectPE);
+                    ObjectPanelActionRequestType.MapAreaOverview,
+                    mASubpanel.activeTab.objectPE);
             }
-            //Иначе, если нажата кнопка вкладки регионов
-            else if(clickEvent.WidgetName == "RegionsTabStrategicAreaSbpn")
+            //Иначе, если нажата кнопка вкладки провинций
+            else if(clickEvent.WidgetName == "ProvincesTabMapAreaSbpn")
             {
-                //Запрашиваем отображение вкладки регионов
+                //Запрашиваем отображение вкладки провинций
                 ObjectPnActionRequest(
-                    ObjectPanelActionRequestType.StrategicAreaRegions,
-                    sASubpanel.activeTab.objectPE);
+                    ObjectPanelActionRequestType.MapAreaProvinces,
+                    mASubpanel.activeTab.objectPE);
             }
 
             //ТЕСТ
             //Если нажата кнопка захвата области
-            else if(clickEvent.WidgetName == "ConquerStrategicAreaSbpn")
+            else if(clickEvent.WidgetName == "ConquerMapAreaSbpn")
             {
                 //Запрашиваем смену владельца области на страну игрока
-                StrategicAreaChangeOwnerRequest(
+                MapAreaChangeOwnerRequest(
                     inputData.Value.playerCountryPE,
-                    sASubpanel.activeTab.objectPE);
+                    mASubpanel.activeTab.objectPE);
             }
             //ТЕСТ
 
-            //Иначе, если открыта вкладка регионов
-            else if(sASubpanel.activeTab == sASubpanel.regionsTab)
+            //Иначе, если открыта вкладка провинций
+            else if(mASubpanel.activeTab == mASubpanel.provincesTab)
             {
                 Debug.LogWarning("!");
 
                 //ТЕСТ
-                //Для каждого региона с отображаемыми панелями GUI
-                foreach(int regionEntity in regionDisplayedGUIPanelsFilter.Value)
+                //Для каждой провинции с отображаемыми панелями GUI
+                foreach(int provinceEntity in provinceDisplayedGUIPanelsFilter.Value)
                 {
-                    //Берём панели региона
-                    ref CRegionDisplayedGUIPanels regionDisplayedGUIPanels = ref regionDisplayedGUIPanelsPool.Value.Get(regionEntity);
+                    //Берём панели провинции
+                    ref CProvinceDisplayedGUIPanels provinceDisplayedGUIPanels = ref provinceDisplayedGUIPanelsPool.Value.Get(provinceEntity);
 
-                    //Если у региона есть обзорная панель вкладки регионов
-                    if(regionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel != null)
+                    //Если у провинции есть обзорная панель вкладки провинций
+                    if(provinceDisplayedGUIPanels.mASbpnProvincesTabSummaryPanel != null)
                     {
                         Debug.LogWarning("!");
 
                         Debug.LogWarning(clickEvent.Sender.transform.parent);
 
                         //Если она является родительским объектом источника события
-                        if (regionDisplayedGUIPanels.sASbpnRegionsTabSummaryPanel.transform == clickEvent.Sender.transform.parent)
+                        if (provinceDisplayedGUIPanels.mASbpnProvincesTabSummaryPanel.transform == clickEvent.Sender.transform.parent)
                         {
                             Debug.LogWarning("!");
 
-                            //Берём регион
-                            ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                            //Берём провинцию
+                            ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
-                            //То запрашиваем смену владельца региона
-                            RegionChangeOwnerRequest(
+                            //То запрашиваем смену владельца провинции
+                            ProvinceChangeOwnerRequest(
                                 inputData.Value.playerCountryPE,
-                                rC.selfPE,
-                                RegionChangeOwnerType.Test);
+                                pC.selfPE,
+                                ProvinceChangeOwnerType.Test);
 
                             break;
                         }
@@ -587,36 +587,36 @@ namespace SO.UI
             }
         }
 
-        readonly EcsPoolInject<RStrategicAreaChangeOwner> sAChangeOwnerRequestPool = default;
-        void StrategicAreaChangeOwnerRequest(
+        readonly EcsPoolInject<RMapAreaChangeOwner> mAChangeOwnerRequestPool = default;
+        void MapAreaChangeOwnerRequest(
             EcsPackedEntity countryPE,
-            EcsPackedEntity sAPE)
+            EcsPackedEntity mAPE)
         {
-            //Создаём новую сущность и назначаем ей запрос смены владельца стратегической области
+            //Создаём новую сущность и назначаем ей запрос смены владельца области карты
             int requestEntity = world.Value.NewEntity();
-            ref RStrategicAreaChangeOwner requestComp = ref sAChangeOwnerRequestPool.Value.Add(requestEntity);
+            ref RMapAreaChangeOwner requestComp = ref mAChangeOwnerRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
             requestComp = new(
                 countryPE,
-                sAPE,
-                StrategicAreaChangeOwnerType.Test);
+                mAPE,
+                MapAreaChangeOwnerType.Test);
         }
 
-        readonly EcsPoolInject<RRegionChangeOwner> regionChangeOwnerRequestPool = default;
-        void RegionChangeOwnerRequest(
+        readonly EcsPoolInject<RProvinceChangeOwner> provinceChangeOwnerRequestPool = default;
+        void ProvinceChangeOwnerRequest(
             EcsPackedEntity countryPE,
-            EcsPackedEntity regionPE,
-            RegionChangeOwnerType requestType)
+            EcsPackedEntity provincePE,
+            ProvinceChangeOwnerType requestType)
         {
-            //Создаём новую сущность и назначаем ей запрос смены владельца региона
+            //Создаём новую сущность и назначаем ей запрос смены владельца провинции
             int requestEntity = world.Value.NewEntity();
-            ref RRegionChangeOwner requestComp = ref regionChangeOwnerRequestPool.Value.Add(requestEntity);
+            ref RProvinceChangeOwner requestComp = ref provinceChangeOwnerRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
             requestComp = new(
                 countryPE,
-                regionPE,
+                provincePE,
                 requestType);
         }
         #endregion
@@ -741,32 +741,32 @@ namespace SO.UI
         void HexasphereCheckMouseInteraction()
         {
             //Если курсор находится над гексасферой
-            if(HexasphereCheckMousePosition(out Vector3 position, out Ray ray, out EcsPackedEntity regionPE))
+            if(HexasphereCheckMousePosition(out Vector3 position, out Ray ray, out EcsPackedEntity provincePE))
             {
-                //Берём регион под курсором
-                regionPE.Unpack(world.Value, out int regionEntity);
-                ref CRegionHexasphere currentRHS = ref rHSPool.Value.Get(regionEntity);
+                //Берём провинцию под курсором
+                provincePE.Unpack(world.Value, out int provinceEntity);
+                ref CProvinceHexasphere currentPHS = ref pHSPool.Value.Get(provinceEntity);
 
                 //ТЕСТ
-                ref CRegionCore currentRC = ref rCPool.Value.Get(regionEntity);
+                ref CProvinceCore currentPC = ref pCPool.Value.Get(provinceEntity);
 
-                //Берём родительскую стратегическую область региона
-                currentRC.ParentStrategicAreaPE.Unpack(world.Value, out int sAEntity);
-                ref CStrategicArea sA = ref sAPool.Value.Get(sAEntity);
+                //Берём родительскую область карты провинции
+                currentPC.ParentMapAreaPE.Unpack(world.Value, out int mAEntity);
+                ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
                 //ТЕСТ
 
                 //Если нажата ЛКМ
                 if(inputData.Value.leftMouseButtonClick)
                 {
-                    //Запрашиваем отображение подпанели региона
+                    //Запрашиваем отображение подпанели провинции
                     //ObjectPnActionRequest(
-                    //    uIData.Value.regionSubpanelDefaultTab,
-                    //    currentRHS.selfPE);
+                    //    uIData.Value.provinceSubpanelDefaultTab,
+                    //    currentPHS.selfPE);
 
                     //Запрашиваем отображение подпанели области
                     ObjectPnActionRequest(
-                        uIData.Value.strategicAreaSubpanelDefaultTab,
-                        sA.selfPE, currentRHS.selfPE);
+                        uIData.Value.mapAreaSubpanelDefaultTab,
+                        mA.selfPE, currentPHS.selfPE);
                 }
                 //Иначе, если нажата ПКМ
                 else if(inputData.Value.rightMouseButtonClick)
@@ -784,7 +784,7 @@ namespace SO.UI
                             //Запрашиваем перемещение группы
                             TaskForceMovementRequest(
                                 ref tF,
-                                currentRHS.selfPE, TaskForceMovementTargetType.Region);
+                                currentPHS.selfPE, TaskForceMovementTargetType.Province);
                         }
                     }
                 }
@@ -793,64 +793,64 @@ namespace SO.UI
 
         bool HexasphereCheckMousePosition(
             out Vector3 position, out Ray ray,
-            out EcsPackedEntity regionPE)
+            out EcsPackedEntity provincePE)
         {
             //Проверяем, находится ли курсор над гексасферой
             inputData.Value.isMouseOver = HexasphereGetHitPoint(out position, out ray);
 
-            regionPE = new();
+            provincePE = new();
 
             //Если курсор находится над гексасферой
             if(inputData.Value.isMouseOver == true)
             {
-                //Определяем индекс региона, над которым находится курсор
-                int regionIndex = RegionGetInRayDirection(
+                //Определяем индекс провинции, над которой находится курсор
+                int provinceIndex = ProvinceGetInRayDirection(
                     ray, position,
                     out Vector3 hitPosition);
 
-                //Если индекс региона больше нуля
-                if (regionIndex >= 0)
+                //Если индекс провинции больше нуля
+                if (provinceIndex >= 0)
                 {
-                    //Берём регион
-                    regionsData.Value.regionPEs[regionIndex].Unpack(world.Value, out int regionEntity);
-                    ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
-                    ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                    //Берём провинцию
+                    provincesData.Value.provincePEs[provinceIndex].Unpack(world.Value, out int provinceEntity);
+                    ref CProvinceHexasphere pHS = ref pHSPool.Value.Get(provinceEntity);
+                    ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
-                    //Если сущность региона не равна сущности последнего подсвеченного
-                    if(inputData.Value.lastHighlightedRegionPE.EqualsTo(rC.selfPE) == false)
+                    //Если сущность провинции не равна сущности последнего подсвеченного
+                    if(inputData.Value.lastHighlightedProvincePE.EqualsTo(pC.selfPE) == false)
                     {
-                        //Если последний подсвеченный регион существует
-                        if(inputData.Value.lastHighlightedRegionPE.Unpack(world.Value, out int lastHighlightRegionEntity))
+                        //Если последняя подсвеченная провинция существует
+                        if(inputData.Value.lastHighlightedProvincePE.Unpack(world.Value, out int lastHighlightProvinceEntity))
                         {
                             //Запрашиваем отключение подсветки для него
-                            RegionHideHighlightRequest(
-                                inputData.Value.lastHighlightedRegionPE,
-                                RegionHighlightRequestType.Hover);
+                            ProvinceHideHighlightRequest(
+                                inputData.Value.lastHighlightedProvincePE,
+                                ProvinceHighlightRequestType.Hover);
                         }
 
-                        //Обновляем подсвеченный регион
-                        inputData.Value.lastHighlightedRegionPE = rC.selfPE;
+                        //Обновляем подсвеченную провинцию
+                        inputData.Value.lastHighlightedProvincePE = pC.selfPE;
 
                         //Запрашиваем включение подсветки для него
-                        RegionShowHighlightRequest(
-                            rC.selfPE,
-                            RegionHighlightRequestType.Hover);
+                        ProvinceShowHighlightRequest(
+                            pC.selfPE,
+                            ProvinceHighlightRequestType.Hover);
                     }
 
-                    regionPE = rC.selfPE;
+                    provincePE = pC.selfPE;
 
                     return true;
                 }
-                //Иначе, если индекс региона меньше нуля и последний подсвеченный регион существует
-                else if(regionIndex < 0 && inputData.Value.lastHighlightedRegionPE.Unpack(world.Value, out int lastHighlightRegionEntity))
+                //Иначе, если индекс провинции меньше нуля и последняя подсвеченная провинция существует
+                else if(provinceIndex < 0 && inputData.Value.lastHighlightedProvincePE.Unpack(world.Value, out int lastHighlightProvinceEntity))
                 {
                     //Запрашиваем отключение подсветки для него
-                    RegionHideHighlightRequest(
-                        inputData.Value.lastHighlightedRegionPE,
-                        RegionHighlightRequestType.Hover);
+                    ProvinceHideHighlightRequest(
+                        inputData.Value.lastHighlightedProvincePE,
+                        ProvinceHighlightRequestType.Hover);
 
-                    //Удаляем последний подсвеченный регион
-                    inputData.Value.lastHighlightedRegionPE = new();
+                    //Удаляем последнюю подсвеченную провинцию
+                    inputData.Value.lastHighlightedProvincePE = new();
                 }
             }
 
@@ -890,7 +890,7 @@ namespace SO.UI
             return false;
         }
 
-        int RegionGetInRayDirection(
+        int ProvinceGetInRayDirection(
             Ray ray,
             Vector3 worldPosition,
             out Vector3 hitPosition)
@@ -931,75 +931,75 @@ namespace SO.UI
                 }
             }
 
-            //Берём индекс региона 
-            int nearestRegionIndex = RegionGetAtLocalPosition(SceneData.HexashpereGO.transform.InverseTransformPoint(worldPosition));
+            //Берём индекс провинции 
+            int nearestProvinceIndex = ProvinceGetAtLocalPosition(SceneData.HexashpereGO.transform.InverseTransformPoint(worldPosition));
             //Если индекс меньше нуля, выходим из функции
-            if (nearestRegionIndex < 0)
+            if (nearestProvinceIndex < 0)
             {
                 return -1;
             }
 
-            //Определяем индекс региона
+            //Определяем индекс провинции
             Vector3 currentPoint = worldPosition;
 
-            //Берём ближайший регион
-            regionsData.Value.regionPEs[nearestRegionIndex].Unpack(world.Value, out int nearestRegionEntity);
-            ref CRegionHexasphere nearestRHS = ref rHSPool.Value.Get(nearestRegionEntity);
+            //Берём ближайшую провинцию
+            provincesData.Value.provincePEs[nearestProvinceIndex].Unpack(world.Value, out int nearestProvinceEntity);
+            ref CProvinceHexasphere nearestPHS = ref pHSPool.Value.Get(nearestProvinceEntity);
 
-            //Определяем верхнюю точку региона
-            Vector3 regionTop = SceneData.HexashpereGO.transform.TransformPoint(
-                nearestRHS.center * (1.0f + nearestRHS.ExtrudeAmount * mapGenerationData.Value.extrudeMultiplier));
+            //Определяем верхнюю точку провинции
+            Vector3 provinceTop = SceneData.HexashpereGO.transform.TransformPoint(
+                nearestPHS.center * (1.0f + nearestPHS.ExtrudeAmount * mapGenerationData.Value.extrudeMultiplier));
 
-            //Определяем высоту региона и высоту луча
-            float regionHeight = regionTop.sqrMagnitude;
+            //Определяем высоту провинции и высоту луча
+            float provinceHeight = provinceTop.sqrMagnitude;
             float rayHeight = currentPoint.sqrMagnitude;
 
             float minDistance = 1e6f;
             distance = minDistance;
 
-            //Определяем индекс региона-кандидата
-            int candidateRegionIndex = -1;
+            //Определяем индекс провинции-кандидата
+            int candidateProvinceIndex = -1;
 
             const int NUM_STEPS = 10;
             //Уточняем точку
             for (int a = 1; a <= NUM_STEPS; a++)
             {
-                distance = Mathf.Abs(rayHeight - regionHeight);
+                distance = Mathf.Abs(rayHeight - provinceHeight);
 
                 //Если расстояние меньше минимального
                 if (distance < minDistance)
                 {
                     //Обновляем минимальное расстояние и кандидата
                     minDistance = distance;
-                    candidateRegionIndex = nearestRegionIndex;
+                    candidateProvinceIndex = nearestProvinceIndex;
                     hitPosition = currentPoint;
                 }
 
-                if (rayHeight < regionHeight)
+                if (rayHeight < provinceHeight)
                 {
-                    return candidateRegionIndex;
+                    return candidateProvinceIndex;
                 }
 
                 float t = a / (float)NUM_STEPS;
 
                 currentPoint = worldPosition * (1f - t) + bestPoint * t;
 
-                nearestRegionIndex = RegionGetAtLocalPosition(SceneData.HexashpereGO.transform.InverseTransformPoint(currentPoint));
+                nearestProvinceIndex = ProvinceGetAtLocalPosition(SceneData.HexashpereGO.transform.InverseTransformPoint(currentPoint));
 
-                if (nearestRegionIndex < 0)
+                if (nearestProvinceIndex < 0)
                 {
                     break;
                 }
 
-                //Обновляем ближайший регион
-                regionsData.Value.regionPEs[nearestRegionIndex].Unpack(world.Value, out nearestRegionEntity);
-                nearestRHS = ref rHSPool.Value.Get(nearestRegionEntity);
+                //Обновляем ближайшую провинцию
+                provincesData.Value.provincePEs[nearestProvinceIndex].Unpack(world.Value, out nearestProvinceEntity);
+                nearestPHS = ref pHSPool.Value.Get(nearestProvinceEntity);
 
-                regionTop = SceneData.HexashpereGO.transform.TransformPoint(
-                    nearestRHS.center * (1.0f + nearestRHS.ExtrudeAmount * mapGenerationData.Value.extrudeMultiplier));
+                provinceTop = SceneData.HexashpereGO.transform.TransformPoint(
+                    nearestPHS.center * (1.0f + nearestPHS.ExtrudeAmount * mapGenerationData.Value.extrudeMultiplier));
 
-                //Определяем высоту региона и высоту луча
-                regionHeight = regionTop.sqrMagnitude;
+                //Определяем высоту провинции и высоту луча
+                provinceHeight = provinceTop.sqrMagnitude;
                 rayHeight = currentPoint.sqrMagnitude;
             }
 
@@ -1008,13 +1008,13 @@ namespace SO.UI
             {
                 //Обновляем минимальное расстояние и кандидата
                 minDistance = distance;
-                candidateRegionIndex = nearestRegionIndex;
+                candidateProvinceIndex = nearestProvinceIndex;
                 hitPosition = currentPoint;
             }
 
-            if (rayHeight < regionHeight)
+            if (rayHeight < provinceHeight)
             {
-                return candidateRegionIndex;
+                return candidateProvinceIndex;
             }
             else
             {
@@ -1022,32 +1022,32 @@ namespace SO.UI
             }
         }
 
-        int RegionGetAtLocalPosition(
+        int ProvinceGetAtLocalPosition(
             Vector3 localPosition)
         {
-            //Проверяем, не последний ли это регион
-            if (inputData.Value.lastHitRegionIndex >= 0 && inputData.Value.lastHitRegionIndex < regionsData.Value.regionPEs.Length)
+            //Проверяем, не последняя ли это провинция
+            if (inputData.Value.lastHitProvinceIndex >= 0 && inputData.Value.lastHitProvinceIndex < provincesData.Value.provincePEs.Length)
             {
-                //Берём последний регион
-                regionsData.Value.regionPEs[inputData.Value.lastHitRegionIndex].Unpack(world.Value, out int lastHitRegionEntity);
-                ref CRegionCore lastHitRC = ref rCPool.Value.Get(lastHitRegionEntity);
+                //Берём последнюю провинцию
+                provincesData.Value.provincePEs[inputData.Value.lastHitProvinceIndex].Unpack(world.Value, out int lastHitProvinceEntity);
+                ref CProvinceCore lastHitPC = ref pCPool.Value.Get(lastHitProvinceEntity);
 
-                //Определяем расстояние до центра региона
-                float distance = Vector3.SqrMagnitude(lastHitRC.center - localPosition);
+                //Определяем расстояние до центра провинции
+                float distance = Vector3.SqrMagnitude(lastHitPC.center - localPosition);
 
                 bool isValid = true;
 
-                //Для каждого соседнего региона
-                for (int a = 0; a < lastHitRC.neighbourRegionPEs.Length; a++)
+                //Для каждой соседней провинции
+                for (int a = 0; a < lastHitPC.neighbourProvincePEs.Length; a++)
                 {
-                    //Берём соседний регион
-                    lastHitRC.neighbourRegionPEs[a].Unpack(world.Value, out int neighbourRegionEntity);
-                    ref CRegionHexasphere neighbourRHS = ref rHSPool.Value.Get(neighbourRegionEntity);
+                    //Берём соседнюю провинцию
+                    lastHitPC.neighbourProvincePEs[a].Unpack(world.Value, out int neighbourProvinceEntity);
+                    ref CProvinceHexasphere neighbourPHS = ref pHSPool.Value.Get(neighbourProvinceEntity);
 
-                    //Определяем расстояние до центре региона
-                    float otherDistance = Vector3.SqrMagnitude(neighbourRHS.center - localPosition);
+                    //Определяем расстояние до центра провинции
+                    float otherDistance = Vector3.SqrMagnitude(neighbourPHS.center - localPosition);
 
-                    //Если оно меньше расстояния до последнего региона
+                    //Если оно меньше расстояния до последней провинции
                     if (otherDistance < distance)
                     {
                         //Отмечаем это и выходим из цикла
@@ -1056,41 +1056,41 @@ namespace SO.UI
                     }
                 }
 
-                //Если это последний регион
+                //Если это последняя провинция
                 if (isValid == true)
                 {
-                    return inputData.Value.lastHitRegionIndex;
+                    return inputData.Value.lastHitProvinceIndex;
                 }
             }
             //Иначе
             else
             {
-                //Обнуляем индекс последнего региона
-                inputData.Value.lastHitRegionIndex = 0;
+                //Обнуляем индекс последней провинции
+                inputData.Value.lastHitProvinceIndex = 0;
             }
 
             //Следуем кратчайшему пути к минимальному расстоянию
-            regionsData.Value.regionPEs[inputData.Value.lastHitRegionIndex].Unpack(world.Value, out int nearestRegionEntity);
-            ref CRegionCore nearestRC = ref rCPool.Value.Get(nearestRegionEntity);
+            provincesData.Value.provincePEs[inputData.Value.lastHitProvinceIndex].Unpack(world.Value, out int nearestProvinceEntity);
+            ref CProvinceCore nearestPC = ref pCPool.Value.Get(nearestProvinceEntity);
 
             float minDist = 1e6f;
 
-            //Для каждого региона
-            for (int a = 0; a < regionsData.Value.regionPEs.Length; a++)
+            //Для каждой провинции
+            for (int a = 0; a < provincesData.Value.provincePEs.Length; a++)
             {
-                //Берём ближайший регион 
-                RegionGetNearestToPosition(
-                    ref nearestRC.neighbourRegionPEs,
+                //Берём ближайшую провинцию 
+                ProvinceGetNearestToPosition(
+                    ref nearestPC.neighbourProvincePEs,
                     localPosition,
-                    out float regionDistance).Unpack(world.Value, out int newNearestRegionEntity);
+                    out float provinceDistance).Unpack(world.Value, out int newNearestProvinceEntity);
 
                 //Если расстояние меньше минимального
-                if (regionDistance < minDist)
+                if (provinceDistance < minDist)
                 {
-                    //Обновляем регион и минимальное расстояние 
-                    nearestRC = ref rCPool.Value.Get(newNearestRegionEntity);
+                    //Обновляем провинцию и минимальное расстояние 
+                    nearestPC = ref pCPool.Value.Get(newNearestProvinceEntity);
 
-                    minDist = regionDistance;
+                    minDist = provinceDistance;
                 }
                 //Иначе выходим из цикла
                 else
@@ -1099,30 +1099,30 @@ namespace SO.UI
                 }
             }
 
-            //Индекс последнего региона - это индекс ближайшего
-            inputData.Value.lastHitRegionIndex = nearestRC.Index;
+            //Индекс последней провинции - это индекс ближайшего
+            inputData.Value.lastHitProvinceIndex = nearestPC.Index;
 
-            return inputData.Value.lastHitRegionIndex;
+            return inputData.Value.lastHitProvinceIndex;
         }
 
-        EcsPackedEntity RegionGetNearestToPosition(
-            ref EcsPackedEntity[] regionPEs,
+        EcsPackedEntity ProvinceGetNearestToPosition(
+            ref EcsPackedEntity[] provincePEs,
             Vector3 localPosition,
             out float minDistance)
         {
             minDistance = float.MaxValue;
 
-            EcsPackedEntity nearestRegionPE = new();
+            EcsPackedEntity nearestProvincePE = new();
 
-            //Для каждого региона в массиве
-            for (int a = 0; a < regionPEs.Length; a++)
+            //Для каждой провинции в массиве
+            for (int a = 0; a < provincePEs.Length; a++)
             {
-                //Берём регион
-                regionPEs[a].Unpack(world.Value, out int regionEntity);
-                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
+                //Берём провинцию
+                provincePEs[a].Unpack(world.Value, out int provinceEntity);
+                ref CProvinceHexasphere pHS = ref pHSPool.Value.Get(provinceEntity);
 
-                //Берём центр региона
-                Vector3 center = rHS.center;
+                //Берём центр провинции
+                Vector3 center = pHS.center;
 
                 //Рассчитываем расстояние
                 float distance
@@ -1133,47 +1133,47 @@ namespace SO.UI
                 //Если расстояние меньше минимального
                 if (distance < minDistance)
                 {
-                    //Обновляем регион и минимальное расстояние
-                    nearestRegionPE = rHS.selfPE;
+                    //Обновляем провинцию и минимальное расстояние
+                    nearestProvincePE = pHS.selfPE;
                     minDistance = distance;
                 }
             }
 
-            return nearestRegionPE;
+            return nearestProvincePE;
         }
 
-        readonly EcsPoolInject<RGameShowRegionHighlight> gameShowRegionHighlightRequestPool = default;
-        void RegionShowHighlightRequest(
-            EcsPackedEntity regionPE,
-            RegionHighlightRequestType requestType)
+        readonly EcsPoolInject<RGameShowProvinceHighlight> gameShowProvinceHighlightRequestPool = default;
+        void ProvinceShowHighlightRequest(
+            EcsPackedEntity provincePE,
+            ProvinceHighlightRequestType requestType)
         {
-            //Создаём новую сущность и назначаем ей запрос включения подсветки региона
+            //Создаём новую сущность и назначаем ей запрос включения подсветки провинции
             int requestEntity = world.Value.NewEntity();
-            ref RGameShowRegionHighlight requestComp = ref gameShowRegionHighlightRequestPool.Value.Add(requestEntity);
+            ref RGameShowProvinceHighlight requestComp = ref gameShowProvinceHighlightRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
             requestComp = new(
-                regionPE,
+                provincePE,
                 requestType);
         }
 
-        readonly EcsPoolInject<RGameHideRegionHighlight> gameHideRegionHighlightRequestPool = default;
-        void RegionHideHighlightRequest(
-            EcsPackedEntity regionPE,
-            RegionHighlightRequestType requestType)
+        readonly EcsPoolInject<RGameHideProvinceHighlight> gameHideProvinceHighlightRequestPool = default;
+        void ProvinceHideHighlightRequest(
+            EcsPackedEntity provincePE,
+            ProvinceHighlightRequestType requestType)
         {
-            //Создаём новую сущность и назначаем ей запрос выключения подсветки региона
+            //Создаём новую сущность и назначаем ей запрос выключения подсветки провинции
             int requestEntity = world.Value.NewEntity();
-            ref RGameHideRegionHighlight requestComp = ref gameHideRegionHighlightRequestPool.Value.Add(requestEntity);
+            ref RGameHideProvinceHighlight requestComp = ref gameHideProvinceHighlightRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
             requestComp = new(
-                regionPE,
+                provincePE,
                 requestType);
         }
         #endregion
         #endregion
-
+        
         readonly EcsPoolInject<RGeneralAction> generalActionRequestPool = default;
         void GeneralActionRequest(
             GeneralActionType actionType)

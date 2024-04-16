@@ -4,8 +4,8 @@ namespace SO.Map.Pathfinding
 {
     public class PathfindingQueueInt
     {
-        int[] regions;
-        public int regionsCount;
+        int[] provinces;
+        public int provincesCount;
 
         public IComparer<int> Comparer
         {
@@ -22,63 +22,63 @@ namespace SO.Map.Pathfinding
         {
             mComparer = comparer;
 
-            regions = new int[capacity];
-            regionsCount = 0;
+            provinces = new int[capacity];
+            provincesCount = 0;
         }
 
         void Swap(
             int i, int j)
         {
-            int h = regions[i];
+            int h = provinces[i];
 
-            regions[i] = regions[j];
+            provinces[i] = provinces[j];
 
-            regions[j] = h;
+            provinces[j] = h;
         }
 
         int Compare(
             int i, int j)
         {
-            return mComparer.Compare(regions[i], regions[j]);
+            return mComparer.Compare(provinces[i], provinces[j]);
         }
 
         public int Pop()
         {
-            //Берём первый регион в очереди
-            int result = regions[0];
+            //Берём первую провинцию в очереди
+            int result = provinces[0];
 
             //Создаём временные переменные
             int p = 0, p1, p2, pn;
 
-            //Переносим последний регион в очереди на место первого
-            int count = regionsCount - 1;
-            regions[0] = regions[count];
-            regionsCount--;
+            //Переносим последнюю провинцию в очереди на место первого
+            int count = provincesCount - 1;
+            provinces[0] = provinces[count];
+            provincesCount--;
 
             //Сортировка
             //Делаем
             do
             {
-                //Берём в PN текущий регион
+                //Берём в PN текущую провинцию
                 pn = p;
 
-                //Берём в P1 регион 2P + 1
+                //Берём в P1 провинцию 2P + 1
                 p1 = 2 * p + 1;
 
-                //Берём в P2 регион 2P + 2
+                //Берём в P2 провинцию 2P + 2
                 p2 = p1 + 1;
 
                 //Если счётчик больше P1 и P больше P1
                 if (count > p1 && Compare(p, p1) > 0)
-                    //То берём в P регион P1
+                    //То берём в P провинцию P1
                     p = p1;
 
                 //Если счётчик больше P2 и P больше P2
                 if (count > p2 && Compare(p, p2) > 0)
-                    //То берём в P регион P2
+                    //То берём в P провинцию P2
                     p = p2;
 
-                //Если P равен изначальному региону
+                //Если P равен изначальной провинции
                 if (p == pn)
                     //Выходим из цикла
                     break;
@@ -95,32 +95,32 @@ namespace SO.Map.Pathfinding
         public int Push(int item)
         {
             //Создаём временные переменные
-            int p = regionsCount, p2;
+            int p = provincesCount, p2;
 
-            //Заносим переданный регион на последнее место
-            regions[regionsCount] = item;
-            regionsCount++;
+            //Заносим переданную провинцию на последнее место
+            provinces[provincesCount] = item;
+            provincesCount++;
 
             //Сортировка
             //Делаем
             do
             {
-                //Если количество регионов в очереди было равно 0, то теперь оно равно 1 и сортировка не требуется
+                //Если количество провинций в очереди было равно 0, то теперь оно равно 1 и сортировка не требуется
                 if (p == 0)
                 {
                     break;
                 }
 
-                //Берём регион (P - 1) / 2
+                //Берём провинцию (P - 1) / 2
                 p2 = (p - 1) / 2;
 
-                //Если приоритет региона P меньше приоритета P2
+                //Если приоритет провинции P меньше приоритета P2
                 if (Compare(p, p2) < 0)
                 {
                     //Меняем их местами
                     Swap(p, p2);
 
-                    //Берём регион P2
+                    //Берём провинцию P2
                     p = p2;
                 }
                 //Иначе выходим из цикла
@@ -132,13 +132,13 @@ namespace SO.Map.Pathfinding
             //Пока истинно
             while (true);
 
-            //Возвращаем последний регион
+            //Возвращаем последнюю провинцию
             return p;
         }
 
         public void Clear()
         {
-            regionsCount = 0;
+            provincesCount = 0;
         }
     }
 }

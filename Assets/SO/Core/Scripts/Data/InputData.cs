@@ -12,7 +12,7 @@ namespace SO.UI
         None,
         Default,
         Terrain,
-        StrategicArea,
+        MapArea,
         Country
     }
 
@@ -66,11 +66,11 @@ namespace SO.UI
 
 
         public bool isMouseOver;
-        public int lastHitRegionIndex;
-        public EcsPackedEntity lastHighlightedRegionPE;
+        public int lastHitProvinceIndex;
+        public EcsPackedEntity lastHighlightedProvincePE;
 
-        public EcsPackedEntity searchFromRegion;
-        public EcsPackedEntity searchToRegion;
+        public EcsPackedEntity searchFromProvince;
+        public EcsPackedEntity searchToProvince;
 
 
         public EcsPackedEntity playerCountryPE;

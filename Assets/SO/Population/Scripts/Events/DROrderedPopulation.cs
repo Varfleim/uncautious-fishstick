@@ -6,18 +6,18 @@ namespace SO.Population.Events
     public readonly struct DROrderedPopulation
     {
         public DROrderedPopulation(
-            EcsPackedEntity targetRegionPE,
+            EcsPackedEntity targetProvincePE,
             int socialClassIndex,
             int population)
         {
-            this.targetRegionPE = targetRegionPE;
+            this.targetProvincePE = targetProvincePE;
 
             this.socialClassIndex = socialClassIndex;
 
             this.population = population;
         }
 
-        public readonly EcsPackedEntity targetRegionPE;
+        public readonly EcsPackedEntity targetProvincePE;
 
         public readonly int socialClassIndex;
 

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Threads;
 
-using SO.Map.Region;
+using SO.Map.Province;
 using SO.Warfare.Fleet.Movement.Events;
 
 namespace SO.Warfare.Fleet.Movement
@@ -12,11 +12,11 @@ namespace SO.Warfare.Fleet.Movement
     public struct TTaskForcePathfinding : IEcsThread<
         SRTaskForceFindPath,
         CTaskForce, CTaskForceMovement,
-        CRegionCore>
+        CProvinceCore>
     {
         public EcsWorld world;
 
-        public RegionsData regionsData;
+        public ProvincesData provincesData;
 
         int[] tFEntities;
 
@@ -29,15 +29,15 @@ namespace SO.Warfare.Fleet.Movement
         CTaskForceMovement[] tFMovementPool;
         int[] tFMovementIndices;
 
-        CRegionCore[] rCPool;
-        int[] rCIndices;
+        CProvinceCore[] pCPool;
+        int[] pCIndices;
 
         public void Init(
             int[] entities,
             SRTaskForceFindPath[] pool1, int[] indices1,
             CTaskForce[] pool2, int[] indices2,
             CTaskForceMovement[] pool3, int[] indices3,
-            CRegionCore[] pool4, int[] indices4)
+            CProvinceCore[] pool4, int[] indices4)
         {
             tFEntities = entities;
 
@@ -50,8 +50,8 @@ namespace SO.Warfare.Fleet.Movement
             tFMovementPool = pool3;
             tFMovementIndices = indices3;
 
-            rCPool = pool4;
-            rCIndices = indices4;
+            pCPool = pool4;
+            pCIndices = indices4;
         }
 
         public void Execute(int threadId, int fromIndex, int beforeIndex)
@@ -66,31 +66,31 @@ namespace SO.Warfare.Fleet.Movement
                 ref CTaskForceMovement tFMovement = ref tFMovementPool[tFMovementIndices[tFEntity]];
 
                 //Очищаем данные движения
-                tFMovement.pathRegionPEs.Clear();
+                tFMovement.pathProvincePEs.Clear();
 
-                //Берём текущий регион группы
-                tF.currentRegionPE.Unpack(world, out int startRegionEntity);
-                ref CRegionCore startRC = ref rCPool[rCIndices[startRegionEntity]];
+                //Берём текущую провинцию группы
+                tF.currentProvincePE.Unpack(world, out int startProvinceEntity);
+                ref CProvinceCore startPC = ref pCPool[pCIndices[startProvinceEntity]];
 
-                //Берём целевой регион
-                selfRequestComp.targetRegionPE.Unpack(world, out int endRegionEntity);
-                ref CRegionCore endRC = ref rCPool[rCIndices[endRegionEntity]];
+                //Берём целевую провинцию
+                selfRequestComp.targetProvincePE.Unpack(world, out int endProvinceEntity);
+                ref CProvinceCore endPC = ref pCPool[pCIndices[endProvinceEntity]];
 
                 //Находим путь
-                List<int> path = regionsData.PathFindThreads(
+                List<int> path = provincesData.PathFindThreads(
                     world,
-                    ref rCPool, ref rCIndices,
+                    ref pCPool, ref pCIndices,
                     threadId,
-                    ref startRC, ref endRC);
+                    ref startPC, ref endPC);
 
                 //Если путь не пуст
                 if(path != null)
                 {
-                    //Для каждого региона в пути
-                    for(int b = 0; b < path.Count; b++)
+                    //Для каждой провинции в пути
+                    for (int b = 0; b < path.Count; b++)
                     {
-                        //Заносим регион в список PE
-                        tFMovement.pathRegionPEs.Add(regionsData.regionPEs[path[b]]);
+                        //Заносим провинцию в список PE
+                        tFMovement.pathProvincePEs.Add(provincesData.provincePEs[path[b]]);
 
                         UnityEngine.Debug.LogWarning(path[b]);
                     }

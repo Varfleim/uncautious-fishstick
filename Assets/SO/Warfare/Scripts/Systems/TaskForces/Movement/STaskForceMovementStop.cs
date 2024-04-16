@@ -2,7 +2,7 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Map.Region;
+using SO.Map.Province;
 using SO.Warfare.Fleet.Missions.Events;
 
 namespace SO.Warfare.Fleet.Movement
@@ -14,7 +14,7 @@ namespace SO.Warfare.Fleet.Movement
 
 
         //Карта
-        readonly EcsPoolInject<CRegionCore> rCPool = default;
+        readonly EcsPoolInject<CProvinceCore> pCPool = default;
 
         //Военное дело
         readonly EcsPoolInject<CTaskForce> tFPool = default;
@@ -49,38 +49,38 @@ namespace SO.Warfare.Fleet.Movement
                     //Берём группу
                     ref CTaskForce tF = ref tFPool.Value.Get(tFEntity);
 
-                    //Если группа имеет следующий регион в маршруте
-                    if (tFMovement.pathRegionPEs.Count > 0)
+                    //Если группа имеет следующую провинцию в маршруте
+                    if (tFMovement.pathProvincePEs.Count > 0)
                     {
-                        //Берём текущий регион группы
-                        tF.currentRegionPE.Unpack(world.Value, out int currentRegionEntity);
-                        ref CRegionCore currentRC = ref rCPool.Value.Get(currentRegionEntity);
+                        //Берём текущую провинцию группы
+                        tF.currentProvincePE.Unpack(world.Value, out int currentProvinceEntity);
+                        ref CProvinceCore currentPC = ref pCPool.Value.Get(currentProvinceEntity);
 
-                        //Удаляем группу из списка групп в регионе
-                        currentRC.taskForcePEs.Remove(tF.selfPE);
+                        //Удаляем группу из списка групп в провинции
+                        currentPC.taskForcePEs.Remove(tF.selfPE);
 
-                        //Берём следующий регион в маршруте группы
-                        tFMovement.pathRegionPEs[tFMovement.pathRegionPEs.Count - 1].Unpack(world.Value, out int nextRegionEntity);
-                        ref CRegionCore nextRC = ref rCPool.Value.Get(nextRegionEntity);
+                        //Берём следующую провинцию в маршруте группы
+                        tFMovement.pathProvincePEs[tFMovement.pathProvincePEs.Count - 1].Unpack(world.Value, out int nextProvinceEntity);
+                        ref CProvinceCore nextPC = ref pCPool.Value.Get(nextProvinceEntity);
 
-                        //Заносим группу в список групп в регионе
-                        nextRC.taskForcePEs.Add(tF.selfPE);
+                        //Заносим группу в список групп в провинции
+                        nextPC.taskForcePEs.Add(tF.selfPE);
 
-                        //Меняем текущий регион группы
-                        tF.currentRegionPE = nextRC.selfPE;
+                        //Меняем текущую провинцию группы
+                        tF.currentProvincePE = nextPC.selfPE;
 
-                        //Удаляем следующий (уже текущий) регион из маршрута
-                        tFMovement.pathRegionPEs.RemoveAt(tFMovement.pathRegionPEs.Count - 1);
+                        //Удаляем следующую (уже текущую) провинцию из маршрута
+                        tFMovement.pathProvincePEs.RemoveAt(tFMovement.pathProvincePEs.Count - 1);
 
-                        //Сохраняем предыдущий регион группы
-                        tF.previousRegionPE = currentRC.selfPE;
+                        //Сохраняем предыдущую провинцию группы
+                        tF.previousProvincePE = currentPC.selfPE;
 
-                        //Создаём событие, сообщающее о смене региона оперативной группой
-                        TaskForceChangeRegionEvent(ref tF);
+                        //Создаём событие, сообщающее о смене провинции оперативной группой
+                        TaskForceChangeProvinceEvent(ref tF);
                     }
 
-                    //Если в маршруте группы больше не осталось регионов
-                    if(tFMovement.pathRegionPEs.Count == 0)
+                    //Если в маршруте группы больше не осталось провинций
+                    if (tFMovement.pathProvincePEs.Count == 0)
                     {
                         //Запрашиваем проверку цели
                         //TaskForceTargetCheckSelfRequest(tFEntity);
@@ -105,13 +105,13 @@ namespace SO.Warfare.Fleet.Movement
             selfRequestComp = new(0);
         }
 
-        readonly EcsPoolInject<ETaskForceChangeRegion> tFChangeOwnerEventPool = default;
-        void TaskForceChangeRegionEvent(
+        readonly EcsPoolInject<ETaskForceChangeProvince> tFChangeProvinceEventPool = default;
+        void TaskForceChangeProvinceEvent(
             ref CTaskForce tF)
         {
-            //Создаём новую сущность и назначаем ей событие смены региона оперативной группой
+            //Создаём новую сущность и назначаем ей событие смены провинции оперативной группой
             int eventEntity = world.Value.NewEntity();
-            ref ETaskForceChangeRegion eventComp = ref tFChangeOwnerEventPool.Value.Add(eventEntity);
+            ref ETaskForceChangeProvince eventComp = ref tFChangeProvinceEventPool.Value.Add(eventEntity);
 
             //Заполняем данные события
             eventComp = new(tF.selfPE);

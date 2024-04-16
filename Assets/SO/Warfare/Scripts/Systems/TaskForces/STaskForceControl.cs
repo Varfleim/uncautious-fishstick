@@ -3,7 +3,7 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using SO.Country;
 using SO.Warfare.Fleet.Events;
-using SO.Map.Region;
+using SO.Map.Province;
 
 namespace SO.Warfare.Fleet
 {
@@ -14,7 +14,7 @@ namespace SO.Warfare.Fleet
 
 
         //Карта
-        readonly EcsPoolInject<CRegionCore> rCPool = default;
+        readonly EcsPoolInject<CProvinceCore> pCPool = default;
 
         //Страны
         readonly EcsPoolInject<CCountry> countryPool = default;
@@ -56,17 +56,17 @@ namespace SO.Warfare.Fleet
                 //Заносим PE группы в список групп страны
                 country.ownedTaskForces.Add(tF.selfPE);
 
-                //Берём стартовый регион страны
-                country.ownedRCPEs[0].Unpack(world.Value, out int regionEntity);
-                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                //Берём стартовую провинцию страны
+                country.ownedPCPEs[0].Unpack(world.Value, out int provinceEntity);
+                ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
-                //Размещаем оперативную группу в стартовом регионе страны
-                tF.currentRegionPE = rC.selfPE;
+                //Размещаем оперативную группу в стартовй провинции страны
+                tF.currentProvincePE = pC.selfPE;
 
-                //Заносим группу в список групп в регионе
-                rC.taskForcePEs.Add(tF.selfPE);
+                //Заносим группу в список групп в провинции
+                pC.taskForcePEs.Add(tF.selfPE);
 
-                UnityEngine.Debug.LogWarning(rC.Index);
+                UnityEngine.Debug.LogWarning(pC.Index);
                 //ТЕСТ
 
                 //Создаём событие, сообщающее о создании новой оперативной группы

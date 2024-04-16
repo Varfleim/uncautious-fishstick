@@ -8,7 +8,7 @@ namespace SO.Warfare.Fleet.Movement
     public enum TaskForceMovementTargetType : byte
     {
         None,
-        Region,
+        Province,
         TaskForce
     }
 
@@ -20,7 +20,7 @@ namespace SO.Warfare.Fleet.Movement
             this.targetPE = targetPE;
             this.targetType = targetType;
 
-            pathRegionPEs = new();
+            pathProvincePEs = new();
 
             traveledDistance = 0;
             isTraveled = false;
@@ -29,7 +29,7 @@ namespace SO.Warfare.Fleet.Movement
         public EcsPackedEntity targetPE;
         public TaskForceMovementTargetType targetType;
 
-        public List<EcsPackedEntity> pathRegionPEs;
+        public List<EcsPackedEntity> pathProvincePEs;
 
         public float traveledDistance;
         public bool isTraveled;

@@ -112,10 +112,10 @@ namespace SO.Warfare.Fleet.Movement
             //Заполняем данные компонента
             tFMovement = new(movementTargetPE, movementTargetType);
 
-            //Если цель движения - это регион
-            if(movementTargetType == TaskForceMovementTargetType.Region)
+            //Если цель движения - это провинция
+            if(movementTargetType == TaskForceMovementTargetType.Province)
             {
-                //Запрашиваем поиск пути до целевого региона
+                //Запрашиваем поиск пути до целевой провинции
                 TaskForceFindPathSelfRequest(tFEntity, movementTargetPE);
             }
             //Иначе, если цель движения - оперативная группа
@@ -128,13 +128,13 @@ namespace SO.Warfare.Fleet.Movement
         readonly EcsPoolInject<SRTaskForceFindPath> tFFindPathSelfRequestPool = default;
         void TaskForceFindPathSelfRequest(
             int tFEntity,
-            EcsPackedEntity targetRegionPE)
+            EcsPackedEntity targetProvincePE)
         {
             //Назначаем сущности оперативной группы самозапрос поиска пути
             ref SRTaskForceFindPath selfRequestComp = ref tFFindPathSelfRequestPool.Value.Add(tFEntity);
 
             //Заполняем данные запроса
-            selfRequestComp = new(targetRegionPE);
+            selfRequestComp = new(targetProvincePE);
         }
     }
 }

@@ -63,7 +63,7 @@ namespace SO.Map.Hexasphere
 
         public DHexasphereTriangle[] triangles;
         public int triangleCount;
-        public EcsPackedEntity regionPE;
+        public EcsPackedEntity provincePE;
 
         public static int flag = 0;
 

@@ -11,8 +11,8 @@ using SO.Time;
 using SO.Map;
 using SO.Map.Hexasphere;
 using SO.Map.Generation;
-using SO.Map.StrategicArea;
-using SO.Map.Region;
+using SO.Map.MapArea;
+using SO.Map.Province;
 using SO.Country;
 using SO.Population;
 using SO.Warfare.Fleet;
@@ -35,7 +35,7 @@ namespace SO
         public SceneData sceneData;
         public UIData uIData;
         public MapGenerationData mapGenerationData;
-        public RegionsData regionsData;
+        public ProvincesData provincesData;
         public CountriesData countriesData;
         public InputData inputData;
 
@@ -62,21 +62,21 @@ namespace SO
                 new SNewGameInitializationMain(),
                 //Генерация гексасферы
                 new SMapHexasphere(),
-                //Генерация стратегических областей
-                new SMapStrategicArea(),
-                //Генерация ландшафта стратегических областей
-                new SMapStrategicAreaTerrain(),
+                //Генерация областей карты
+                new SMapMapArea(),
+                //Генерация ландшафта областей карты
+                new SMapMapAreaTerrain(),
 
                 //Управление странами
                 new SCountryControl(),
-                
-                //Применение инициализаторов регионов
-                new SMapRegionInitializerControl(),
-                
-                //Управление стратегическими областями
-                new SStrategicAreaControl(),
-                //Управление регионами
-                new SRegionControl(),
+
+                //Применение инициализаторов провинций
+                new SMapProvinceInitializerControl(),
+
+                //Управление областями карты
+                new SMapAreaControl(),
+                //Управление провинциями
+                new SProvinceControl(),
                 
                 //Управление группами населения
                 new SPopulationControl())
@@ -111,7 +111,7 @@ namespace SO
                 sceneData,
                 uIData,
                 mapGenerationData,
-                regionsData,
+                provincesData,
                 countriesData,
                 inputData,
                 runtimeData)
@@ -119,10 +119,10 @@ namespace SO
 
             perTickSystems
 
-                //Управление стратегическими областями
-                .Add(new SStrategicAreaControl())
-                //Управление регионами
-                .Add(new SRegionControl())
+                //Управление областями карты
+                .Add(new SMapAreaControl())
+                //Управление провинциями
+                .Add(new SProvinceControl())
 
                 //Управление группами населения
                 .Add(new SPopulationControl())
@@ -155,7 +155,7 @@ namespace SO
                 sceneData,
                 uIData,
                 mapGenerationData,
-                regionsData,
+                provincesData,
                 countriesData,
                 inputData,
                 runtimeData)

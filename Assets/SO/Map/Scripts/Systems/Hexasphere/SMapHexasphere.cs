@@ -9,7 +9,7 @@ using Leopotam.EcsLite.Di;
 using SO.UI;
 using SO.Map.Generation;
 using SO.Map.Economy;
-using SO.Map.Region;
+using SO.Map.Province;
 
 namespace SO.Map.Hexasphere
 {
@@ -20,9 +20,9 @@ namespace SO.Map.Hexasphere
 
 
         //Карта
-        readonly EcsPoolInject<CRegionHexasphere> rHSPool = default;
-        readonly EcsPoolInject<CRegionCore> rCPool = default;
-        readonly EcsPoolInject<CRegionEconomy> rEPool = default;
+        readonly EcsPoolInject<CProvinceHexasphere> pHSPool = default;
+        readonly EcsPoolInject<CProvinceCore> pCPool = default;
+        readonly EcsPoolInject<CProvinceEconomy> pEPool = default;
 
 
         //События карты
@@ -34,7 +34,7 @@ namespace SO.Map.Hexasphere
         readonly EcsCustomInject<SceneData> sceneData = default;
         readonly EcsCustomInject<UIData> uIData = default;
         readonly EcsCustomInject<MapGenerationData> mapGenerationData = default;
-        readonly EcsCustomInject<RegionsData> regionsData = default;
+        readonly EcsCustomInject<ProvincesData> provincesData = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -61,9 +61,9 @@ namespace SO.Map.Hexasphere
             //Отмечаем, что требуется стартовое обновление
             mapGenerationData.Value.isInitializationUpdate = true;
 
-            //Отмечаем, что требуется обновить регионы, цвета, UV-координаты и массивы текстур
+            //Отмечаем, что требуется обновить провинции, цвета, UV-координаты и массивы текстур
             mapGenerationData.Value.isMaterialUpdated = true;
-            mapGenerationData.Value.isRegionUpdated = true;
+            mapGenerationData.Value.isProvinceUpdated = true;
             mapGenerationData.Value.isColorUpdated = true;
             mapGenerationData.Value.isUVUpdatedFast = true;
         }
@@ -81,20 +81,20 @@ namespace SO.Map.Hexasphere
             SceneData.HexashpereGO = sceneData.Value.hexashpereGO;
 
             //Задаём настройки шейдеров
-            mapGenerationData.Value.fleetRegionHighlightMaterial.shaderKeywords = null;//new string[] { ShaderParameters.SKW_HIGHLIGHT_TINT_BACKGROUND };
-            mapGenerationData.Value.fleetRegionHighlightMaterial.SetFloat(ShaderParameters.ColorShift, 1f);
+            mapGenerationData.Value.fleetProvinceHighlightMaterial.shaderKeywords = null;//new string[] { ShaderParameters.SKW_HIGHLIGHT_TINT_BACKGROUND };
+            mapGenerationData.Value.fleetProvinceHighlightMaterial.SetFloat(ShaderParameters.ColorShift, 1f);
 
-            mapGenerationData.Value.hoverRegionHighlightMaterial.shaderKeywords = null;//= new string[] { ShaderParameters.SKW_HIGHLIGHT_TINT_BACKGROUND };
-            mapGenerationData.Value.hoverRegionHighlightMaterial.SetFloat(ShaderParameters.ColorShift, 1f);
+            mapGenerationData.Value.hoverProvinceHighlightMaterial.shaderKeywords = null;//= new string[] { ShaderParameters.SKW_HIGHLIGHT_TINT_BACKGROUND };
+            mapGenerationData.Value.hoverProvinceHighlightMaterial.SetFloat(ShaderParameters.ColorShift, 1f);
 
-            mapGenerationData.Value.currentRegionHighlightMaterial.shaderKeywords = null;//= new string[] { ShaderParameters.SKW_HIGHLIGHT_TINT_BACKGROUND };
-            mapGenerationData.Value.currentRegionHighlightMaterial.SetFloat(ShaderParameters.ColorShift, 1f);
+            mapGenerationData.Value.currentProvinceHighlightMaterial.shaderKeywords = null;//= new string[] { ShaderParameters.SKW_HIGHLIGHT_TINT_BACKGROUND };
+            mapGenerationData.Value.currentProvinceHighlightMaterial.SetFloat(ShaderParameters.ColorShift, 1f);
 
             //Указываем, что нужно пересчитать все матрицы пути
-            regionsData.Value.needRefreshRouteMatrix = true;
-            for (int a = 0; a < regionsData.Value.needRefreshPathMatrix.Length; a++)
+            provincesData.Value.needRefreshRouteMatrix = true;
+            for (int a = 0; a < provincesData.Value.needRefreshPathMatrix.Length; a++)
             {
-                regionsData.Value.needRefreshPathMatrix[a] = true;
+                provincesData.Value.needRefreshPathMatrix[a] = true;
             }
         }
 
@@ -206,69 +206,69 @@ namespace SO.Map.Hexasphere
             //Определяем количество точек
             int meshPointCount = mapGenerationData.Value.points.Values.Count;
 
-            //Создаём регионы
-            //Берём индекс первого региона
-            int regionIndex = 0;
+            //Создаём провинции
+            //Берём индекс первой
+            int provinceIndex = 0;
             //Обнуляем флаг точек
             DHexaspherePoint.flag = 0;
 
-            //Определяем размер массива регионов
-            regionsData.Value.regionPEs = new EcsPackedEntity[meshPointCount];
+            //Определяем размер массива провинций
+            provincesData.Value.provincePEs = new EcsPackedEntity[meshPointCount];
 
-            //Создаём родительский объект для GO регионов
-            Transform regionsRoot = HexasphereCreateGOAndParent(
+            //Создаём родительский объект для GO провинций
+            Transform provincesRoot = HexasphereCreateGOAndParent(
                 sceneData.Value.coreObject,
-                MapGenerationData.regionsRootName).transform;
+                MapGenerationData.provincesRootName).transform;
 
             //Для каждой вершины в словаре
             foreach (DHexaspherePoint point in mapGenerationData.Value.points.Values)
             {
-                //Создаём регион
-                RegionCreate(
-                    regionsRoot,
+                //Создаём провинцию
+                ProvinceCreate(
+                    provincesRoot,
                     point,
-                    regionIndex);
+                    provinceIndex);
 
                 //Увеличиваем индекс
-                regionIndex++;
+                provinceIndex++;
             }
 
-            //Для каждого региона
-            for (int a = 0; a < regionsData.Value.regionPEs.Length; a++)
+            //Для каждой провинции
+            for (int a = 0; a < provincesData.Value.provincePEs.Length; a++)
             {
-                //Берём RHS и RC
-                regionsData.Value.regionPEs[a].Unpack(world.Value, out int regionEntity);
-                ref CRegionHexasphere rHS = ref rHSPool.Value.Get(regionEntity);
-                ref CRegionCore rC = ref rCPool.Value.Get(regionEntity);
+                //Берём PHS и PC
+                provincesData.Value.provincePEs[a].Unpack(world.Value, out int provinceEntity);
+                ref CProvinceHexasphere pHS = ref pHSPool.Value.Get(provinceEntity);
+                ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
-                //Рассчитываем соседей региона
+                //Рассчитываем соседей
 
                 //Очищаем временный список соседей
-                CRegionCore.tempNeighbours.Clear();
-                //Для каждого треугольника в данных центра региона
-                for (int b = 0; b < rHS.centerPoint.triangleCount; b++)
+                CProvinceCore.tempNeighbours.Clear();
+                //Для каждого треугольника в данных центра провинции
+                for (int b = 0; b < pHS.centerPoint.triangleCount; b++)
                 {
                     //Берём треугольник
-                    DHexasphereTriangle triangle = rHS.centerPoint.triangles[b];
+                    DHexasphereTriangle triangle = pHS.centerPoint.triangles[b];
 
                     //Для каждой вершины треугольника
                     for (int c = 0; c < 3; c++)
                     {
-                        //Берём регион вершины
-                        triangle.points[c].regionPE.Unpack(world.Value, out int neighbourRegionEntity);
-                        ref CRegionCore neighbourRC = ref rCPool.Value.Get(neighbourRegionEntity);
+                        //Берём провинцию вершины
+                        triangle.points[c].provincePE.Unpack(world.Value, out int neighbourProvinceEntity);
+                        ref CProvinceCore neighbourPC = ref pCPool.Value.Get(neighbourProvinceEntity);
 
-                        //Если это не текущий регион и временный список ещё не содержит его
-                        if (neighbourRC.Index != rC.Index && CRegionCore.tempNeighbours.Contains(neighbourRC.selfPE) == false)
+                        //Если это не текущая провинция и временный список ещё не содержит её
+                        if (neighbourPC.Index != pC.Index && CProvinceCore.tempNeighbours.Contains(neighbourPC.selfPE) == false)
                         {
                             //Заносим PE соседа в список
-                            CRegionCore.tempNeighbours.Add(neighbourRC.selfPE);
+                            CProvinceCore.tempNeighbours.Add(neighbourPC.selfPE);
                         }
                     }
                 }
 
-                //Заносим соседей в массив региона
-                rC.neighbourRegionPEs = CRegionCore.tempNeighbours.ToArray();
+                //Заносим соседей в массив провинции
+                pC.neighbourProvincePEs = CProvinceCore.tempNeighbours.ToArray();
             }
         }
 
@@ -351,46 +351,46 @@ namespace SO.Map.Hexasphere
             }
         }
 
-        void RegionCreate(
+        void ProvinceCreate(
             Transform parentGO,
             DHexaspherePoint centerPoint,
-            int regionIndex)
+            int provinceIndex)
         {
-            //Создаём новую сущность и назначаем ей компоненты RHS, RC, RE
-            int regionEntity = world.Value.NewEntity();
-            ref CRegionHexasphere currentRHS = ref rHSPool.Value.Add(regionEntity);
-            ref CRegionCore currentRC = ref rCPool.Value.Add(regionEntity);
-            ref CRegionEconomy currentRE = ref rEPool.Value.Add(regionEntity);
+            //Создаём новую сущность и назначаем ей компоненты PHS, PC, PE
+            int provinceEntity = world.Value.NewEntity();
+            ref CProvinceHexasphere currentPHS = ref pHSPool.Value.Add(provinceEntity);
+            ref CProvinceCore currentPC = ref pCPool.Value.Add(provinceEntity);
+            ref CProvinceEconomy currentPE = ref pEPool.Value.Add(provinceEntity);
 
-            //Заполняем основные данные RHS
-            currentRHS = new(
-                world.Value.PackEntity(regionEntity),
+            //Заполняем основные данные PHS
+            currentPHS = new(
+                world.Value.PackEntity(provinceEntity),
                 centerPoint);
 
-            //Заполняем основные данные RC
-            currentRC = new(
-                currentRHS.selfPE, regionIndex,
-                currentRHS.centerPoint.ProjectedVector3);
+            //Заполняем основные данные PC
+            currentPC = new(
+                currentPHS.selfPE, provinceIndex,
+                currentPHS.centerPoint.ProjectedVector3);
 
-            //Заполняем основные данные RE
-            currentRE = new(
-                currentRHS.selfPE);
+            //Заполняем основные данные PE
+            currentPE = new(
+                currentPHS.selfPE);
 
-            //Заносим регион в массив регионов
-            regionsData.Value.regionPEs[regionIndex] = currentRHS.selfPE;
+            //Заносим провинцию в массив провинций
+            provincesData.Value.provincePEs[provinceIndex] = currentPHS.selfPE;
 
-            //Создаём GO региона и меш
-            GORegion regionGO = Object.Instantiate(uIData.Value.regionPrefab);
+            //Создаём GO провинции и меш
+            GOProvince provinceGO = Object.Instantiate(uIData.Value.provincePrefab);
 
             //Заполняем основные данные GO
-            regionGO.gameObject.layer = parentGO.gameObject.layer;
-            regionGO.transform.SetParent(parentGO, false);
-            regionGO.transform.localPosition = Vector3.zero;
-            regionGO.transform.localScale = Vector3.one;
-            regionGO.transform.localRotation = Quaternion.Euler(0, 0, 0);
+            provinceGO.gameObject.layer = parentGO.gameObject.layer;
+            provinceGO.transform.SetParent(parentGO, false);
+            provinceGO.transform.localPosition = Vector3.zero;
+            provinceGO.transform.localScale = Vector3.one;
+            provinceGO.transform.localRotation = Quaternion.Euler(0, 0, 0);
 
-            //Даём региону ссылку на свой GO
-            currentRHS.selfObject = regionGO.gameObject;
+            //Даём провинции ссылку на свой GO
+            currentPHS.selfObject = provinceGO.gameObject;
         }
     }
 }

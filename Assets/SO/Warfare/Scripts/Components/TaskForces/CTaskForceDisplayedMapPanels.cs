@@ -7,7 +7,7 @@ namespace SO.Warfare.Fleet
 {
     public struct CTaskForceDisplayedMapPanels
     {
-        public EcsPackedEntity currentRegionPE;
+        public EcsPackedEntity currentProvincePE;
 
         public UITFMainMapPanel mainMapPanel;
     }

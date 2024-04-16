@@ -36,13 +36,13 @@ namespace SO
             ObjectNewCreatedEvent();
 
             //Проверяем события смены владельца RFO
-            RegionCoreChangeOwnerEvent();
+            ProvinceCoreChangeOwnerEvent();
 
-            //Проверяем события смены владельца стратегических областей
-            StrategicAreaChangeOwnerEvent();
+            //Проверяем события смены владельца областей карты
+            MapAreaChangeOwnerEvent();
 
-            //Проверяем события смены региона оперативной группой
-            TaskForceChangeRegionEvent();
+            //Проверяем события смены провинции оперативной группой
+            TaskForceChangeProvinceEvent();
         }
 
         readonly EcsFilterInject<Inc<EObjectNewCreated>> objectNewCreatedEventFilter = default;
@@ -83,42 +83,42 @@ namespace SO
             }
         }
 
-        readonly EcsFilterInject<Inc<ERegionChangeOwner>> regionChangeOwnerEventFilter = default;
-        readonly EcsPoolInject<ERegionChangeOwner> regionChangeOwnerEventPool = default;
-        void RegionCoreChangeOwnerEvent()
+        readonly EcsFilterInject<Inc<EProvinceChangeOwner>> provinceChangeOwnerEventFilter = default;
+        readonly EcsPoolInject<EProvinceChangeOwner> provinceChangeOwnerEventPool = default;
+        void ProvinceCoreChangeOwnerEvent()
         {
-            //Для каждого события смены владельца региона
-            foreach (int eventEntity in regionChangeOwnerEventFilter.Value)
+            //Для каждого события смены владельца провинции
+            foreach (int eventEntity in provinceChangeOwnerEventFilter.Value)
             {
                 //Берём событие
-                ref ERegionChangeOwner eventComp = ref regionChangeOwnerEventPool.Value.Get(eventEntity);
+                ref EProvinceChangeOwner eventComp = ref provinceChangeOwnerEventPool.Value.Get(eventEntity);
 
-                //Если регион не принадлежал никому, то его сущность невозможно будет взять
+                //Если провинция не принадлежала никому, то сущность владельца невозможно будет взять
                 if (eventComp.oldOwnerCountryPE.Unpack(world.Value, out int oldOwnerCountryEntity) == false)
                 {
-                    //Запрашиваем создание главной панели карты региона
+                    //Запрашиваем создание главной панели карты
                     GameCreatePanelRequest(
-                        eventComp.regionPE,
-                        GamePanelType.RegionMainMapPanel);
+                        eventComp.provincePE,
+                        GamePanelType.ProvinceMainMapPanel);
                 }
                 //Иначе
                 else
                 {
-                    //Запрашиваем обновление панелей региона
-                    GameRefreshPanelsSelfRequest(eventComp.regionPE);
+                    //Запрашиваем обновление панелей
+                    GameRefreshPanelsSelfRequest(eventComp.provincePE);
                 }
             }
         }
 
-        readonly EcsFilterInject<Inc<EStrategicAreaChangeOwner>> sAChangeOwnerEventFilter = default;
-        readonly EcsPoolInject<EStrategicAreaChangeOwner> sAChangeOwnerEventPool = default;
-        void StrategicAreaChangeOwnerEvent()
+        readonly EcsFilterInject<Inc<EMapAreaChangeOwner>> mAChangeOwnerEventFilter = default;
+        readonly EcsPoolInject<EMapAreaChangeOwner> mAChangeOwnerEventPool = default;
+        void MapAreaChangeOwnerEvent()
         {
-            //Для каждого события смены владельца стратегической области
-            foreach(int eventEntity in sAChangeOwnerEventFilter.Value)
+            //Для каждого события смены владельца области карты
+            foreach (int eventEntity in mAChangeOwnerEventFilter.Value)
             {
                 //Берём событие 
-                ref EStrategicAreaChangeOwner eventComp = ref sAChangeOwnerEventPool.Value.Get(eventEntity);
+                ref EMapAreaChangeOwner eventComp = ref mAChangeOwnerEventPool.Value.Get(eventEntity);
 
                 //Если область не принадлежала никому, то сущность страны невозможно будет взять
                 if(eventComp.oldOwnerCountryPE.Unpack(world.Value, out int oldOwnerCountryEntity) == false)
@@ -133,15 +133,15 @@ namespace SO
             }
         }
 
-        readonly EcsFilterInject<Inc<ETaskForceChangeRegion>> tFChangeRegionEventFilter = default;
-        readonly EcsPoolInject<ETaskForceChangeRegion> tFChangeRegionEventPool = default;
-        void TaskForceChangeRegionEvent()
+        readonly EcsFilterInject<Inc<ETaskForceChangeProvince>> tFChangeProvinceEventFilter = default;
+        readonly EcsPoolInject<ETaskForceChangeProvince> tFChangeProvinceEventPool = default;
+        void TaskForceChangeProvinceEvent()
         {
-            //Для каждого события смены региона оперативной группой
-            foreach(int eventEntity in tFChangeRegionEventFilter.Value)
+            //Для каждого события смены провинции оперативной группой
+            foreach (int eventEntity in tFChangeProvinceEventFilter.Value)
             {
                 //Берём событие 
-                ref ETaskForceChangeRegion eventComp = ref tFChangeRegionEventPool.Value.Get(eventEntity);
+                ref ETaskForceChangeProvince eventComp = ref tFChangeProvinceEventPool.Value.Get(eventEntity);
 
                 //Запрашиваем обновление родителя панелей карты
                 GameRefreshMapPanelParentSelfRequest(eventComp.tFPE);
