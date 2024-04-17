@@ -2,8 +2,8 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Country.Events;
 using SO.Map.Generation;
+using SO.Country.Events;
 
 namespace SO
 {
@@ -33,7 +33,7 @@ namespace SO
                 //Запрашиваем генерацию карты
                 MapGeneratingRequest(50);
 
-                //Запрашиваем создание тестовой страны
+                //Запрашиваем создание тестовой страны - страны игрока
                 CountryCreatingRequest("TestCountry");
 
                 UnityEngine.Debug.LogWarning("Новая игра");
@@ -59,7 +59,8 @@ namespace SO
             ref RCountryCreating requestComp = ref countryCreatingRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
-            requestComp = new(countryName);
+            requestComp = new(
+                countryName);
         }
     }
 }

@@ -9,11 +9,12 @@ using Leopotam.EcsLite.Di;
 using SO.UI;
 using SO.UI.Game.Map.Events;
 using SO.Country;
-using SO.Map.MapArea;
 using SO.Map.Hexasphere;
 using SO.Map.Generation;
-using SO.Map.Events;
+using SO.Map.MapArea;
 using SO.Map.Province;
+using SO.Map.State;
+using SO.Map.Events;
 
 namespace SO.Map
 {
@@ -24,11 +25,13 @@ namespace SO.Map
 
 
         //Карта
-        readonly EcsPoolInject<CProvinceHexasphere> pHSPool = default;
-        readonly EcsPoolInject<CProvinceCore> pCPool = default;
-
         readonly EcsFilterInject<Inc<CMapArea>> mAFilter = default;
         readonly EcsPoolInject<CMapArea> mAPool = default;
+
+        readonly EcsPoolInject<CState> statePool = default;
+
+        readonly EcsPoolInject<CProvinceHexasphere> pHSPool = default;
+        readonly EcsPoolInject<CProvinceCore> pCPool = default;
 
         //Страны
         readonly EcsFilterInject<Inc<CCountry>> countryFilter = default;
@@ -119,13 +122,13 @@ namespace SO.Map
                     //Отображаем режим типов местности
                     MapDisplayModeTerrain();
                 }
-                //Если запрашивается отображение режима областей карты
+                //Если запрашивается отображение режима зон карты
                 else if (requestComp.requestType == ChangeMapModeRequestType.MapArea)
                 {
-                    //Указываем режим карты областей как активный
+                    //Указываем режим карты зон как активный
                     inputData.Value.mapMode = MapMode.MapArea;
 
-                    //Отображаем режим карты областей
+                    //Отображаем режим карты зон
                     MapDisplayModeMapArea();
                 }
                 //Иначе, если запрашивается отображение стран
@@ -150,33 +153,33 @@ namespace SO.Map
                 //Отображаем режим типов местности
                 MapDisplayModeTerrain();
             }
-            //Иначе, если текущий режим карты - режим областей карты
+            //Иначе, если текущий режим карты - режим зон карты
             else if (inputData.Value.mapMode == MapMode.MapArea)
             {
-                //Отображаем режим областей
+                //Отображаем режим зон
                 MapDisplayModeMapArea();
             }
         }
 
         void MapDisplayModeTerrain()
         {
-            //Для каждой области карты
+            //Для каждой зоны карты
             foreach (int mAEntity in mAFilter.Value)
             {
-                //Берём область
+                //Берём зону
                 ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
 
-                //Определяем цвет области
+                //Определяем цвет зоны
                 Color mAColor = Color.Lerp(Color.yellow, Color.red, (float)mA.Elevation / mapGenerationData.Value.elevationMaximum);
 
-                //Для каждой провинции области
+                //Для каждой провинции зоны
                 for (int a = 0; a < mA.provincePEs.Length; a++)
                 {
                     //Берём провинцию
                     mA.provincePEs[a].Unpack(world.Value, out int provinceEntity);
                     ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
-                    //Устанавливаем цвет провинции соответственно высоте области
+                    //Устанавливаем цвет провинции соответственно высоте зоны
                     ProvinceSetColor(
                         ref pC,
                         mAColor);
@@ -187,13 +190,13 @@ namespace SO.Map
 
         void MapDisplayModeMapArea()
         {
-            //Для каждой области карты
+            //Для каждой зоны карты
             foreach (int mAEntity in mAFilter.Value)
             {
-                //Берём область
+                //Берём зону
                 ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
 
-                //Для каждой провинции области
+                //Для каждой провинции зоны
                 for (int a = 0; a < mA.provincePEs.Length; a++)
                 {
                     //Берём провинцию
@@ -216,18 +219,18 @@ namespace SO.Map
                 //Берём страну
                 ref CCountry country = ref countryPool.Value.Get(countryEntity);
 
-                //Для каждой области карты страны
-                for (int a = 0; a < country.ownedMAPEs.Count; a++)
+                //Для каждой области страны
+                for(int a = 0; a< country.ownedStatePEs.Count; a++)
                 {
-                    //Берём область
-                    country.ownedMAPEs[a].Unpack(world.Value, out int mAEntity);
-                    ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
+                    //Берём зону
+                    country.ownedStatePEs[a].Unpack(world.Value, out int stateEntity);
+                    ref CState state = ref statePool.Value.Get(stateEntity);
 
                     //Для каждой провинции области
-                    for (int b = 0; b < mA.provincePEs.Length; b++)
+                    for(int b = 0; b < state.provincePEs.Count; b++)
                     {
                         //Берём провинцию
-                        mA.provincePEs[b].Unpack(world.Value, out int provinceEntity);
+                        state.provincePEs[b].Unpack(world.Value, out int provinceEntity);
                         ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
                         //ТЕСТ
@@ -484,7 +487,7 @@ namespace SO.Map
                 ref CProvinceHexasphere pHS = ref pHSPool.Value.Get(provinceEntity);
                 ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
-                //Берём родительскую область карты провинции
+                //Берём родительскую зону карты провинции
                 pC.ParentMapAreaPE.Unpack(world.Value, out int mAEntity);
                 ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
 

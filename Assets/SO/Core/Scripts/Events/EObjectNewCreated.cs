@@ -7,6 +7,7 @@ namespace SO
     {
         None,
         Country,
+        State,
         TaskForce,
         Population
     }

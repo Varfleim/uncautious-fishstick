@@ -35,11 +35,8 @@ namespace SO
             //Проверяем события создания новых объектов
             ObjectNewCreatedEvent();
 
-            //Проверяем события смены владельца RFO
+            //Проверяем события смены владельцев провинций
             ProvinceCoreChangeOwnerEvent();
-
-            //Проверяем события смены владельца областей карты
-            MapAreaChangeOwnerEvent();
 
             //Проверяем события смены провинции оперативной группой
             TaskForceChangeProvinceEvent();
@@ -59,6 +56,11 @@ namespace SO
                 if (eventComp.objectType == ObjectNewCreatedType.Country)
                 {
                     UnityEngine.Debug.LogWarning("Country created!");
+                }
+                //Иначе, если событие сообщает о создании новой области
+                else if(eventComp.objectType == ObjectNewCreatedType.State)
+                {
+                    UnityEngine.Debug.LogWarning("State created!");
                 }
                 //Иначе, если событие сообщает о создании новой оперативной группы
                 else if(eventComp.objectType == ObjectNewCreatedType.TaskForce)
@@ -97,38 +99,15 @@ namespace SO
                 if (eventComp.oldOwnerCountryPE.Unpack(world.Value, out int oldOwnerCountryEntity) == false)
                 {
                     //Запрашиваем создание главной панели карты
-                    GameCreatePanelRequest(
-                        eventComp.provincePE,
-                        GamePanelType.ProvinceMainMapPanel);
+                    //GameCreatePanelRequest(
+                    //    eventComp.provincePE,
+                    //    GamePanelType.ProvinceMainMapPanel);
                 }
                 //Иначе
                 else
                 {
                     //Запрашиваем обновление панелей
                     GameRefreshPanelsSelfRequest(eventComp.provincePE);
-                }
-            }
-        }
-
-        readonly EcsFilterInject<Inc<EMapAreaChangeOwner>> mAChangeOwnerEventFilter = default;
-        readonly EcsPoolInject<EMapAreaChangeOwner> mAChangeOwnerEventPool = default;
-        void MapAreaChangeOwnerEvent()
-        {
-            //Для каждого события смены владельца области карты
-            foreach (int eventEntity in mAChangeOwnerEventFilter.Value)
-            {
-                //Берём событие 
-                ref EMapAreaChangeOwner eventComp = ref mAChangeOwnerEventPool.Value.Get(eventEntity);
-
-                //Если область не принадлежала никому, то сущность страны невозможно будет взять
-                if(eventComp.oldOwnerCountryPE.Unpack(world.Value, out int oldOwnerCountryEntity) == false)
-                {
-                    //Запрашиваем создание главной панели интерфейса области
-                }
-                //Иначе
-                else
-                {
-                    //Запрашиваем обновление панелей области
                 }
             }
         }

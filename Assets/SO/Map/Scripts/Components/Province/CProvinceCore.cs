@@ -27,8 +27,7 @@ namespace SO.Map.Province
 
             parentMapAreaPE = new();
 
-
-            ownerCountryPE = new();
+            parentStatePE = new();
 
 
             crossCost = 1;
@@ -70,8 +69,21 @@ namespace SO.Map.Province
         }
         #endregion
 
-        #region CountryData
-        public EcsPackedEntity ownerCountryPE;
+        #region StateData
+        public EcsPackedEntity ParentStatePE
+        {
+            get
+            {
+                return parentStatePE;
+            }
+        }
+        EcsPackedEntity parentStatePE;
+
+        public void SetParentState(
+            EcsPackedEntity statePE)
+        {
+            parentStatePE = statePE;
+        }
         #endregion
 
         #region TaskForceData

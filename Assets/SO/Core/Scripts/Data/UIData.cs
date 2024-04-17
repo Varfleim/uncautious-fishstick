@@ -15,15 +15,13 @@ namespace SO.UI
         public VerticalLayoutGroup mapPanelGroup;
         public float mapPanelAltitude;
 
-        public Game.GUI.Object.MapArea.Provinces.UIProvinceSummaryPanel mASbpnProvincesTabProvinceSummaryPanelPrefab;
         public UIPCMainMapPanel pCMainMapPanelPrefab;
 
         public Game.GUI.Object.FleetManager.Fleets.UITaskForceSummaryPanel fMSbpnFleetsTabTaskForceSummaryPanelPrefab;
         public UITFMainMapPanel tFMainMapPanelPrefab;
 
         public ObjectPanelActionRequestType countrySubpanelDefaultTab;
-        public ObjectPanelActionRequestType provinceSubpanelDefaultTab;
-        public ObjectPanelActionRequestType mapAreaSubpanelDefaultTab;
+        public ObjectPanelActionRequestType stateSubpanelDefaultTab;
         public ObjectPanelActionRequestType fleetManagerSubpanelDefaultTab;
     }
 }

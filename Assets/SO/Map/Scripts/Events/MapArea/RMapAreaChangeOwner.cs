@@ -1,7 +1,7 @@
 
 using Leopotam.EcsLite;
 
-namespace SO.Map.Events
+namespace SO.Map.Events.MapArea
 {
     public enum MapAreaChangeOwnerType : byte
     {
@@ -12,18 +12,18 @@ namespace SO.Map.Events
     public readonly struct RMapAreaChangeOwner
     {
         public RMapAreaChangeOwner(
-            EcsPackedEntity countryPE,
+            EcsPackedEntity newOwnerCountryPE,
             EcsPackedEntity mAPE,
             MapAreaChangeOwnerType requestType)
         {
-            this.countryPE = countryPE;
+            this.newOwnerCountryPE = newOwnerCountryPE;
 
             this.mAPE = mAPE;
 
             this.requestType = requestType;
         }
 
-        public readonly EcsPackedEntity countryPE;
+        public readonly EcsPackedEntity newOwnerCountryPE;
 
         public readonly EcsPackedEntity mAPE;
 

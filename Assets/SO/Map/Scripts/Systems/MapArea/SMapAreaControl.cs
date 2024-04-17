@@ -2,8 +2,8 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Country;
-using SO.Map.Events;
+using SO.Map.Events.MapArea;
+using SO.Map.Events.State;
 
 namespace SO.Map.MapArea
 {
@@ -16,58 +16,53 @@ namespace SO.Map.MapArea
         //Карта
         readonly EcsPoolInject<CMapArea> mAPool = default;
 
-
-        //Страны
-        readonly EcsPoolInject<CCountry> countryPool = default;
-
         public void Run(IEcsSystems systems)
         {
-            //Смена владельцев областей карты
-            MapAreaChangeOwner();
+            //Смена владельцев зон карты
+            MapAreasChangeOwner();
         }
 
         readonly EcsFilterInject<Inc<RMapAreaChangeOwner>> mAChangeOwnerRequestFilter = default;
         readonly EcsPoolInject<RMapAreaChangeOwner> mAChangeOwnerRequestPool = default;
-        void MapAreaChangeOwner()
+        void MapAreasChangeOwner()
         {
-            //Для каждого запроса смены владельца области карты
+            //Для каждого запроса смены владельца зоны карты
             foreach (int requestEntity in mAChangeOwnerRequestFilter.Value)
             {
                 //Берём запрос
                 ref RMapAreaChangeOwner requestComp = ref mAChangeOwnerRequestPool.Value.Get(requestEntity);
 
-                //Берём страну, которая становится владельцем области
-                requestComp.countryPE.Unpack(world.Value, out int countryEntity);
-                ref CCountry newOwnerCountry = ref countryPool.Value.Get(countryEntity);
-
-                //Берём область
+                //Берём зону
                 requestComp.mAPE.Unpack(world.Value, out int mAEntity);
                 ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
 
-                //Если смена владельца происходит при инициализации
-                if(requestComp.requestType == MapAreaChangeOwnerType.Initialization)
-                {
-                    MapAreaChangeOwnerInitialization();
-                }
-
-
-                //Запрашиваем событие, когда ещё владелец области не изменён, поскольку нам необходима его PE
-                //Создаём событие, сообщающее о смене владельца области
-                MapAreaChangeOwnerEvent(
-                    mA.selfPE,
-                    newOwnerCountry.selfPE, mA.ownerCountryPE);
-
-
-                //Указываем страну-владельца области
-                mA.ownerCountryPE = newOwnerCountry.selfPE;
-
-                //ТЕСТ
-                //Заносим PE области в список страны
-                newOwnerCountry.ownedMAPEs.Add(mA.selfPE);
-                //ТЕСТ
+                //Меняем владельца зоны
+                MapAreaChangeOwner(
+                    ref mA,
+                    ref requestComp);
 
                 mAChangeOwnerRequestPool.Value.Del(requestEntity);
             }
+        }
+
+        void MapAreaChangeOwner(
+            ref CMapArea mA,
+            ref RMapAreaChangeOwner requestComp)
+        {
+            //Если смена владельца происходит при инициализации
+            if (requestComp.requestType == MapAreaChangeOwnerType.Initialization)
+            {
+                MapAreaChangeOwnerInitialization();
+            }
+
+            //Запрашиваем смену владельца всех областей, из которых состоит зона карты
+            MapAreaAllStatesChangeOwner(
+                ref mA,
+                requestComp.newOwnerCountryPE);
+
+            //Поскольку минимальной единицей территории является провинция,
+            //событие смены владельца должно вызываться на уровне провинции,
+            //чтобы быть наиболее подробным
         }
 
         void MapAreaChangeOwnerInitialization()
@@ -75,19 +70,36 @@ namespace SO.Map.MapArea
 
         }
 
-        readonly EcsPoolInject<EMapAreaChangeOwner> mAChangeOwnerEventPool = default;
-        void MapAreaChangeOwnerEvent(
-            EcsPackedEntity mAPE,
-            EcsPackedEntity newOwnerCountryPE, EcsPackedEntity oldOwnerCountryPE)
+        void MapAreaAllStatesChangeOwner(
+            ref CMapArea mA,
+            EcsPackedEntity newOwnerCountryPE)
         {
-            //Создаём новую сущность и назначаем ей событие смены владельца области карты
-            int eventEntity = world.Value.NewEntity();
-            ref EMapAreaChangeOwner eventComp = ref mAChangeOwnerEventPool.Value.Add(eventEntity);
+            //Для каждой области в зоне
+            for (int a = 0; a < mA.states.Count; a++)
+            {
+                //Запрашиваем смену владельца области
+                StateChangeOwnerRequest(
+                    newOwnerCountryPE,
+                    mA.states[a].statePE,
+                    StateChangeOwnerType.Test);
+            }
+        }
 
-            //Заполняем данные события
-            eventComp = new(
-                mAPE,
-                newOwnerCountryPE, oldOwnerCountryPE);
+        readonly EcsPoolInject<RStateChangeOwner> stateChangeOwnerRequestPool = default;
+        void StateChangeOwnerRequest(
+            EcsPackedEntity targetCountryPE,
+            EcsPackedEntity statePE,
+            StateChangeOwnerType requestType)
+        {
+            //Создаём новую сущность и назначаем ей запрос смены владельца области
+            int requestEntity = world.Value.NewEntity();
+            ref RStateChangeOwner requestComp = ref stateChangeOwnerRequestPool.Value.Add(requestEntity);
+
+            //Заполняем данные запроса
+            requestComp = new(
+                targetCountryPE,
+                statePE,
+                requestType);
         }
     }
 }

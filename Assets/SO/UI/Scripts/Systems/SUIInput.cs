@@ -13,18 +13,19 @@ using SO.UI.Game.Map.Events;
 using SO.UI.Game.GUI;
 using SO.UI.Game.GUI.Object;
 using SO.UI.Game.GUI.Object.Events;
+using SO.Map.Hexasphere;
+using SO.Map.Generation;
+using SO.Map.State;
+using SO.Map.Province;
+using SO.Map.Events;
+using SO.Map.Events.State;
+using SO.Map.UI;
 using SO.Country;
 using SO.Warfare.Fleet;
 using SO.Warfare.Fleet.Events;
 using SO.Warfare.Fleet.Missions.Events;
 using SO.Warfare.Fleet.Movement;
 using SO.Warfare.Fleet.Movement.Events;
-using SO.Map.MapArea;
-using SO.Map.Hexasphere;
-using SO.Map.UI;
-using SO.Map.Generation;
-using SO.Map.Events;
-using SO.Map.Province;
 
 namespace SO.UI
 {
@@ -37,13 +38,10 @@ namespace SO.UI
 
 
         //Карта
+        readonly EcsPoolInject<CState> statePool = default;
+
         readonly EcsPoolInject<CProvinceHexasphere> pHSPool = default;
         readonly EcsPoolInject<CProvinceCore> pCPool = default;
-
-        readonly EcsFilterInject<Inc<CProvinceCore, CProvinceDisplayedGUIPanels>> provinceDisplayedGUIPanelsFilter = default;
-        readonly EcsPoolInject<CProvinceDisplayedGUIPanels> provinceDisplayedGUIPanelsPool = default;
-
-        readonly EcsPoolInject<CMapArea> mAPool = default;
 
         //Страны
         readonly EcsPoolInject<CCountry> countryPool = default;
@@ -431,17 +429,11 @@ namespace SO.UI
                 //Проверяем клики в подпанели страны
                 CountrySbpnClickAction(ref clickEvent);
             }
-            //Иначе, если активна подпанель провинции
-            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Province)
-            {
-                //Проверяем клики в подпанели провинции
-                ProvinceSbpnClickAction(ref clickEvent);
-            }
-            //Иначе, если активна подпанель области карты
-            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.MapArea)
+            //Иначе, если активна подпанель области
+            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.State)
             {
                 //Проверяем клики в подпанели области
-                MapAreaSbpnClickAction(ref clickEvent);
+                StateSbpnClickAction(ref clickEvent);
             }
             //Иначе, если активна подпанель менеджера флотов
             else if (objectPanel.activeSubpanelType == ObjectSubpanelType.FleetManager)
@@ -487,136 +479,51 @@ namespace SO.UI
         }
         #endregion
 
-        #region ProvinceSubpanel
-        void ProvinceSbpnClickAction(
+        #region StateSubpanel
+        void StateSbpnClickAction(
             ref EcsUguiClickEvent clickEvent)
         {
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель провинции
-            UIProvinceSubpanel provinceSubpanel = objectPanel.provinceSubpanel;
+            //Берём подпанель зоны карты
+            UIStateSubpanel stateSubpanel = objectPanel.stateSubpanel;
 
             //Если нажата кнопка обзорной вкладки
-            if (clickEvent.WidgetName == "OverviewTabProvinceSbpn")
+            if(clickEvent.WidgetName == "OverviewTabStateSbpn")
             {
                 //Запрашиваем отображение обзорной вкладки
                 ObjectPnActionRequest(
-                    ObjectPanelActionRequestType.ProvinceOverview,
-                    provinceSubpanel.activeTab.objectPE);
-            }
-        }
-        #endregion
-
-        #region MapAreaSubpanel
-        void MapAreaSbpnClickAction(
-            ref EcsUguiClickEvent clickEvent)
-        {
-            //Берём панель объекта
-            UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
-
-            //Берём подпанель области карты
-            UIMapAreaSubpanel mASubpanel = objectPanel.mapAreaSubpanel;
-
-            //Если нажата кнопка обзорной вкладки
-            if (clickEvent.WidgetName == "OverviewTabMapAreaSbpn")
-            {
-                //Запрашиваем отображение обзорной вкладки
-                ObjectPnActionRequest(
-                    ObjectPanelActionRequestType.MapAreaOverview,
-                    mASubpanel.activeTab.objectPE);
-            }
-            //Иначе, если нажата кнопка вкладки провинций
-            else if(clickEvent.WidgetName == "ProvincesTabMapAreaSbpn")
-            {
-                //Запрашиваем отображение вкладки провинций
-                ObjectPnActionRequest(
-                    ObjectPanelActionRequestType.MapAreaProvinces,
-                    mASubpanel.activeTab.objectPE);
+                    ObjectPanelActionRequestType.StateOverview,
+                    stateSubpanel.activeTab.objectPE);
             }
 
             //ТЕСТ
             //Если нажата кнопка захвата области
-            else if(clickEvent.WidgetName == "ConquerMapAreaSbpn")
+            if(clickEvent.WidgetName == "ConquerStateSbpn") 
             {
                 //Запрашиваем смену владельца области на страну игрока
-                MapAreaChangeOwnerRequest(
+                StateChangeOwnerRequest(
                     inputData.Value.playerCountryPE,
-                    mASubpanel.activeTab.objectPE);
+                    stateSubpanel.activeTab.objectPE);
             }
             //ТЕСТ
-
-            //Иначе, если открыта вкладка провинций
-            else if(mASubpanel.activeTab == mASubpanel.provincesTab)
-            {
-                Debug.LogWarning("!");
-
-                //ТЕСТ
-                //Для каждой провинции с отображаемыми панелями GUI
-                foreach(int provinceEntity in provinceDisplayedGUIPanelsFilter.Value)
-                {
-                    //Берём панели провинции
-                    ref CProvinceDisplayedGUIPanels provinceDisplayedGUIPanels = ref provinceDisplayedGUIPanelsPool.Value.Get(provinceEntity);
-
-                    //Если у провинции есть обзорная панель вкладки провинций
-                    if(provinceDisplayedGUIPanels.mASbpnProvincesTabSummaryPanel != null)
-                    {
-                        Debug.LogWarning("!");
-
-                        Debug.LogWarning(clickEvent.Sender.transform.parent);
-
-                        //Если она является родительским объектом источника события
-                        if (provinceDisplayedGUIPanels.mASbpnProvincesTabSummaryPanel.transform == clickEvent.Sender.transform.parent)
-                        {
-                            Debug.LogWarning("!");
-
-                            //Берём провинцию
-                            ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
-
-                            //То запрашиваем смену владельца провинции
-                            ProvinceChangeOwnerRequest(
-                                inputData.Value.playerCountryPE,
-                                pC.selfPE,
-                                ProvinceChangeOwnerType.Test);
-
-                            break;
-                        }
-                    }
-                }
-                //ТЕСТ
-            }
         }
 
-        readonly EcsPoolInject<RMapAreaChangeOwner> mAChangeOwnerRequestPool = default;
-        void MapAreaChangeOwnerRequest(
-            EcsPackedEntity countryPE,
-            EcsPackedEntity mAPE)
+        readonly EcsPoolInject<RStateChangeOwner> stateChangeOwnerRequestPool = default;
+        void StateChangeOwnerRequest(
+            EcsPackedEntity targetCountryPE,
+            EcsPackedEntity statePE,
+            StateChangeOwnerType requestType = StateChangeOwnerType.Test)
         {
-            //Создаём новую сущность и назначаем ей запрос смены владельца области карты
+            //Создаём новую сущность и назначаем ей запрос смены владельца области
             int requestEntity = world.Value.NewEntity();
-            ref RMapAreaChangeOwner requestComp = ref mAChangeOwnerRequestPool.Value.Add(requestEntity);
+            ref RStateChangeOwner requestComp = ref stateChangeOwnerRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
             requestComp = new(
-                countryPE,
-                mAPE,
-                MapAreaChangeOwnerType.Test);
-        }
-
-        readonly EcsPoolInject<RProvinceChangeOwner> provinceChangeOwnerRequestPool = default;
-        void ProvinceChangeOwnerRequest(
-            EcsPackedEntity countryPE,
-            EcsPackedEntity provincePE,
-            ProvinceChangeOwnerType requestType)
-        {
-            //Создаём новую сущность и назначаем ей запрос смены владельца провинции
-            int requestEntity = world.Value.NewEntity();
-            ref RProvinceChangeOwner requestComp = ref provinceChangeOwnerRequestPool.Value.Add(requestEntity);
-
-            //Заполняем данные запроса
-            requestComp = new(
-                countryPE,
-                provincePE,
+                targetCountryPE,
+                statePE,
                 requestType);
         }
         #endregion
@@ -750,23 +657,18 @@ namespace SO.UI
                 //ТЕСТ
                 ref CProvinceCore currentPC = ref pCPool.Value.Get(provinceEntity);
 
-                //Берём родительскую область карты провинции
-                currentPC.ParentMapAreaPE.Unpack(world.Value, out int mAEntity);
-                ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
+                //Берём родительскую область провинции
+                currentPC.ParentStatePE.Unpack(world.Value, out int stateEntity);
+                ref CState state = ref statePool.Value.Get(stateEntity);
                 //ТЕСТ
 
                 //Если нажата ЛКМ
                 if(inputData.Value.leftMouseButtonClick)
                 {
-                    //Запрашиваем отображение подпанели провинции
-                    //ObjectPnActionRequest(
-                    //    uIData.Value.provinceSubpanelDefaultTab,
-                    //    currentPHS.selfPE);
-
                     //Запрашиваем отображение подпанели области
                     ObjectPnActionRequest(
-                        uIData.Value.mapAreaSubpanelDefaultTab,
-                        mA.selfPE, currentPHS.selfPE);
+                        uIData.Value.stateSubpanelDefaultTab,
+                        state.selfPE, currentPHS.selfPE);
                 }
                 //Иначе, если нажата ПКМ
                 else if(inputData.Value.rightMouseButtonClick)

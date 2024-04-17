@@ -1,12 +1,10 @@
-using System;
-using System.Collections.Generic;
 
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Country;
+using SO.Map.State;
 using SO.Map.Events;
-using SO.Map.Economy;
+using SO.Map.Events.Province;
 
 namespace SO.Map.Province
 {
@@ -17,78 +15,82 @@ namespace SO.Map.Province
 
 
         //Карта
-        readonly EcsPoolInject<CProvinceCore> pCPool = default;
-        readonly EcsPoolInject<CProvinceEconomy> pEPool = default;
+        readonly EcsPoolInject<CState> statePool = default;
 
-        //Страны
-        readonly EcsPoolInject<CCountry> countryPool = default;
+        readonly EcsPoolInject<CProvinceCore> pCPool = default;
 
         public void Run(IEcsSystems systems)
         {
             //Смена владельцев провинций
-            ProvinceChangeOwners();
+            ProvincesChangeOwner();
         }
 
         readonly EcsFilterInject<Inc<RProvinceChangeOwner>> provinceChangeOwnerRequestFilter = default;
         readonly EcsPoolInject<RProvinceChangeOwner> provinceChangeOwnerRequestPool = default;
-        void ProvinceChangeOwners()
+        void ProvincesChangeOwner()
         {
-            //Для каждого запроса смены владельца провинции
+            //Для каждого запроса смены владельца провинций
             foreach (int requestEntity in provinceChangeOwnerRequestFilter.Value)
             {
                 //Берём запрос
                 ref RProvinceChangeOwner requestComp = ref provinceChangeOwnerRequestPool.Value.Get(requestEntity);
 
-                //Берём страну, которая становится владельцем провинции
-                requestComp.countryPE.Unpack(world.Value, out int countryEntity);
-                ref CCountry country = ref countryPool.Value.Get(countryEntity);
-
-                //Берём провинцию
-                requestComp.provincePE.Unpack(world.Value, out int provinceEntity);
-                ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
-
-                //Если смена владельца происходит при инициализации
-                if (requestComp.requestType == ProvinceChangeOwnerType.Initialization)
+                //Для каждой провинции в запросе
+                for (int a = 0; a < requestComp.provincePEs.Count; a++)
                 {
-                    PCChangeOwnerInitialization();
+                    //Берём провинцию
+                    requestComp.provincePEs[a].Unpack(world.Value, out int provinceEntity);
+                    ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
+
+                    //Меняем владельца провинции
+                    ProvinceChangeOwner(
+                        ref pC,
+                        ref requestComp);
                 }
-
-
-                //Создаём событие, сообщающее о смене владельца провинции
-                ProvinceChangeOwnerEvent(
-                    pC.selfPE,
-                    country.selfPE, pC.ownerCountryPE);
-
-
-                //Указываем страну-владельца провинции
-                pC.ownerCountryPE = country.selfPE;
-
-                //ТЕСТ
-                //Заносим PE провинции в список страны
-                country.ownedPCPEs.Add(pC.selfPE);
-
-                //Берём экономический компонент провинции
-                ref CProvinceEconomy pE = ref pEPool.Value.Get(provinceEntity);
-
-                //Создаём тестовые группы населения
-                for(int a = 0; a < 5; a++)
-                {
-                    //Создаём новый запрос создания ПОПа
-                    Population.Events.DROrderedPopulation orderedPOP = new(
-                        pE.selfPE,
-                        0,
-                        100);
-
-                    //Заносим его в список заказанных ПОПов
-                    pE.orderedPOPs.Add(orderedPOP);
-                }
-                //ТЕСТ
 
                 provinceChangeOwnerRequestPool.Value.Del(requestEntity);
             }
         }
 
-        void PCChangeOwnerInitialization()
+        void ProvinceChangeOwner(
+            ref CProvinceCore pC,
+            ref RProvinceChangeOwner requestComp)
+        {
+            //Если смена владельца происходит при инициализации
+            if (requestComp.requestType == ProvinceChangeOwnerType.Initialization)
+            {
+                ProvinceChangeOwnerInitialization();
+            }
+            //Иначе 
+            else
+            {
+                //Берём исходную область
+                pC.ParentStatePE.Unpack(world.Value, out int oldStateEntity);
+                ref CState oldState = ref statePool.Value.Get(oldStateEntity);
+
+                //Удаляем провинцию из списка исходной области
+                oldState.RemoveProvinceFromList(pC.selfPE);
+            }
+
+            //Указываем новую область, к которой относится провинция
+            pC.SetParentState(requestComp.newStatePE);
+
+
+            //Берём целевую область
+            requestComp.newStatePE.Unpack(world.Value, out int newStateEntity);
+            ref CState newState = ref statePool.Value.Get(newStateEntity);
+
+            //Заносим провинцию в список целевой области
+            newState.provincePEs.Add(pC.selfPE);
+
+
+            //Создаём событие, сообщающее о смене владельца провинции
+            ProvinceChangeOwnerEvent(
+                pC.selfPE,
+                requestComp.newOwnerCountryPE, requestComp.oldOwnerCountryPE);
+        }
+
+        void ProvinceChangeOwnerInitialization()
         {
 
         }

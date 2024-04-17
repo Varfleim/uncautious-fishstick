@@ -1,9 +1,11 @@
 
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
+
+using SO.Map.State;
+using SO.Map.Province;
 using SO.Country;
 using SO.Warfare.Fleet.Events;
-using SO.Map.Province;
 
 namespace SO.Warfare.Fleet
 {
@@ -14,6 +16,8 @@ namespace SO.Warfare.Fleet
 
 
         //Карта
+        readonly EcsPoolInject<CState> statePool = default;
+
         readonly EcsPoolInject<CProvinceCore> pCPool = default;
 
         //Страны
@@ -22,6 +26,10 @@ namespace SO.Warfare.Fleet
 
         //Военное дело
         readonly EcsPoolInject<CTaskForce> tFPool = default;
+
+
+        //Данные
+        readonly EcsCustomInject<ProvincesData> provincesData = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -56,8 +64,8 @@ namespace SO.Warfare.Fleet
                 //Заносим PE группы в список групп страны
                 country.ownedTaskForces.Add(tF.selfPE);
 
-                //Берём стартовую провинцию страны
-                country.ownedPCPEs[0].Unpack(world.Value, out int provinceEntity);
+                //Берём первую провинцию в мире
+                provincesData.Value.provincePEs[0].Unpack(world.Value, out int provinceEntity);
                 ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
                 //Размещаем оперативную группу в стартовй провинции страны

@@ -2,8 +2,7 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Map.Economy;
-using SO.Map.Province;
+using SO.Map.State;
 using SO.Population.Events;
 
 namespace SO.Population
@@ -15,8 +14,8 @@ namespace SO.Population
 
 
         //Карта
-        readonly EcsFilterInject<Inc<CProvinceEconomy>> provinceFilter = default;
-        readonly EcsPoolInject<CProvinceEconomy> pEPool = default;
+        readonly EcsFilterInject<Inc<CState>> stateFilter = default;
+        readonly EcsPoolInject<CState> statePool = default;
 
         //Население
         readonly EcsPoolInject<CPopulation> pOPPool = default;
@@ -29,37 +28,37 @@ namespace SO.Population
 
         void PopulationCreating()
         {
-            //Для каждой провинции
-            foreach (int currentProvinceEntity in provinceFilter.Value)
+            //Для каждой области
+            foreach (int currentStateEntity in stateFilter.Value)
             {
-                //Берём провинцию
-                ref CProvinceEconomy currentPE = ref pEPool.Value.Get(currentProvinceEntity);
+                //Берём область
+                ref CState currentState = ref statePool.Value.Get(currentStateEntity);
 
-                //Пока в провинции есть заказанные группы населения
-                for (int a = 0; a < currentPE.orderedPOPs.Count; a++)
+                //Пока в области есть заказанные группы населения
+                for (int a = 0; a < currentState.orderedPOPs.Count; a++)
                 {
                     //Берём заказанный ПОП
-                    DROrderedPopulation orderedPOP = currentPE.orderedPOPs[a];
+                    DROrderedPopulation orderedPOP = currentState.orderedPOPs[a];
 
-                    //Определяем провинцию, в котором создаётся ПОП
-                    int targetProvinceEntity;
+                    //Определяем область, в которой создаётся ПОП
+                    int targetStateEntity;
 
-                    //Если у ПОПа нет целевой провинции 
-                    if (orderedPOP.targetProvincePE.Unpack(world.Value, out targetProvinceEntity) == false)
+                    //Если у ПОПа нет целевой области 
+                    if (orderedPOP.targetStatePE.Unpack(world.Value, out targetStateEntity) == false)
                     {
-                        //ПОП создаётся в текущей провинции
+                        //ПОП создаётся в текущей области
 
                         //Указываем в качестве целевой текущую
-                        targetProvinceEntity = currentProvinceEntity;
+                        targetStateEntity = currentStateEntity;
                     }
-                    //Иначе ПОП создаётся в целевой провинции
+                    //Иначе ПОП создаётся в целевой области
 
-                    //Берём целевую провинцию
-                    ref CProvinceEconomy targetPE = ref pEPool.Value.Get(targetProvinceEntity);
+                    //Берём целевую область
+                    ref CState targetState = ref statePool.Value.Get(targetStateEntity);
 
-                    //Если в провинции уже есть идентичный ПОП
+                    //Если в область уже есть идентичный ПОП
                     if (FindIdenticalPopulation(
-                        ref targetPE,
+                        ref targetState,
                         ref orderedPOP,
                         out int oldPOPEntity))
                     {
@@ -74,29 +73,29 @@ namespace SO.Population
                     //Иначе
                     else
                     {
-                        //Создаём новый ПОП в провинции
+                        //Создаём новый ПОП в области
                         PopulationCreateNew(
                             ref orderedPOP,
-                            ref targetPE);
+                            ref targetState);
                     }
                 }
-                currentPE.orderedPOPs.Clear();
+                currentState.orderedPOPs.Clear();
             }
         }
 
         bool FindIdenticalPopulation(
-            ref CProvinceEconomy pE,
+            ref CState state,
             ref DROrderedPopulation orderedPOP,
             out int oldPOPEntity)
         {
             //Задаём несуществующий индекс
             oldPOPEntity = -1;
 
-            //Для каждой группы населения в провинции
-            for (int a = 0; a < pE.pOPs.Count; a++)
+            //Для каждой группы населения в области
+            for (int a = 0; a < state.pOPPEs.Count; a++)
             {
                 //Берём ПОП
-                pE.pOPs[a].Unpack(world.Value, out oldPOPEntity);
+                state.pOPPEs[a].Unpack(world.Value, out oldPOPEntity);
                 ref CPopulation oldPOP = ref pOPPool.Value.Get(oldPOPEntity);
 
                 //Если существующий ПОП идентичен проверяемому
@@ -115,7 +114,7 @@ namespace SO.Population
 
         void PopulationCreateNew(
             ref DROrderedPopulation orderedPOP,
-            ref CProvinceEconomy pE)
+            ref CState state)
         {
             //Создаём новую сущность и назначаем ей компонент ПОПа
             int pOPEntity = world.Value.NewEntity();
@@ -129,8 +128,8 @@ namespace SO.Population
             //Добавляем ПОПу его население
             pOP.UpdatePopulation(ref orderedPOP);
 
-            //Заносим PE ПОПа в список провинции
-            pE.pOPs.Add(pOP.selfPE);
+            //Заносим PE ПОПа в список области
+            state.pOPPEs.Add(pOP.selfPE);
 
             //Создаём событие, сообщающее о создании нового ПОПа
             ObjectNewCreatedEvent(pOP.selfPE, ObjectNewCreatedType.Population);

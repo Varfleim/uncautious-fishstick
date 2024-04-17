@@ -46,7 +46,7 @@ namespace SO.Map.MapArea
                 //Берём запрос
                 ref RMapGenerating requestComp = ref mapGeneratingRequestPool.Value.Get(requestEntity);
 
-                //Создаём области карты
+                //Создаём зоны карты
                 MapAreaCreate();
             }
         }
@@ -56,17 +56,17 @@ namespace SO.Map.MapArea
             //Для каждой провинции
             foreach (int provinceEntity in pCFilter.Value)
             {
-                //Назначаем провинции компонент области карты
+                //Назначаем провинции компонент зоны карты
                 ref CTProvinceMapArea provinceMA = ref pMAPool.Value.Add(provinceEntity);
 
                 //Заполняем данные компонента
                 provinceMA = new(world.Value.PackEntity(provinceEntity));
             }
 
-            //Случайно генерируем области карты
+            //Случайно генерируем зоны карты
             MapAreaGenerate();
 
-            //Определяем соседей областей
+            //Определяем соседей зон
             MapAreaSetNeighbours();
 
             //Для каждой сущности с компонентом отсутствия соседей
@@ -76,7 +76,7 @@ namespace SO.Map.MapArea
                 withoutFreeNeighboursPool.Value.Del(entity);
             }
 
-            //Для каждой провинции с областью карты
+            //Для каждой провинции с зоной карты
             foreach (int provinceEntity in provinceMAFilter.Value)
             {
                 //Берём провинцию
@@ -90,10 +90,10 @@ namespace SO.Map.MapArea
                 pMAPool.Value.Del(provinceEntity);
             }
 
-            //Для каждой области с компонентом генерации
+            //Для каждой зоны с компонентом генерации
             foreach(int mAEntity in mAGFilter.Value)
             {
-                //Берём область
+                //Берём зону
                 ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
                 ref CTMapAreaGeneration mAG = ref mAGPool.Value.Get(mAEntity);
 
@@ -107,24 +107,24 @@ namespace SO.Map.MapArea
 
         void MapAreaGenerate()
         {
-            //Определяем количество областей карты
+            //Определяем количество зон карты
             int mapAreaCount = provincesData.Value.provincePEs.Length / mapGenerationData.Value.mapAreaAverageSize;
 
-            //Создаём массив для PE областей
+            //Создаём массив для PE зон
             provincesData.Value.mapAreaPEs = new EcsPackedEntity[mapAreaCount];
 
-            //Для каждой требуемой области карты
+            //Для каждой требуемой зоны карты
             for (int a = 0; a < provincesData.Value.mapAreaPEs.Length; a++)
             {
-                //Создаём новую сущность и назначаем ей компоненты области карты и генерации области карты
+                //Создаём новую сущность и назначаем ей компоненты зоны карты и генерации зоны карты
                 int mAEntity = world.Value.NewEntity();
                 ref CMapArea mA = ref mAPool.Value.Add(mAEntity);
                 ref CTMapAreaGeneration mAG = ref mAGPool.Value.Add(mAEntity);
 
-                //Определяем цвет области
+                //Определяем цвет зоны
                 Color mAColor = new Color32((byte)(Random.value * 255), (byte)(Random.value * 255), (byte)(Random.value * 255), 255);
 
-                //Заполняем основные данные области
+                //Заполняем основные данные зоны
                 mA = new(
                     world.Value.PackEntity(mAEntity),
                     mAColor);
@@ -132,17 +132,17 @@ namespace SO.Map.MapArea
                 //Заполняем данные компонента генерации
                 mAG = new(0);
 
-                //Заносим PE области в массив
+                //Заносим PE зоны в массив
                 provincesData.Value.mapAreaPEs[a] = mA.selfPE;
 
-                //Берём компонент области случайной провинции
+                //Берём компонент зоны случайной провинции
                 provincesData.Value.GetProvinceRandom().Unpack(world.Value, out int provinceEntity);
                 ref CTProvinceMapArea pMA = ref pMAPool.Value.Get(provinceEntity);
 
-                //Пока полученная провинция принадлежит какой-либо области
+                //Пока полученная провинция принадлежит какой-либо зоны
                 while (pMA.parentMAPE.Unpack(world.Value, out int provinceParentMAEntity))
                 {
-                    //Берём компонент области случайной провинции
+                    //Берём компонент зоны случайной провинции
                     provincesData.Value.GetProvinceRandom().Unpack(world.Value, out provinceEntity);
                     pMA = ref pMAPool.Value.Get(provinceEntity);
                 }
@@ -150,10 +150,10 @@ namespace SO.Map.MapArea
                 //Берём полученную провинцию
                 ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
 
-                //Заносим провинцию во временный список области
+                //Заносим провинцию во временный список зоны
                 mAG.tempProvincePEs.Add(pMA.selfPE);
 
-                //Заносим PE области в данные провинции
+                //Заносим PE зоны в данные провинции
                 pMA.parentMAPE = mA.selfPE;
 
                 //Увеличиваем количество занятых соседних провинций для всех провинций, соседних PC
@@ -173,20 +173,20 @@ namespace SO.Map.MapArea
             //Создаём счётчик ошибок
             int errorCount = 0;
 
-            //Пока существуют области, имеющие свободных соседей
+            //Пока существуют зоны, имеющие свободных соседей
             while (mAWithFreeNeighboursFilter.Value.GetEntitiesCount() > 0)
             {
-                //Определяем, сколько провинций было добавлено к областям в этом цикле
+                //Определяем, сколько провинций было добавлено к зонам в этом цикле
                 int addedProvincesCount = 0;
 
-                //Для каждой области, имеющей свободных соседей
+                //Для каждой зоны, имеющей свободных соседей
                 foreach (int mAEntity in mAWithFreeNeighboursFilter.Value)
                 {
-                    //Берём область
+                    //Берём зону
                     ref CMapArea currentMA = ref mAPool.Value.Get(mAEntity);
                     ref CTMapAreaGeneration currentMAG = ref mAGPool.Value.Get(mAEntity);
 
-                    //Берём сущность случайной провинции в области
+                    //Берём сущность случайной провинции в зоны
                     currentMAG.tempProvincePEs[Random.Range(0, currentMAG.tempProvincePEs.Count)].Unpack(world.Value, out int currentFreeProvinceEntity);
 
                     //Создаём счётчик ошибок
@@ -206,7 +206,7 @@ namespace SO.Map.MapArea
                             break;
                         }
 
-                        //Берём сущность случайной провинции в области
+                        //Берём сущность случайной провинции в зоне
                         currentMAG.tempProvincePEs[Random.Range(0, currentMAG.tempProvincePEs.Count)].Unpack(world.Value, out currentFreeProvinceEntity);
                     }
 
@@ -217,7 +217,7 @@ namespace SO.Map.MapArea
                         ref CProvinceCore currentFreePC = ref pCPool.Value.Get(currentFreeProvinceEntity);
                         ref CTProvinceMapArea currentFreePMA = ref pMAPool.Value.Get(currentFreeProvinceEntity);
 
-                        //Берём компонент области случайной соседней провинции
+                        //Берём компонент зоны случайной соседней провинции
                         currentFreePC.neighbourProvincePEs[Random.Range(0, currentFreePC.neighbourProvincePEs.Length)]
                             .Unpack(world.Value, out int neighbourFreeProvinceEntity);
                         ref CTProvinceMapArea neighbourFreePMA = ref pMAPool.Value.Get(neighbourFreeProvinceEntity);
@@ -228,7 +228,7 @@ namespace SO.Map.MapArea
                         int maxNeighbourErrorCount = currentFreePC.neighbourProvincePEs.Length
                             * (currentFreePC.neighbourProvincePEs.Length - currentFreePMA.neighboursWithMACount);
 
-                        //Пока полученная провинция принадлежит какой-либо области
+                        //Пока полученная провинция принадлежит какой-либо зоне
                         while (neighbourFreePMA.parentMAPE.Unpack(world.Value, out int neighboutParentMAEntity))
                         {
                             //Увеличиваем счётчик ошибок
@@ -240,7 +240,7 @@ namespace SO.Map.MapArea
                                 break;
                             }
 
-                            //Берём компонент области случайной соседней провинции
+                            //Берём компонент зоны случайной соседней провинции
                             currentFreePC.neighbourProvincePEs[Random.Range(0, currentFreePC.neighbourProvincePEs.Length)]
                                 .Unpack(world.Value, out neighbourFreeProvinceEntity);
                             neighbourFreePMA = ref pMAPool.Value.Get(neighbourFreeProvinceEntity);
@@ -252,10 +252,10 @@ namespace SO.Map.MapArea
                             //Берём полученную соседнюю провинцию
                             ref CProvinceCore neighbourFreePC = ref pCPool.Value.Get(neighbourFreeProvinceEntity);
 
-                            //Заносим его во временный список области
+                            //Заносим его во временный список зоны
                             currentMAG.tempProvincePEs.Add(neighbourFreePC.selfPE);
 
-                            //Заносим PE области в данные провинции
+                            //Заносим PE зоны в данные провинции
                             neighbourFreePMA.parentMAPE = currentMA.selfPE;
 
                             //Увеличиваем количество занятых соседних провинций для всех провинций, соседних neighbourFreePC
@@ -273,11 +273,11 @@ namespace SO.Map.MapArea
 
                             addedProvincesCount++;
 
-                            //Если провинция имеет компонент отсутствия соседей, а область не имеет
+                            //Если провинция имеет компонент отсутствия соседей, а зона не имеет
                             if (withoutFreeNeighboursPool.Value.Has(neighbourFreeProvinceEntity) == true
                                 && withoutFreeNeighboursPool.Value.Has(mAEntity) == false)
                             {
-                                //Проводим проверку области
+                                //Проводим проверку зоны
                                 MapAreaCheckProvincesWithoutFreeNeighbours(mAEntity);
                             }
                         }
@@ -295,7 +295,7 @@ namespace SO.Map.MapArea
                 if (errorCount >= mapAreaCount)
                 {
                     //Выводим ошибку и прерываем цикл
-                    Debug.LogWarning("Невозможно дальнейшее расширение областей карты!");
+                    Debug.LogWarning("Невозможно дальнейшее расширение зон карты!");
 
                     break;
                 }
@@ -307,31 +307,31 @@ namespace SO.Map.MapArea
             //Для каждой провинции
             foreach (int provinceEntity in provinceMAFilter.Value)
             {
-                //Берём компонент области провинции
+                //Берём компонент зоны провинции
                 ref CTProvinceMapArea pMA = ref pMAPool.Value.Get(provinceEntity);
 
-                //Удаляем из списка соседних областей область, к которой провинция принадлежит
+                //Удаляем из списка соседних зон зону, к которой провинция принадлежит
                 pMA.neighbourMAPEs.Remove(pMA.parentMAPE);
             }
 
-            //Для каждой области карты
+            //Для каждой зоны карты
             foreach (int mAEntity in mAGFilter.Value)
             {
-                //Берём область
+                //Берём зону
                 ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
                 ref CTMapAreaGeneration mAG = ref mAGPool.Value.Get(mAEntity);
 
-                //Для каждой провинции области
+                //Для каждой провинции зоны
                 for (int a = 0; a < mAG.tempProvincePEs.Count; a++)
                 {
-                    //Берём компонент области провинции
+                    //Берём компонент зоны провинции
                     mAG.tempProvincePEs[a].Unpack(world.Value, out int provinceEntity);
                     ref CTProvinceMapArea pMA = ref pMAPool.Value.Get(provinceEntity);
 
-                    //Для каждой соседней провинции области
+                    //Для каждой соседней провинции зоны
                     for (int b = 0; b < pMA.neighbourMAPEs.Count; b++)
                     {
-                        //Если такой области нет в списке соседних областей текущей области
+                        //Если такой зоны нет в списке соседних зон текущей зоны
                         if (mAG.tempNeighbourMAPEs.Contains(pMA.neighbourMAPEs[b]) == false)
                         {
                             //Заносим её PE в список
@@ -345,7 +345,7 @@ namespace SO.Map.MapArea
         void MapAreaAddProvinceWithoutFreeNeighbours(
         int mAEntity)
         {
-            //Берём область карты
+            //Берём зону карты
             ref CTMapAreaGeneration mAG = ref mAGPool.Value.Get(mAEntity);
 
             //Если количество провинций без свободных соседей меньше количества провинций
@@ -357,7 +357,7 @@ namespace SO.Map.MapArea
                 //Если количество провинций без свободных соседей равно количеству провинций
                 if (mAG.provinceWithoutFreeNeighboursCount >= mAG.tempProvincePEs.Count)
                 {
-                    //Назначаем области компонент отсутствия соседей
+                    //Назначаем зоне компонент отсутствия соседей
                     ref CTWithoutFreeNeighbours mAWFN = ref withoutFreeNeighboursPool.Value.Add(mAEntity);
                 }
             }
@@ -366,13 +366,13 @@ namespace SO.Map.MapArea
         void MapAreaCheckProvincesWithoutFreeNeighbours(
             int mAEntity)
         {
-            //Берём область карты
+            //Берём зону карты
             ref CTMapAreaGeneration mAG = ref mAGPool.Value.Get(mAEntity);
 
             //Подсчитываем количество провинций, не имеющих свободных соседей
             int rWFNCount = 0;
 
-            //Для каждой провинции в области
+            //Для каждой провинции в зоне
             for (int a = 0; a < mAG.tempProvincePEs.Count; a++)
             {
                 //Берём сущность провинции
@@ -386,13 +386,13 @@ namespace SO.Map.MapArea
                 }
             }
 
-            //Обновляем счётчик в данных области
+            //Обновляем счётчик в данных зоны
             mAG.provinceWithoutFreeNeighboursCount = rWFNCount;
 
             //Если количество провинций без свободных соседей равно количеству провинций
             if (mAG.provinceWithoutFreeNeighboursCount >= mAG.tempProvincePEs.Count)
             {
-                //Назначаем области компонент отсутствия соседей
+                //Назначаем зоне компонент отсутствия соседей
                 ref CTWithoutFreeNeighbours mAWFN = ref withoutFreeNeighboursPool.Value.Add(mAEntity);
             }
         }
@@ -405,25 +405,25 @@ namespace SO.Map.MapArea
             ref CProvinceCore pC = ref pCPool.Value.Get(provinceEntity);
             ref CTProvinceMapArea pMA = ref pMAPool.Value.Get(provinceEntity);
 
-            //Если количество соседей, принадлежащих областям, меньше количества соседей
+            //Если количество соседей, принадлежащих зонам, меньше количества соседей
             if(pMA.neighboursWithMACount < pC.neighbourProvincePEs.Length)
             {
-                //Увеличиваем количество соседей, принадлежащих областям
+                //Увеличиваем количество соседей, принадлежащих зонам
                 pMA.neighboursWithMACount++;
 
-                //Заносим новую соседнюю область в список соседних областей провинции
+                //Заносим новую соседнюю зону в список соседних зон провинции
                 pMA.neighbourMAPEs.Add(neighbourMAPE);
 
-                //Если количество соседей, принадлежащих областям, равно количеству соседей
+                //Если количество соседей, принадлежащих зонам, равно количеству соседей
                 if (pMA.neighboursWithMACount >= pC.neighbourProvincePEs.Length)
                 {
                     //Назначаем провинции компонент отсутствия свободных соседей
                     ref CTWithoutFreeNeighbours rWFN = ref withoutFreeNeighboursPool.Value.Add(provinceEntity);
 
-                    //Если провинция принадлежит области
+                    //Если провинция принадлежит зоне
                     if (pMA.parentMAPE.Unpack(world.Value, out int parentMAEntity))
                     {
-                        //То увеличиваем количество провинций без свободных соседей для этой области
+                        //То увеличиваем количество провинций без свободных соседей для этой зоны
                         MapAreaAddProvinceWithoutFreeNeighbours(parentMAEntity);
                     }
                 }

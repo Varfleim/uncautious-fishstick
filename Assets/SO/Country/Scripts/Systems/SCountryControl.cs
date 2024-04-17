@@ -2,8 +2,8 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Country.Events;
 using SO.Map.Generation;
+using SO.Country.Events;
 
 namespace SO.Country
 {
@@ -35,8 +35,7 @@ namespace SO.Country
                 ref RCountryCreating requestComp = ref countryCreatingRequestPool.Value.Get(requestEntity);
 
                 //Создаём новую страну
-                CountryCreating(
-                    ref requestComp);
+                CountryCreating(ref requestComp);
 
                 countryCreatingRequestPool.Value.Del(requestEntity);
             }
@@ -58,7 +57,7 @@ namespace SO.Country
             inputData.Value.playerCountryPE = country.selfPE;
 
             //Запрашиваем инициализацию стартовой провинции страны
-            CountryStartProvinceInitializerRequest(country.selfPE);
+            //CountryStartProvinceInitializerRequest(country.selfPE);
             //ТЕСТ
 
             //Создаём событие, сообщающее о создании новой страны

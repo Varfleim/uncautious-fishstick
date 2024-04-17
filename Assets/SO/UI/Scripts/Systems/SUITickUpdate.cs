@@ -53,17 +53,11 @@ namespace SO.UI
                 //Проверяем, требуется ли обновление в подпанели страны
                 CountrySbpnCheckRefresh();
             }
-            //Иначе, если активна подпанель провинции
-            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.Province)
-            {
-                //Проверяем, требуется ли обновление в подпанели провинции
-                ProvinceSbpnCheckRefresh();
-            }
-            //Иначе, если активна подпанель области карты
-            else if (objectPanel.activeSubpanelType == ObjectSubpanelType.MapArea)
+            //Иначе, если активна подпанель области
+            else if(objectPanel.activeSubpanelType == ObjectSubpanelType.State)
             {
                 //Проверяем, требуется ли обновление в подпанели области
-                MapAreaSbpnCheckRefresh();
+                StateSbpnCheckRefresh();
             }
             //Иначе, если активна подпанель менеджера флотов
             else if(objectPanel.activeSubpanelType == ObjectSubpanelType.FleetManager)
@@ -106,47 +100,21 @@ namespace SO.UI
             }
         }
 
-        void ProvinceSbpnCheckRefresh()
+        void StateSbpnCheckRefresh()
         {
             //Берём панель объекта
             UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
 
-            //Берём подпанель провинции
-            UIProvinceSubpanel provinceSubpanel = objectPanel.provinceSubpanel;
+            //Берём подпанель области
+            UIStateSubpanel stateSubpanel = objectPanel.stateSubpanel;
 
             //Если активна обзорная вкладка
-            if (provinceSubpanel.activeTab == provinceSubpanel.overviewTab)
+            if (stateSubpanel.activeTab == stateSubpanel.overviewTab)
             {
                 //Запрашиваем обновление обзорной вкладки
                 ObjPnActionRequest(
-                    ObjectPanelActionRequestType.ProvinceOverview,
-                    provinceSubpanel.activeTab.objectPE);
-            }
-        }
-
-        void MapAreaSbpnCheckRefresh()
-        {
-            //Берём панель объекта
-            UIObjectPanel objectPanel = sOUI.Value.gameWindow.objectPanel;
-
-            //Берём подпанель области карты
-            UIMapAreaSubpanel mASubpanel = objectPanel.mapAreaSubpanel;
-
-            //Если активна обзорная вкладка
-            if (mASubpanel.activeTab == mASubpanel.overviewTab)
-            {
-                //Запрашиваем обновление обзорной вкладки
-                ObjPnActionRequest(
-                    ObjectPanelActionRequestType.MapAreaOverview,
-                    mASubpanel.activeTab.objectPE);
-            }
-            //Иначе, если активна вкладка провинций
-            else if(mASubpanel.activeTab == mASubpanel.provincesTab)
-            {
-                //Запрашиваем обновление вкладки провинций
-                ObjPnActionRequest(
-                    ObjectPanelActionRequestType.MapAreaProvinces,
-                    mASubpanel.activeTab.objectPE);
+                    ObjectPanelActionRequestType.StateOverview,
+                    stateSubpanel.activeTab.objectPE);
             }
         }
 

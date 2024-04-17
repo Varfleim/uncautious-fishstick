@@ -12,8 +12,7 @@ namespace SO.UI.Game.GUI
         None,
 
         Country,
-        MapArea,
-        Province,
+        State,
         FleetManager
     }
 
@@ -26,8 +25,7 @@ namespace SO.UI.Game.GUI
         public UIAObjectSubpanel activeSubpanel;
 
         public UICountrySubpanel countrySubpanel;
-        public UIMapAreaSubpanel mapAreaSubpanel;
-        public UIProvinceSubpanel provinceSubpanel;
+        public UIStateSubpanel stateSubpanel;
         public UIFleetManagerSubpanel fleetManagerSubpanel;
 
         public void HideActiveSubpanel()

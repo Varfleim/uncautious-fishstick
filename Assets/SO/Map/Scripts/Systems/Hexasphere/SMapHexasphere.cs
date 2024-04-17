@@ -8,7 +8,6 @@ using Leopotam.EcsLite.Di;
 
 using SO.UI;
 using SO.Map.Generation;
-using SO.Map.Economy;
 using SO.Map.Province;
 
 namespace SO.Map.Hexasphere
@@ -22,7 +21,6 @@ namespace SO.Map.Hexasphere
         //Карта
         readonly EcsPoolInject<CProvinceHexasphere> pHSPool = default;
         readonly EcsPoolInject<CProvinceCore> pCPool = default;
-        readonly EcsPoolInject<CProvinceEconomy> pEPool = default;
 
 
         //События карты
@@ -360,7 +358,6 @@ namespace SO.Map.Hexasphere
             int provinceEntity = world.Value.NewEntity();
             ref CProvinceHexasphere currentPHS = ref pHSPool.Value.Add(provinceEntity);
             ref CProvinceCore currentPC = ref pCPool.Value.Add(provinceEntity);
-            ref CProvinceEconomy currentPE = ref pEPool.Value.Add(provinceEntity);
 
             //Заполняем основные данные PHS
             currentPHS = new(
@@ -371,10 +368,6 @@ namespace SO.Map.Hexasphere
             currentPC = new(
                 currentPHS.selfPE, provinceIndex,
                 currentPHS.centerPoint.ProjectedVector3);
-
-            //Заполняем основные данные PE
-            currentPE = new(
-                currentPHS.selfPE);
 
             //Заносим провинцию в массив провинций
             provincesData.Value.provincePEs[provinceIndex] = currentPHS.selfPE;

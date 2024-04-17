@@ -7,7 +7,6 @@ namespace SO.UI.Game.Events
     {
         None,
 
-        ProvinceSummaryPanelMASbpnProvincesTab,
         ProvinceMainMapPanel,
 
         TaskForceSummaryPanelFMSbpnFleetsTab,

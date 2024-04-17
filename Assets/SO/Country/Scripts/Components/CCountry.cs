@@ -15,9 +15,7 @@ namespace SO.Country
             
             this.selfName = selfName;
 
-            ownedPCPEs = new();
-
-            ownedMAPEs = new();
+            ownedStatePEs = new();
 
             ownedTaskForces = new();
         }
@@ -27,9 +25,7 @@ namespace SO.Country
         
         public string selfName;
 
-        public List<EcsPackedEntity> ownedPCPEs;
-
-        public List<EcsPackedEntity> ownedMAPEs;
+        public List<EcsPackedEntity> ownedStatePEs;
 
         public List<EcsPackedEntity> ownedTaskForces;
     }

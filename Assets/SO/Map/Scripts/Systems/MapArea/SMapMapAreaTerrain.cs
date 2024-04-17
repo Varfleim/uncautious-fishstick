@@ -3,6 +3,7 @@ using UnityEngine;
 
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
+
 using SO.Map.Generation;
 using SO.Map.Province;
 
@@ -35,23 +36,23 @@ namespace SO.Map.MapArea
                 //Берём запрос
                 ref RMapGenerating requestComp = ref mapGeneratingRequestPool.Value.Get(requestEntity);
 
-                //Создаём ландшафт областей карты
+                //Создаём ландшафт зон карты
                 MapAreaTerrainCreate();
             }
         }
 
         void MapAreaTerrainCreate()
         {
-            //Первично определяем высоту областей
+            //Первично определяем высоту зон
             MapAreaSetElevationFirst();
 
-            //Вторично определяем высоту областей
+            //Вторично определяем высоту зон
             MapAreaSetElevationSecond();
         }
 
         void MapAreaSetElevationFirst()
         {
-            //Определяем количество областей для первичной установки высоты
+            //Определяем количество зон для первичной установки высоты
             int firstElevationSetMACount = Mathf.RoundToInt(
                 provincesData.Value.mapAreaPEs.Length
                 * mapGenerationData.Value.mapAreaFirstElevationSetCount * 0.01f);
@@ -59,29 +60,29 @@ namespace SO.Map.MapArea
             //Пока счётчик больше нуля
             while (firstElevationSetMACount > 0)
             {
-                //Берём случайную область
+                //Берём случайную зону
                 provincesData.Value.GetMapAreaRandom().Unpack(world.Value, out int mAEntity);
                 ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
 
-                //Пока полученная область имеет высоту, отличную от нуля
+                //Пока полученная зона имеет высоту, отличную от нуля
                 while (mA.Elevation != 0)
                 {
-                    //Берём случайную область
+                    //Берём случайную зону
                     provincesData.Value.GetMapAreaRandom().Unpack(world.Value, out mAEntity);
                     mA = ref mAPool.Value.Get(mAEntity);
                 }
 
-                //Генерируем случайную высоту области
+                //Генерируем случайную высоту зоны
                 mA.Elevation = Random.Range(mapGenerationData.Value.elevationMinimum, mapGenerationData.Value.elevationMaximum + 1);
 
-                //Уменьшаем счётчик областей для первичной установки высоты
+                //Уменьшаем счётчик зон для первичной установки высоты
                 firstElevationSetMACount--;
             }
         }
 
         void MapAreaSetElevationSecond()
         {
-            //Определяем количество областей для вторичной установки высоты
+            //Определяем количество зон для вторичной установки высоты
             int secondElevationSetMACount = Mathf.RoundToInt(
                 provincesData.Value.mapAreaPEs.Length 
                 * mapGenerationData.Value.mapAreaSecondElevationSetCount * 0.01f);
@@ -89,33 +90,33 @@ namespace SO.Map.MapArea
             //Пока счётчик больше нуля
             while (secondElevationSetMACount > 0)
             {
-                //Берём случайную область
+                //Берём случайную зону
                 provincesData.Value.GetMapAreaRandom().Unpack(world.Value, out int mAEntity);
                 ref CMapArea mA = ref mAPool.Value.Get(mAEntity);
 
-                //Пока полученная область имеет высоту, отличную от нуля
+                //Пока полученная зона имеет высоту, отличную от нуля
                 while (mA.Elevation != 0)
                 {
-                    //Берём случайную область
+                    //Берём случайную зону
                     provincesData.Value.GetMapAreaRandom().Unpack(world.Value, out mAEntity);
                     mA = ref mAPool.Value.Get(mAEntity);
                 }
 
-                //Определяем среднюю высоту соседних областей
+                //Определяем среднюю высоту соседних зон
                 int averageNeighbourElevation = 0;
                 int neighbourWithElevationCount = 0;
 
-                //Для каждой соседней области 
+                //Для каждой соседней зоны 
                 for (int a = 0; a < mA.neighbourMAPEs.Length; a++)
                 {
-                    //Берём соседнюю область
+                    //Берём соседнюю зону
                     mA.neighbourMAPEs[a].Unpack(world.Value, out int neighbourMAEntity);
                     ref CMapArea neighbourMA = ref mAPool.Value.Get(neighbourMAEntity);
 
-                    //Если высота области не равна нулю
+                    //Если высота зоны не равна нулю
                     if (neighbourMA.Elevation != 0)
                     {
-                        //Прибавляем высоту соседней области 
+                        //Прибавляем высоту соседней зоны 
                         averageNeighbourElevation += neighbourMA.Elevation;
 
                         //Увеличиваем счётчик соседей с высотой
@@ -129,7 +130,7 @@ namespace SO.Map.MapArea
                     //Вычисляем среднюю высоту
                     averageNeighbourElevation = Mathf.CeilToInt((float)averageNeighbourElevation / neighbourWithElevationCount);
 
-                    //Генерируем случайную высоту области в рамках от средней минус два до средней
+                    //Генерируем случайную высоту зоны в рамках от средней минус два до средней
                     mA.Elevation = Random.Range(averageNeighbourElevation - 2, averageNeighbourElevation);
 
                     //Ограничиваем высоту 
@@ -138,7 +139,7 @@ namespace SO.Map.MapArea
                     //Если итоговая высота не равно нулю
                     if (mA.Elevation != 0)
                     {
-                        //Уменьшаем счётчик областей для вторичной установки высоты
+                        //Уменьшаем счётчик зон для вторичной установки высоты
                         secondElevationSetMACount--;
                     }
                 }

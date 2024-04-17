@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using SO.Map.Events;
 using SO.Map.Hexasphere;
 using SO.Map.Province;
+using SO.Map.Events.Province;
 
 namespace SO.Map.Generation
 {
-    public class SMapProvinceInitializerControl : IEcsRunSystem
+    public class SMapInitializerControl : IEcsRunSystem
     {
         //Миры
         readonly EcsWorldInject world = default;
@@ -20,7 +20,7 @@ namespace SO.Map.Generation
         readonly EcsPoolInject<CProvinceHexasphere> pHSPool = default;
 
 
-        //События экономики
+        //События карты
         readonly EcsFilterInject<Inc<RProvinceInitializer>> provinceInitializerRequestFilter = default;
         readonly EcsPoolInject<RProvinceInitializer> provinceInitializerRequestPool = default;
         readonly EcsFilterInject<Inc<RProvinceInitializer, RProvinceInitializerOwner>> provinceInitializerOwnerRequestFilter = default;
@@ -119,10 +119,10 @@ namespace SO.Map.Generation
             ref RProvinceChangeOwner requestComp = ref provinceChangeOwnerRequestPool.Value.Add(requestEntity);
 
             //Заполняем данные запроса
-            requestComp = new(
-                countryPE,
-                provincePE,
-                requestType);
+            //requestComp = new(
+            //    countryPE,
+            //    provincePE,
+            //    requestType);
         }
     }
 }

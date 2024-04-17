@@ -13,9 +13,6 @@ namespace SO
         readonly EcsFilterInject<Inc<EProvinceChangeOwner>> provinceChangeOwnerEventFilter = default;
         readonly EcsPoolInject<EProvinceChangeOwner> provinceChangeOwnerEventPool = default;
 
-        readonly EcsFilterInject<Inc<EMapAreaChangeOwner>> mAChangeOwnerEventFilter = default;
-        readonly EcsPoolInject<EMapAreaChangeOwner> mAChangeOwnerEventPool = default;
-
         //События военного дела
         readonly EcsFilterInject<Inc<ETaskForceChangeProvince>> tFChangeProvinceEventFilter = default;
         readonly EcsPoolInject<ETaskForceChangeProvince> tFChangeProvinceEventPool = default;
@@ -38,13 +35,6 @@ namespace SO
             {
                 //Удаляем компонент события
                 provinceChangeOwnerEventPool.Value.Del(eventEntity);
-            }
-
-            //Для каждого события смены владельца области карты
-            foreach (int eventEntity in mAChangeOwnerEventFilter.Value)
-            {
-                //Удаляем компонент события
-                mAChangeOwnerEventPool.Value.Del(eventEntity);
             }
 
             //Для каждого события смены провинции оперативной группой

@@ -12,6 +12,7 @@ using SO.Map;
 using SO.Map.Hexasphere;
 using SO.Map.Generation;
 using SO.Map.MapArea;
+using SO.Map.State;
 using SO.Map.Province;
 using SO.Country;
 using SO.Population;
@@ -62,19 +63,28 @@ namespace SO
                 new SNewGameInitializationMain(),
                 //Генерация гексасферы
                 new SMapHexasphere(),
-                //Генерация областей карты
+                //Генерация зон карты
                 new SMapMapArea(),
-                //Генерация ландшафта областей карты
+                //Генерация ландшафта зон карты
                 new SMapMapAreaTerrain(),
+                //Создание ничейных областей
+                new SMapState(),
+
+                //Управление областями
+                new SStateControl(),
+                //Управление провинциями
+                new SProvinceControl(),
 
                 //Управление странами
                 new SCountryControl(),
 
-                //Применение инициализаторов провинций
-                new SMapProvinceInitializerControl(),
+                //Применение инициализаторов
+                new SMapInitializerControl(),
 
-                //Управление областями карты
+                //Управление зонами карты
                 new SMapAreaControl(),
+                //Управление областями
+                new SStateControl(),
                 //Управление провинциями
                 new SProvinceControl(),
                 
@@ -119,7 +129,7 @@ namespace SO
 
             perTickSystems
 
-                //Управление областями карты
+                //Управление зонами карты
                 .Add(new SMapAreaControl())
                 //Управление провинциями
                 .Add(new SProvinceControl())

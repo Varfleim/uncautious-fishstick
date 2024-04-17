@@ -26,6 +26,7 @@ namespace SO.Map.MapArea
 
 
             ownerCountryPE = new();
+            states = new();
         }
 
         public readonly EcsPackedEntity selfPE;
@@ -53,6 +54,8 @@ namespace SO.Map.MapArea
 
         #region CountryData
         public EcsPackedEntity ownerCountryPE;
+
+        public List<DState> states;
         #endregion
     }
 }

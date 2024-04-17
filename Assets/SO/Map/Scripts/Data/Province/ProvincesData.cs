@@ -29,19 +29,19 @@ namespace SO.Map.Province
             return GetProvince(UnityEngine.Random.Range(0, provincePEs.Length));
         }
 
-        //Данные областей
+        //Данные зон
         public EcsPackedEntity[] mapAreaPEs;
 
         public EcsPackedEntity GetMapArea(
             int mAIndex)
         {
-            //Возвращаем PE запрошенной области
+            //Возвращаем PE запрошенной зоны
             return mapAreaPEs[mAIndex];
         }
 
         public EcsPackedEntity GetMapAreaRandom()
         {
-            //Возвращаем PE случайной области
+            //Возвращаем PE случайной зоны
             return GetMapArea(UnityEngine.Random.Range(0, mapAreaPEs.Length));
         }
 
